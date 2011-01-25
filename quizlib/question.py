@@ -1,6 +1,7 @@
 import os
 import random
 import datetime
+import thumb
 
 __author__ = 'tommy'
 
@@ -55,7 +56,7 @@ class Question(object):
             return filename
         else:
             return os.path.join(path, filename)
-        
+
 
 class WhatMovieIsThisQuestion(Question):
     """
@@ -66,7 +67,6 @@ class WhatMovieIsThisQuestion(Question):
         self.correctAnswer = self.database.fetchone('SELECT mv.idMovie AS movieId, mv.c00 AS title, mv.c14 AS genre, mv.strPath AS path, mv.strFilename AS filename, slm.idSet AS setId '
             + 'FROM movieview mv LEFT JOIN setlinkmovie slm ON mv.idMovie = slm.idMovie ORDER BY random() LIMIT 1')
         self._add_answer(self.correctAnswer)
-
 
         # Find other movies in set
         otherMoviesInSet = self.database.fetchall('SELECT DISTINCT mv.idMovie AS movieId, mv.c00 AS title, mv.c14 AS genre, mv.strPath AS path, mv.strFilename AS filename '
@@ -116,7 +116,8 @@ class ActorNotInMovieQuestion(Question):
             + 'FROM movieview mv, actorlinkmovie alm, actors a '
             + 'WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor '
             + 'GROUP BY alm.idActor HAVING count(mv.idMovie) > 3 ORDER BY random() LIMIT 1')
-        
+        self.photoFile = thumb.getCachedThumb('actor' + self.actor['name'])
+
         # Movie actor is not in
         self.correctAnswer = self.database.fetchone('SELECT mv.idMovie AS movieId, mv.c00 AS title, mv.c14 AS genre, mv.strPath AS path, mv.strFilename AS filename '
             + 'FROM movieview mv, actorlinkmovie alm '
@@ -139,13 +140,10 @@ class ActorNotInMovieQuestion(Question):
 
 
     def getQuestion(self):
-        return "What movie is %s not in?" % self.actor['name']
+        return "What movie is [B]%s[/B] not in?" % self.actor['name']
 
     def getPhotoFile(self):
-        if self.actor['thumb'] != '':
-            return self.actor['thumb'][7:-8] # remove <thumb> and </thumb>
-        else:
-            return None
+        return self.photoFile
 
 
 class WhatYearWasMovieReleasedQuestion(Question):
@@ -181,16 +179,18 @@ class WhatYearWasMovieReleasedQuestion(Question):
             }
             self.answers.append(answer)
 
-        self.correctAnswer = self.answers[0]
-        
+            if year == int(self.movie['year']):
+                self.correctAnswer = answer
+
         print self.answers
-        
+
     def getQuestion(self):
-        return "What year was %s released?" % self.movie['title']
+        return "What year was [B]%s[/B] released?" % self.movie['title']
 
 
     def getVideoFile(self):
         return self.correctAnswer['videoFile']
+
 
 
 def getRandomQuestion():
