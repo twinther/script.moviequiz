@@ -8,6 +8,22 @@
         <posy>0</posy>
     </coordinates>
     <controls>
+        <!-- visibility markers -->
+        <control type="label" id="5000">
+            <description>visibility marker for video group</description>
+        </control>
+        <control type="label" id="5001">
+            <description>visibility marker for photo group</description>
+        </control>
+        <control type="label" id="5002">
+            <description>visibility marker for correct graphics</description>
+        </control>
+        <control type="label" id="5003">
+            <description>visibility marker for incorrect group</description>
+        </control>
+
+
+
         <!-- Background -->
         <control type="image">
             <posx>0</posx>
@@ -17,21 +33,66 @@
             <texture>quiz-background.png</texture>
         </control>
 
-        <control type="videowindow" id="2">
-            <posx>256</posx>
+        <!-- photo group -->
+        <control type="group">
+            <posx>532</posx>
             <posy>34</posy>
-            <width>768</width>
+            <width>216</width>
             <height>432</height>
-            <visible>true</visible>
+            <visible>Control.IsVisible(5001)</visible>
+            <animation effect="fade" start="100" end="0" time="1000">Hidden</animation>
+            <animation effect="fade" start="0" end="100" delay="1000" time="500">Visible</animation>
+
+            <control type="image">
+                <posx>0</posx>
+                <posy>0</posy>
+                <width>216</width>
+                <height>432</height>
+                <texture>quiz-video-background.png</texture>
+            </control>
+            <control type="image" id="4400">
+                <posx>0</posx>
+                <posy>0</posy>
+                <width>216</width>
+                <height>432</height>
+                <aspectratio>keep</aspectratio>
+            </control>
         </control>
-        <control type="image" id="4400">
-            <posx>256</posx>
-            <posy>34</posy>
-            <width>768</width>
-            <height>432</height>
-            <visible>true</visible>
-            <aspectratio>keep</aspectratio>
+
+        <!-- video group -->
+        <control type="group">
+            <posx>246</posx>
+            <posy>24</posy>
+            <width>788</width>
+            <height>452</height>
+            <visible>Control.IsVisible(5000)</visible>
+            <animation effect="slide" end="0,-500" time="1000">Hidden</animation>
+            <animation effect="slide" start="0,-500" time="1000" delay="500">Visible</animation>
+
+            <control type="image">
+                <posx>0</posx>
+                <posy>0</posy>
+                <width>788</width>
+                <height>452</height>
+                <texture>quiz-video-background.png</texture>
+            </control>
+            <control type="image">
+                <posx>224</posx>
+                <posy>194</posy>
+                <width>340</width>
+                <height>64</height>
+                <texture>quiz-loading.png</texture>
+                <visible>!Control.IsVisible(5000)</visible>
+                <animation effect="fade" start="100" end="0" time="1000" delay="5000">Hidden</animation>
+            </control>
+            <control type="videowindow" id="2">
+                <posx>15</posx>
+                <posy>15</posy>
+                <width>758</width>
+                <height>422</height>
+            </control>
         </control>
+
 
         <control type="label" id="4100">
             <posx>25</posx>
@@ -162,6 +223,28 @@
             <onup>4002</onup>
             <ondown>4000</ondown>
         </control>
+
+        <control type="image">
+            <posx>1085</posx>
+            <posy>35</posy>
+            <width>150</width>
+            <height>150</height>
+            <texture>quiz-correct.png</texture>
+            <visible>Control.IsVisible(5002)</visible>
+            <animation effect="fade" start="100" end="0" time="1000">Hidden</animation>
+            <animation effect="slide" start="200,0" time="1000">Visible</animation>
+        </control>
+        <control type="image">
+            <posx>1085</posx>
+            <posy>35</posy>
+            <width>150</width>
+            <height>150</height>
+            <texture>quiz-wrong.png</texture>
+            <visible>Control.IsVisible(5003)</visible>
+            <animation effect="fade" start="100" end="0" time="1000">Hidden</animation>
+            <animation effect="slide" start="200,0" time="1000" delay="500">Visible</animation>
+        </control>
+
 
     </controls>
 </window>

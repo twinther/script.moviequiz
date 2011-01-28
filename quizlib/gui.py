@@ -1,4 +1,5 @@
 import os
+import threading
 
 import xbmc
 import xbmcgui
@@ -17,6 +18,11 @@ class QuizGui(xbmcgui.WindowXML):
     def onInit(self):
         print "onInit"
 
+        self.getControl(5000).setVisible(False)
+        self.getControl(5001).setVisible(False)
+        self.getControl(5002).setVisible(False)
+        self.getControl(5003).setVisible(False)
+
         self.correctAnswer = None
         self.database = Database()
         self.player = TenSecondPlayer()
@@ -27,8 +33,6 @@ class QuizGui(xbmcgui.WindowXML):
         splash = SplashDialog('script-moviequiz-splash.xml', os.getcwd(), database = self.database)
         splash.doModal()
         del splash
-
-        print self
 
         self._update_score()
         self._setup_question()
@@ -52,13 +56,17 @@ class QuizGui(xbmcgui.WindowXML):
         if controlId >= 4000 or controlId <= 4003:
             if self.correctAnswer == (controlId - 4000):
                 self.score['correct'] += 1
+                self.getControl(5002).setVisible(True)
             else:
                 self.score['wrong'] += 1
+                self.getControl(5003).setVisible(True)
             self._update_score()
 
             if self.player.isPlaying():
                 self.player.stop()
             self._setup_question()
+
+            threading.Timer(3.0, self._hide_icons).start()
 
 
     def onFocus(self, controlId):
@@ -87,15 +95,20 @@ class QuizGui(xbmcgui.WindowXML):
 
         self._update_thumb()
 
-        self.getControl(4400).setVisible(False)
-        if q.getVideoFile() is not None and os.path.exists(q.getVideoFile()):
+        if q.getVideoFile() is not None: # and os.path.exists(q.getVideoFile()):
+            print "videoFile: %s" % q.getVideoFile()
+            self.getControl(5000).setVisible(True)
+            self.getControl(5001).setVisible(False)
+            xbmc.sleep(1500) # give skin animation time to execute
+            #self.player.playWindowed("/home/tommy/Videos/daily-pixels-3805-vind-halo-reach-faa-det-foer-alle-andre.mp4")
             self.player.playWindowed(q.getVideoFile())
-            pass
 
         elif q.getPhotoFile() is not None:
-            print "photo %s" % q.getPhotoFile()
-            self.getControl(4400).setVisible(True)
+            print "photoFile: %s" % q.getPhotoFile()
             self.getControl(4400).setImage(q.getPhotoFile())
+
+            self.getControl(5000).setVisible(False)
+            self.getControl(5001).setVisible(True)
 
 
     def _update_score(self):
@@ -114,12 +127,16 @@ class QuizGui(xbmcgui.WindowXML):
             except AttributeError:
                 pass
 
+    def _hide_icons(self):
+        self.getControl(5002).setVisible(False)
+        self.getControl(5003).setVisible(False)
+
 
 
 
 
 class SplashDialog(xbmcgui.WindowXMLDialog):
-    def __init__(self, xmlFilename, scriptPath, database    ):
+    def __init__(self, xmlFilename, scriptPath, database):
         xbmcgui.WindowXMLDialog.__init__(self, xmlFilename, scriptPath)
         self.database = database
 
