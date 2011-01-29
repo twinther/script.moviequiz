@@ -1,13 +1,15 @@
 Version next - xxxx-xx-xx
 - New question types
   - Who directed this movie?
-  - What tagline belongs to this movie?
   - What studio released this movie?
-  - Who wrote this movie?
 
+Version 0.1.0 - 2011-01-29
+- First public version
 
 Version 0.0.3 - 2011-01-28
 - Animations and better graphics
+- New question type
+  - What tagline belongs to this movie?
 
 Version 0.0.2 - 2011-01-23
 - Multiple question types

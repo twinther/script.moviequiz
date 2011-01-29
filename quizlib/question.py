@@ -36,6 +36,9 @@ class Question(object):
     def getPhotoFile(self):
         return None
 
+    def isCoverShown(self):
+        return True
+
     def _add_answer(self, newAnswer):
         for answer in self.answers:
             if answer['movieId'] == newAnswer['movieId']:
@@ -112,7 +115,7 @@ class ActorNotInMovieQuestion(Question):
     """
     def __init__(self, database):
         Question.__init__(self, database)
-        self.actor = self.database.fetchone('SELECT a.idActor AS actorId, a.strActor AS name, a.strThumb AS thumb '
+        self.actor = self.database.fetchone('SELECT a.idActor AS actorId, a.strActor AS name '
             + 'FROM movieview mv, actorlinkmovie alm, actors a '
             + 'WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor '
             + 'GROUP BY alm.idActor HAVING count(mv.idMovie) > 3 ORDER BY random() LIMIT 1')
@@ -134,7 +137,7 @@ class ActorNotInMovieQuestion(Question):
         print self.answers
 
         for answer in self.answers:
-            answer['videoFile'] = os.path.join(answer['path'], answer['filename'])
+            answer['videoFile'] = self._get_videofile_path(answer['path'], answer['filename'])
 
         random.shuffle(self.answers)
 
@@ -148,7 +151,7 @@ class ActorNotInMovieQuestion(Question):
 
 class WhatYearWasMovieReleasedQuestion(Question):
     """
-        ActorNotInMovieQuestion
+        WhatYearWasMovieReleasedQuestion
     """
     def __init__(self, database):
         Question.__init__(self, database)
@@ -175,7 +178,7 @@ class WhatYearWasMovieReleasedQuestion(Question):
         for year in years:
             answer = {
                 'title' : str(year),
-                'videoFile' : os.path.join(self.movie['path'], self.movie['filename'])
+                'videoFile' : self._get_videofile_path(self.movie['path'], self.movie['filename'])
             }
             self.answers.append(answer)
 
@@ -192,8 +195,42 @@ class WhatYearWasMovieReleasedQuestion(Question):
         return self.correctAnswer['videoFile']
 
 
+class WhatTagLineBelongsToMovieQuestion(Question):
+    """
+        WhatTagLineBelongsToMovieQuestion
+    """
+    def __init__(self, database):
+        Question.__init__(self, database)
+        self.correctAnswer = self.database.fetchone('SELECT mv.idMovie as movieId, mv.c00 AS movieTitle, mv.c03 AS title, mv.strPath AS path, mv.strFilename AS filename '
+            + 'FROM movieview mv WHERE TRIM(title) != \'\' ORDER BY random() LIMIT 1')
+        self._add_answer(self.correctAnswer)
+
+        otherAnswers = self.database.fetchall('SELECT mv.idMovie as movieId, mv.c03 AS title, mv.strPath AS path, mv.strFilename AS filename '
+            + 'FROM movieview mv WHERE TRIM(title) != \'\' AND mv.idMovie != %s ORDER BY random() LIMIT 3' % self.correctAnswer['movieId'])
+        for answer in otherAnswers:
+            self._add_answer(answer)
+
+        for answer in self.answers:
+            answer['videoFile'] = self._get_videofile_path(answer['path'], answer['filename'])
+
+        random.shuffle(self.answers)
+        print self.answers
+
+    def getQuestion(self):
+        return "What tagline belongs to [B]%s[/B]?" % self.correctAnswer['movieTitle']
+
+
+    def getVideoFile(self):
+        return self.correctAnswer['videoFile']
+
+    def isCoverShown(self):
+        return False
+
 
 def getRandomQuestion():
+    """
+        Gets random question from one of the Question subclasses.
+    """
     subclasses = Question.__subclasses__()
     return subclasses[random.randint(0, len(subclasses) - 1)]
 

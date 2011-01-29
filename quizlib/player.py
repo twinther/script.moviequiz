@@ -1,4 +1,5 @@
 import random
+import threading
 
 __author__ = 'tommy'
 
@@ -7,9 +8,20 @@ import xbmc
 class TenSecondPlayer(xbmc.Player):
     def __init__(self):
         xbmc.Player.__init__(self)
+        self.tenSecondTimer = None
+
+    def stop(self):
+        print "cancel"
+        self.tenSecondTimer.cancel()
+        if self.isPlaying():
+            xbmc.Player.stop(self)
+
 
     def playWindowed(self, file):
         print "!!!!!!!!!!!!! PlayWindowed"
+        if self.tenSecondTimer is not None:
+            self.stop()
+
         self.play(item = file, windowed = True)
 
         retries = 0
@@ -18,18 +30,21 @@ class TenSecondPlayer(xbmc.Player):
             retries += 1
             print "retries %d" % retries
 
-        totalTime = self.getTotalTime()
-        # find start time, ignore first and last 10% of movie
-        startTime = random.randint(int(totalTime * 0.1), int(totalTime * 0.9))
-        endTime = startTime + 10
+        if self.isPlaying():
+            totalTime = self.getTotalTime()
+            # find start time, ignore first and last 10% of movie
+            startTime = random.randint(int(totalTime * 0.1), int(totalTime * 0.9))
+            endTime = startTime + 10
 
-        
-        print "Playback playback from: %d to %d" % (startTime, endTime)
-        self.seekTime(startTime)
+            print "Playback from: %d to %d" % (startTime, endTime)
+            self.seekTime(startTime)
 
-        while self.isPlaying() and self.getTime() < endTime:
-            xbmc.sleep(1000)
+            self.tenSecondTimer = threading.Timer(10.0, self.stopPlayback)
+            self.tenSecondTimer.start()
 
+        print "playWindowed end"
+
+    def stopPlayback(self):
         if self.isPlaying():
             self.stop()
 
@@ -39,7 +54,9 @@ class TenSecondPlayer(xbmc.Player):
             retries += 1
             print "retries %d" % retries
 
-        print "playWindowed end"
+        print "stopPlayback end"
+
+
 
     def onPlayBackStarted(self):
         print "!!!!!!!!!!!!PlayBack Started"

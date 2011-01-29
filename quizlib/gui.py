@@ -17,22 +17,26 @@ class QuizGui(xbmcgui.WindowXML):
 
     def onInit(self):
         print "onInit"
+        try:
+            xbmcgui.lock()
+            self.database = Database()
 
-        self.getControl(5000).setVisible(False)
-        self.getControl(5001).setVisible(False)
-        self.getControl(5002).setVisible(False)
-        self.getControl(5003).setVisible(False)
+            self.getControl(5000).setVisible(False)
+            self.getControl(5001).setVisible(False)
+            self.getControl(5002).setVisible(False)
+            self.getControl(5003).setVisible(False)
+
+            splash = SplashDialog('script-moviequiz-splash.xml', os.getcwd(), database = self.database)
+        finally:
+            xbmcgui.unlock()
+            splash.doModal()
+            del splash
 
         self.correctAnswer = None
-        self.database = Database()
         self.player = TenSecondPlayer()
 
         self.score = {'correct' : 0, 'wrong' : 0}
         self.thumbnails = [None, None, None, None]
-
-        splash = SplashDialog('script-moviequiz-splash.xml', os.getcwd(), database = self.database)
-        splash.doModal()
-        del splash
 
         self._update_score()
         self._setup_question()
@@ -75,7 +79,7 @@ class QuizGui(xbmcgui.WindowXML):
         self._update_thumb()
 
     def _setup_question(self):
-        #q = question.WhatYearWasMovieReleasedQuestion(self.database)
+        #q = question.WhatTagLineBelongsToMovieQuestion(self.database)
         q = question.getRandomQuestion()(self.database)
         self.getControl(4300).setLabel(q.getQuestion())
         self.answers = q.getAnswers()
@@ -93,6 +97,7 @@ class QuizGui(xbmcgui.WindowXML):
                 thumbFile = xbmc.getCacheThumbName(answer['videoFile'])
             self.thumbnails[idx] = xbmc.translatePath('special://profile/Thumbnails/Video/%s/%s' % (thumbFile[0], thumbFile))
 
+        self.getControl(4200).setVisible(q.isCoverShown())
         self._update_thumb()
 
         if q.getVideoFile() is not None: # and os.path.exists(q.getVideoFile()):
