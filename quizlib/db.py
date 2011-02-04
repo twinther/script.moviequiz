@@ -14,6 +14,9 @@ class Database(object):
         print "Database closed"
 
     def fetchall(self, sql, parameters = list()):
+        if not isinstance(parameters, list):
+            parameters = [parameters]
+
         c = self.conn.cursor()
         c.execute(sql, parameters)
         result = c.fetchall()
@@ -21,6 +24,9 @@ class Database(object):
         return result
 
     def fetchone(self, sql, parameters = list()):
+        if not isinstance(parameters, list):
+            parameters = [parameters]
+
         c = self.conn.cursor()
         c.execute(sql, parameters)
         result = c.fetchone()
@@ -32,5 +38,9 @@ class Database(object):
 def sqlite_dict_factory(cursor, row):
     d = {}
     for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
+        dot = col[0].find('.') + 1
+        if dot != -1:
+            d[col[0][dot:]] = row[idx]
+        else:
+            d[col[0]] = row[idx]
     return d

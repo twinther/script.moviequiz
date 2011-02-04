@@ -11,6 +11,8 @@ import question
 __author__ = 'twinther'
 
 class QuizGui(xbmcgui.WindowXML):
+    question = None
+
     def __init__(self, xmlFilename, scriptPath):
         xbmcgui.WindowXML.__init__(self, xmlFilename, scriptPath)
 
@@ -47,7 +49,7 @@ class QuizGui(xbmcgui.WindowXML):
 
         print "onAction 2 " + str(action.getId())
         if action.getId() == 9 or action.getId() == 10:
-            if self.player.isPlaying():
+            if self.player is not None and self.player.isPlaying():
                 self.player.stop()
             self.close()
 
@@ -58,7 +60,8 @@ class QuizGui(xbmcgui.WindowXML):
         print "onClick " + str(controlId)
 
         if controlId >= 4000 or controlId <= 4003:
-            if self.correctAnswer == (controlId - 4000):
+            answer = self.question.getAnswer(controlId - 4000)
+            if answer.correct:
                 self.score['correct'] += 1
                 self.getControl(5002).setVisible(True)
             else:
@@ -79,38 +82,27 @@ class QuizGui(xbmcgui.WindowXML):
         self._update_thumb()
 
     def _setup_question(self):
-        #q = question.WhatTagLineBelongsToMovieQuestion(self.database)
-        q = question.getRandomQuestion()(self.database)
-        self.getControl(4300).setLabel(q.getQuestion())
-        self.answers = q.getAnswers()
-        self.correctAnswer = self.answers.index(q.getCorrectAnswer())
+        self.question = question.WhichStudioReleasedMovieQuestion(self.database)
+        #self.question = question.getRandomQuestion()(self.database)
+        self.getControl(4300).setLabel(self.question.getText())
 
-        for idx, answer in enumerate(self.answers):
-            control = self.getControl(4000 + idx)
-            control.setLabel(answer['title'])
+        for idx, answer in enumerate(self.question.getAnswers()):
+            self.getControl(4000 + idx).setLabel(answer.text + " (" + str(answer.correct) + ")")
 
-            if answer['videoFile'][0:8] == 'stack://':
-                commaPos = answer['videoFile'].find(' , ')
-                thumbFile = xbmc.getCacheThumbName(answer['videoFile'][8:commaPos].strip())
-                print "thumbFile '%s'" % thumbFile
-            else:
-                thumbFile = xbmc.getCacheThumbName(answer['videoFile'])
-            self.thumbnails[idx] = xbmc.translatePath('special://profile/Thumbnails/Video/%s/%s' % (thumbFile[0], thumbFile))
-
-        self.getControl(4200).setVisible(q.isCoverShown())
         self._update_thumb()
 
-        if q.getVideoFile() is not None: # and os.path.exists(q.getVideoFile()):
-            print "videoFile: %s" % q.getVideoFile()
+        correctAnswer = self.question.getCorrectAnswer()
+        if correctAnswer.videoFile is not None:
+            print "videoFile: %s" % correctAnswer.videoFile
             self.getControl(5000).setVisible(True)
             self.getControl(5001).setVisible(False)
             xbmc.sleep(1500) # give skin animation time to execute
-            #self.player.playWindowed("/home/tommy/Videos/daily-pixels-3805-vind-halo-reach-faa-det-foer-alle-andre.mp4")
-            self.player.playWindowed(q.getVideoFile())
+            self.player.playWindowed("/home/tommy/Videos/daily-pixels-3805-vind-halo-reach-faa-det-foer-alle-andre.mp4")
+            #self.player.playWindowed(correctAnswer.videoFile)
 
-        elif q.getPhotoFile() is not None:
-            print "photoFile: %s" % q.getPhotoFile()
-            self.getControl(4400).setImage(q.getPhotoFile())
+        elif correctAnswer.photoFile is not None:
+            print "photoFile: %s" % correctAnswer.photoFile
+            self.getControl(4400).setImage(correctAnswer.photoFile)
 
             self.getControl(5000).setVisible(False)
             self.getControl(5001).setVisible(True)
@@ -121,17 +113,18 @@ class QuizGui(xbmcgui.WindowXML):
         self.getControl(4103).setLabel(str(self.score['wrong']))
 
     def _update_thumb(self):
-        print "_update_thumb"
+        if self.question is None:
+            return # not initialized yet
+
         controlId = self.getFocusId()
-
         if controlId >= 4000 or controlId <= 4003:
-            try:
-                thumbFile = self.thumbnails[controlId - 4000]
-                if os.path.exists(thumbFile):
-                    self.getControl(4200).setImage(thumbFile)
-            except AttributeError:
-                pass
-
+            answer = self.question.getAnswer(controlId - 4000)
+            if answer.coverFile is not None:
+                self.getControl(4200).setVisible(True)
+                self.getControl(4200).setImage(answer.coverFile)
+            else:
+                self.getControl(4200).setVisible(False)
+                    
     def _hide_icons(self):
         self.getControl(5002).setVisible(False)
         self.getControl(5003).setVisible(False)

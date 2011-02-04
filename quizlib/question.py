@@ -3,110 +3,116 @@ import random
 import datetime
 import thumb
 
-__author__ = 'tommy'
+class Answer(object):
+    def __init__(self, correct, id, text, videoPath = None, videoFilename = None, photoFile = None):
+        self.correct = correct
+        self.id = id
+        self.text = text
+        if videoPath is not None and videoFilename is not None:
+            self.setVideoFile(videoPath, videoFilename)
+            self.coverFile = thumb.getCachedThumb(self.videoFile)
+        else:
+            self.videoFile = None
+            self.coverFile = None
+
+        if photoFile is not None:
+            self.photoFile = photoFile
+        else:
+            self.photoFile = None
+
+    def __str__(self):
+        return "Answer(id=%s, text=%s, correct=%s)" % (self.id, self.text, self.correct)
+        
+    def setVideoFile(self, path, filename):
+        if filename[0:8] == 'stack://':
+            self.videoFile = filename
+        else:
+            self.videoFile = os.path.join(path, filename)
 
 
-
-"""
-Answer dict:
-{
-    "title" : "Answer title",
-    "videoFile" : "/path/to/video.file"
-}
-"""
 class Question(object):
     def __init__(self, database):
-        print "question init"
         self.database = database
-        self.correctAnswer = None
+        self.text = None
         self.answers = list()
 
-    def getQuestion(self):
-        raise Exception("Not implemented")
+    def getText(self):
+        return self.text
 
     def getAnswers(self):
         return self.answers
 
+    def getAnswer(self, idx):
+        return self.answers[idx]
+
     def getCorrectAnswer(self):
-        return self.correctAnswer
+        for answer in self.answers:
+            if answer.correct:
+                return answer
+        return None
 
     def getVideoFile(self):
-        return None
+        return self.getCorrectAnswer().videoFile
 
     def getPhotoFile(self):
-        return None
-
-    def isCoverShown(self):
-        return True
-
-    def _add_answer(self, newAnswer):
-        for answer in self.answers:
-            if answer['movieId'] == newAnswer['movieId']:
-                return
-
-        self.answers.append(newAnswer)
+        return self.getCorrectAnswer().photoFile
 
     def _get_movie_ids(self):
         movieIds = list()
         for movie in self.answers:
-            movieIds.append(movie['movieId'])
-        s = ','.join(map(str, movieIds))
-        print "s = %s" % s
-        return s
-
-    def _get_videofile_path(self, path, filename):
-        if filename[0:8] == 'stack://':
-            return filename
-        else:
-            return os.path.join(path, filename)
+            movieIds.append(movie.id)
+        return ','.join(map(str, movieIds))
 
 
 class WhatMovieIsThisQuestion(Question):
     """
         WhatMovieIsThisQuestion
     """
+
     def __init__(self, database):
         Question.__init__(self, database)
-        self.correctAnswer = self.database.fetchone('SELECT mv.idMovie AS movieId, mv.c00 AS title, mv.c14 AS genre, mv.strPath AS path, mv.strFilename AS filename, slm.idSet AS setId '
-            + 'FROM movieview mv LEFT JOIN setlinkmovie slm ON mv.idMovie = slm.idMovie ORDER BY random() LIMIT 1')
-        self._add_answer(self.correctAnswer)
+
+        row = self.database.fetchone("""
+            SELECT mv.idMovie, mv.c00 AS title, mv.c14 AS genre, mv.strPath, mv.strFilename, slm.idSet
+            FROM movieview mv, setlinkmovie slm
+            WHERE mv.idMovie = slm.idMovie ORDER BY random() LIMIT 1
+            """)
+        self.answers.append(Answer(True, row['idMovie'], row['title'], row['strPath'], row['strFilename']))
 
         # Find other movies in set
-        otherMoviesInSet = self.database.fetchall('SELECT DISTINCT mv.idMovie AS movieId, mv.c00 AS title, mv.c14 AS genre, mv.strPath AS path, mv.strFilename AS filename '
-            + 'FROM movieview mv LEFT JOIN setlinkmovie slm ON mv.idMovie = slm.idMovie '
-            + 'WHERE slm.idSet = ? AND mv.idMovie != ? ORDER BY random() LIMIT 3', (self.correctAnswer['setId'], self.correctAnswer['movieId']))
+        otherMoviesInSet = self.database.fetchall("""
+            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename
+            FROM movieview mv, setlinkmovie slm WHERE mv.idMovie = slm.idMovie AND slm.idSet = ? AND mv.idMovie != ?
+            ORDER BY random() LIMIT 3
+            """, (row['idSet'], row['idMovie']))
         for movie in otherMoviesInSet:
-            self._add_answer(movie)
+            self.answers.append(Answer(False, movie['idMovie'], movie['title'], movie['strPath'], movie['strFilename']))
+        print self._get_movie_ids()
 
         # Find other movies in genre
         if len(self.answers) < 4:
-            otherMoviesInGenre = self.database.fetchall('SELECT DISTINCT mv.idMovie AS movieId, mv.c00 AS title, mv.c14 AS genre, mv.strPath AS path, mv.strFilename AS filename '
-                + 'FROM movieview mv WHERE genre = ? AND mv.idMovie NOT IN (?) ORDER BY random() LIMIT ?',
-                                                        (self.correctAnswer['genre'], self._get_movie_ids(), 4 - len(self.answers)))
+            otherMoviesInGenre = self.database.fetchall("""
+                SELECT mv.idMovie, mv.c00 AS title, mv.c14 AS genre, mv.strPath, mv.strFilename
+                FROM movieview mv WHERE genre = ? AND mv.idMovie NOT IN (%s)
+                ORDER BY random() LIMIT ?
+                """ % self._get_movie_ids(), (row['genre'], 4 - len(self.answers)))
             for movie in otherMoviesInGenre:
-                self._add_answer(movie)
+                self.answers.append(Answer(False, movie['idMovie'], movie['title'], movie['strPath'], movie['strFilename']))
+            print self._get_movie_ids()
 
         # Fill with random movies
         if len(self.answers) < 4:
-            theRest = self.database.fetchall('SELECT DISTINCT mv.idMovie AS movieId, mv.c00 AS title, mv.c14 AS genre, mv.strPath AS path, mv.strFilename AS filename '
-                + 'FROM movieview mv WHERE mv.idMovie NOT IN (?) '
-                + 'ORDER BY random() LIMIT ?', (self._get_movie_ids(), 4 - len(self.answers)))
+            theRest = self.database.fetchall("""
+                SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename
+                FROM movieview mv WHERE mv.idMovie NOT IN (?)
+                ORDER BY random() LIMIT ?
+                """, (self._get_movie_ids(), 4 - len(self.answers)))
             for movie in theRest:
-                self._add_answer(movie)
-
-        print self.answers
-
-        for answer in self.answers:
-            answer['videoFile'] = self._get_videofile_path(answer['path'], answer['filename'])
+                self.answers.append(Answer(False, movie['idMovie'], movie['title'], movie['strPath'], movie['strFilename']))
+            print self._get_movie_ids()
 
         random.shuffle(self.answers)
-
-
-    def getQuestion(self):
-        return "What movie is this?"
-
-    def getVideoFile(self):
-        return self.correctAnswer['videoFile']
+        self.text = "What movie is this?"
 
 
 class ActorNotInMovieQuestion(Question):
@@ -115,38 +121,34 @@ class ActorNotInMovieQuestion(Question):
     """
     def __init__(self, database):
         Question.__init__(self, database)
-        self.actor = self.database.fetchone('SELECT a.idActor AS actorId, a.strActor AS name '
-            + 'FROM movieview mv, actorlinkmovie alm, actors a '
-            + 'WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor '
-            + 'GROUP BY alm.idActor HAVING count(mv.idMovie) > 3 ORDER BY random() LIMIT 1')
-        self.photoFile = thumb.getCachedThumb('actor' + self.actor['name'])
+        
+        actor = self.database.fetchone("""
+            SELECT a.idActor, a.strActor
+            FROM movieview mv, actorlinkmovie alm, actors a
+            WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor
+            GROUP BY alm.idActor HAVING count(mv.idMovie) > 3 ORDER BY random() LIMIT 1
+            """)
 
-        # Movie actor is not in
-        self.correctAnswer = self.database.fetchone('SELECT mv.idMovie AS movieId, mv.c00 AS title, mv.c14 AS genre, mv.strPath AS path, mv.strFilename AS filename '
-            + 'FROM movieview mv, actorlinkmovie alm '
-            + 'WHERE mv.idMovie = alm.idMovie AND alm.idActor != %s ORDER BY random() LIMIT 1' % self.actor['actorId'])
-        self._add_answer(self.correctAnswer)
+        # Movies actor is not in
+        row = self.database.fetchone("""
+            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename
+            FROM movieview mv, actorlinkmovie alm
+            WHERE mv.idMovie = alm.idMovie AND alm.idActor != ? ORDER BY random() LIMIT 1
+            """, actor['idActor'])
+        self.answers.append(Answer(True, row['idMovie'], row['title'], photoFile = thumb.getCachedThumb('actor' + actor['strActor'])))
 
         # Movie actor is in
-        movies = self.database.fetchall('SELECT mv.idMovie AS movieId, mv.c00 AS title, mv.c14 AS genre, mv.strPath AS path, mv.strFilename AS filename '
-            + 'FROM movieview mv, actorlinkmovie alm '
-            + 'WHERE mv.idMovie = alm.idMovie AND alm.idActor = %s ORDER BY random() LIMIT 3' % self.actor['actorId'])
+        movies = self.database.fetchall("""
+            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename
+            FROM movieview mv, actorlinkmovie alm
+            WHERE mv.idMovie = alm.idMovie AND alm.idActor = ? ORDER BY random() LIMIT 3
+            """, actor['idActor'])
         for movie in movies:
-            self._add_answer(movie)
-
-        print self.answers
-
-        for answer in self.answers:
-            answer['videoFile'] = self._get_videofile_path(answer['path'], answer['filename'])
+            self.answers.append(Answer(False, movie['idMovie'], movie['title']))
 
         random.shuffle(self.answers)
+        self.text = "What movie is [B]%s[/B] not in?" % actor['strActor']
 
-
-    def getQuestion(self):
-        return "What movie is [B]%s[/B] not in?" % self.actor['name']
-
-    def getPhotoFile(self):
-        return self.photoFile
 
 
 class WhatYearWasMovieReleasedQuestion(Question):
@@ -155,11 +157,16 @@ class WhatYearWasMovieReleasedQuestion(Question):
     """
     def __init__(self, database):
         Question.__init__(self, database)
-        self.movie = self.database.fetchone('SELECT mv.c00 AS title, mv.c07 AS year, mv.strPath AS path, mv.strFilename AS filename '
-            + 'FROM movieview mv ORDER BY random() LIMIT 1')
 
-        minYear = int(self.movie['year']) - 5
-        maxYear = int(self.movie['year']) + 5
+        row = self.database.fetchone("""
+            SELECT mv.c00 AS title, mv.c07 AS year, mv.strPath, mv.strFilename
+            FROM movieview mv WHERE year != 1900
+            ORDER BY random() LIMIT 1
+            """)
+
+        skew = random.randint(0, 10)
+        minYear = int(row['year']) - skew
+        maxYear = int(row['year']) + (10 - skew)
 
         thisYear = datetime.datetime.today().year
         if maxYear > thisYear:
@@ -167,7 +174,7 @@ class WhatYearWasMovieReleasedQuestion(Question):
             minYear = thisYear - 10
 
         years = list()
-        years.append(int(self.movie['year']))
+        years.append(int(row['year']))
         while len(years) < 4:
             year = random.randint(minYear, maxYear)
             if not year in years:
@@ -176,23 +183,10 @@ class WhatYearWasMovieReleasedQuestion(Question):
         list.sort(years)
 
         for year in years:
-            answer = {
-                'title' : str(year),
-                'videoFile' : self._get_videofile_path(self.movie['path'], self.movie['filename'])
-            }
+            answer = Answer(year == int(row['year']), year, str(year), row['strPath'], row['strFilename'])
             self.answers.append(answer)
 
-            if year == int(self.movie['year']):
-                self.correctAnswer = answer
-
-        print self.answers
-
-    def getQuestion(self):
-        return "What year was [B]%s[/B] released?" % self.movie['title']
-
-
-    def getVideoFile(self):
-        return self.correctAnswer['videoFile']
+        self.text = "What year was [B]%s[/B] released?" % row['title']
 
 
 class WhatTagLineBelongsToMovieQuestion(Question):
@@ -201,30 +195,79 @@ class WhatTagLineBelongsToMovieQuestion(Question):
     """
     def __init__(self, database):
         Question.__init__(self, database)
-        self.correctAnswer = self.database.fetchone('SELECT mv.idMovie as movieId, mv.c00 AS movieTitle, mv.c03 AS title, mv.strPath AS path, mv.strFilename AS filename '
-            + 'FROM movieview mv WHERE TRIM(title) != \'\' ORDER BY random() LIMIT 1')
-        self._add_answer(self.correctAnswer)
 
-        otherAnswers = self.database.fetchall('SELECT mv.idMovie as movieId, mv.c03 AS title, mv.strPath AS path, mv.strFilename AS filename '
-            + 'FROM movieview mv WHERE TRIM(title) != \'\' AND mv.idMovie != %s ORDER BY random() LIMIT 3' % self.correctAnswer['movieId'])
-        for answer in otherAnswers:
-            self._add_answer(answer)
+        row = self.database.fetchone("""
+            SELECT mv.idMovie, mv.c00 AS title, mv.c03 AS tagline, mv.strPath, mv.strFilename
+            FROM movieview mv WHERE TRIM(tagline) != \'\' ORDER BY random() LIMIT 1
+            """)
+        self.answers.append(Answer(True, row['idMovie'], row['tagline'], row['strPath'], row['strFilename']))
 
-        for answer in self.answers:
-            answer['videoFile'] = self._get_videofile_path(answer['path'], answer['filename'])
+
+        otherAnswers = self.database.fetchall("""
+            SELECT mv.idMovie, mv.c03 AS tagline, mv.strPath, mv.strFilename
+            FROM movieview mv WHERE TRIM(tagline) != \'\' AND mv.idMovie != ? ORDER BY random() LIMIT 3
+            """, row['idMovie'])
+        for movie in otherAnswers:
+            self.answers.append(Answer(False, movie['idMovie'], movie['tagline'], row['strPath'], row['strFilename']))
 
         random.shuffle(self.answers)
-        print self.answers
-
-    def getQuestion(self):
-        return "What tagline belongs to [B]%s[/B]?" % self.correctAnswer['movieTitle']
+        self.text = "What tagline belongs to [B]%s[/B]?" % row['title']
 
 
-    def getVideoFile(self):
-        return self.correctAnswer['videoFile']
+class WhoDirectedThisMovieQuestion(Question):
+    """
+        WhoDirectedThisMovieQuestion
+    """
+    def __init__(self, database):
+        Question.__init__(self, database)
 
-    def isCoverShown(self):
-        return False
+        row = self.database.fetchone("""
+            SELECT idActor, a.strActor, mv.c00 AS title, mv.strPath, mv.strFilename
+            FROM movieview mv, directorlinkmovie dlm, actors a
+            WHERE mv.idMovie = dlm.idMovie AND dlm.idDirector = a.idActor
+            ORDER BY random() LIMIT 1
+        """)
+        self.answers.append(Answer(True, row['idActor'], row['strActor'], row['strPath'], row['strFilename']))
+
+        otherAnswers = self.database.fetchall("""
+            SELECT a.idActor, a.strActor, mv.strPath, mv.strFilename
+            FROM movieview mv, directorlinkmovie dlm, actors a
+            WHERE mv.idMovie = dlm.idMovie AND dlm.idDirector = a.idActor AND a.idActor != ?
+            ORDER BY random() LIMIT 3
+        """, row['idActor'])
+        for movie in otherAnswers:
+            self.answers.append(Answer(False, movie['idActor'], movie['strActor'], movie['strPath'], movie['strFilename']))
+
+        random.shuffle(self.answers)
+        self.text = "Who directed [B]%s[/B]?" % row['title']
+
+
+class WhatStudioReleasedMovieQuestion(Question):
+    """
+        WhatStudioReleasedMovieQuestion
+    """
+    def __init__(self, database):
+        Question.__init__(self, database)
+
+        row = self.database.fetchone("""
+            SELECT s.idStudio, s.strStudio, mv.c00 AS title, mv.strPath, mv.strFilename
+            FROM movieview mv, studiolinkmovie slm, studio s
+            WHERE mv.idMovie = slm.idMovie AND slm.idStudio = s.idStudio
+            ORDER BY random() LIMIT 1
+        """)
+        self.answers.append(Answer(True, row['idStudio'], row['strStudio'], row['strPath'], row['strFilename']))
+
+        otherAnswers = self.database.fetchall("""
+            SELECT s.idStudio, s.strStudio, mv.strPath, mv.strFilename
+            FROM movieview mv, studiolinkmovie slm, studio s
+            WHERE mv.idMovie = slm.idMovie AND slm.idStudio = s.idStudio AND s.idStudio != ?
+            ORDER BY random() LIMIT 3
+        """, row['idStudio'])
+        for movie in otherAnswers:
+            self.answers.append(Answer(False, movie['idStudio'], movie['strStudio'], movie['strPath'], movie['strFilename']))
+
+        random.shuffle(self.answers)
+        self.text = "What studio released [B]%s[/B]?" % row['title']
 
 
 def getRandomQuestion():
