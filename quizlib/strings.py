@@ -7,9 +7,9 @@ Q_WHAT_TAGLINE_BELONGS_TO_MOVIE = 30403
 Q_WHO_DIRECTED_THIS_MOVIE = 30404
 Q_WHAT_STUDIO_RELEASED_MOVIE = 30405
 
-def strings(id, replacements):
+def strings(id, replacements = None):
     string = xbmcaddon.Addon(id = 'script.moviequiz').getLocalizedString(id)
-    if replacements:
+    if replacements is not None:
         return string % replacements
     else:
         return string
