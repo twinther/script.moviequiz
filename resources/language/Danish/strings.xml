@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<strings>
+
+    <!-- Questions -->
+    <string id="30400">Hvilken film er det?</string>
+    <string id="30401">Hvilken film medvirker [B]%s[/B] ikke i?</string><!-- %s is actor name -->
+    <string id="30402">Hvilket år blev [B]%s[/B] udgivet?</string><!-- %s is movie title -->
+    <string id="30403">Hvilken tagline hører til [B]%s[/B]?</string><!-- %s is movie title -->
+    <string id="30404">Hvem var instruktør på [B]%s[/B]?</string><!-- %s is movie title -->
+    <string id="30405">Hvilken studie udgav [B]%s[/B]?</string><!-- %s is movie title -->
+
+    <!-- Settings strings -->
+    <string id="30500">Generelt</string>
+    <string id="30510">Begræns antallet af spørgsmål</string>
+    <string id="30511">Spørgsmålsgrænse</string>
+    <string id="30512">Begræns udvalgtet af film baseret på MPAA Rating</string>
+	<string id="30513">Højeste MPAA Rating</string>
+
+</strings>

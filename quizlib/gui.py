@@ -82,8 +82,8 @@ class QuizGui(xbmcgui.WindowXML):
         self._update_thumb()
 
     def _setup_question(self):
-        self.question = question.WhichStudioReleasedMovieQuestion(self.database)
-        #self.question = question.getRandomQuestion()(self.database)
+        #self.question = question.WhichStudioReleasedMovieQuestion(self.database)
+        self.question = question.getRandomQuestion()(self.database)
         self.getControl(4300).setLabel(self.question.getText())
 
         for idx, answer in enumerate(self.question.getAnswers()):
@@ -97,8 +97,8 @@ class QuizGui(xbmcgui.WindowXML):
             self.getControl(5000).setVisible(True)
             self.getControl(5001).setVisible(False)
             xbmc.sleep(1500) # give skin animation time to execute
-            self.player.playWindowed("/home/tommy/Videos/daily-pixels-3805-vind-halo-reach-faa-det-foer-alle-andre.mp4")
-            #self.player.playWindowed(correctAnswer.videoFile)
+            #self.player.playWindowed("/home/tommy/Videos/daily-pixels-3805-vind-halo-reach-faa-det-foer-alle-andre.mp4")
+            self.player.playWindowed(correctAnswer.videoFile)
 
         elif correctAnswer.photoFile is not None:
             print "photoFile: %s" % correctAnswer.photoFile

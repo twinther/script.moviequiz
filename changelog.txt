@@ -1,4 +1,6 @@
-Version next - xxxx-xx-xx
+Version 0.1.1 - xxxx-xx-xx
+- Initial i18n support
+- Initial settings support
 - New question types
   - Who directed this movie?
   - What studio released this movie?

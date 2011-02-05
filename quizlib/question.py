@@ -3,6 +3,8 @@ import random
 import datetime
 import thumb
 
+from strings import *
+
 class Answer(object):
     def __init__(self, correct, id, text, videoPath = None, videoFilename = None, photoFile = None):
         self.correct = correct
@@ -112,7 +114,7 @@ class WhatMovieIsThisQuestion(Question):
             print self._get_movie_ids()
 
         random.shuffle(self.answers)
-        self.text = "What movie is this?"
+        self.text = strings(Q_WHAT_MOVIE_IS_THIS)
 
 
 class ActorNotInMovieQuestion(Question):
@@ -147,7 +149,7 @@ class ActorNotInMovieQuestion(Question):
             self.answers.append(Answer(False, movie['idMovie'], movie['title']))
 
         random.shuffle(self.answers)
-        self.text = "What movie is [B]%s[/B] not in?" % actor['strActor']
+        self.text = strings(Q_WHAT_MOVIE_IS_ACTOR_NOT_IN, actor['strActor'])
 
 
 
@@ -186,7 +188,7 @@ class WhatYearWasMovieReleasedQuestion(Question):
             answer = Answer(year == int(row['year']), year, str(year), row['strPath'], row['strFilename'])
             self.answers.append(answer)
 
-        self.text = "What year was [B]%s[/B] released?" % row['title']
+        self.text = strings(Q_WHAT_YEAR_WAS_MOVIE_RELEASED, row['title'])
 
 
 class WhatTagLineBelongsToMovieQuestion(Question):
@@ -202,7 +204,6 @@ class WhatTagLineBelongsToMovieQuestion(Question):
             """)
         self.answers.append(Answer(True, row['idMovie'], row['tagline'], row['strPath'], row['strFilename']))
 
-
         otherAnswers = self.database.fetchall("""
             SELECT mv.idMovie, mv.c03 AS tagline, mv.strPath, mv.strFilename
             FROM movieview mv WHERE TRIM(tagline) != \'\' AND mv.idMovie != ? ORDER BY random() LIMIT 3
@@ -211,7 +212,7 @@ class WhatTagLineBelongsToMovieQuestion(Question):
             self.answers.append(Answer(False, movie['idMovie'], movie['tagline'], row['strPath'], row['strFilename']))
 
         random.shuffle(self.answers)
-        self.text = "What tagline belongs to [B]%s[/B]?" % row['title']
+        self.text = strings(Q_WHAT_TAGLINE_BELONGS_TO_MOVIE, row['title'])
 
 
 class WhoDirectedThisMovieQuestion(Question):
@@ -239,7 +240,7 @@ class WhoDirectedThisMovieQuestion(Question):
             self.answers.append(Answer(False, movie['idActor'], movie['strActor'], movie['strPath'], movie['strFilename']))
 
         random.shuffle(self.answers)
-        self.text = "Who directed [B]%s[/B]?" % row['title']
+        self.text = strings(Q_WHO_DIRECTED_THIS_MOVIE, row['title'])
 
 
 class WhatStudioReleasedMovieQuestion(Question):
@@ -267,7 +268,7 @@ class WhatStudioReleasedMovieQuestion(Question):
             self.answers.append(Answer(False, movie['idStudio'], movie['strStudio'], movie['strPath'], movie['strFilename']))
 
         random.shuffle(self.answers)
-        self.text = "What studio released [B]%s[/B]?" % row['title']
+        self.text = strings(Q_WHAT_STUDIO_RELEASED_MOVIE, row['title'])
 
 
 def getRandomQuestion():

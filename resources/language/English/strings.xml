@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<strings>
+
+    <!-- Questions -->
+    <string id="30400">What movie is this?</string>
+    <string id="30401">What movie is [B]%s[/B] not in?</string><!-- %s is actor name -->
+    <string id="30402">What year was [B]%s[/B] released?</string><!-- %s is movie title -->
+    <string id="30403">What tagline belongs to [B]%s[/B]?</string><!-- %s is movie title -->
+    <string id="30404">Who directed [B]%s[/B]?</string><!-- %s is movie title -->
+    <string id="30405">What studio released [B]%s[/B]?</string><!-- %s is movie title -->
+
+    <!-- Settings strings -->
+    <string id="30500">General</string>
+    <string id="30510">Limit number of questions</string>
+    <string id="30511">Question limit</string>
+    <string id="30512">Limit movie selection based on MPAA Rating</string>
+	<string id="30513">Max. MPAA Rating</string>
+
+</strings>
