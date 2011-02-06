@@ -9,10 +9,12 @@ class TenSecondPlayer(xbmc.Player):
     def __init__(self):
         xbmc.Player.__init__(self)
         self.tenSecondTimer = None
+        self.startTime = None
 
     def stop(self):
         print "cancel"
-        self.tenSecondTimer.cancel()
+        if self.tenSecondTimer is not None:
+            self.tenSecondTimer.cancel()
         if self.isPlaying():
             xbmc.Player.stop(self)
 
@@ -24,52 +26,37 @@ class TenSecondPlayer(xbmc.Player):
 
         self.play(item = file, windowed = True)
 
-        retries = 0
-        while not self.isPlaying() and retries < 8:
-            xbmc.sleep(250)
-            retries += 1
-            print "retries %d" % retries
-
-        if self.isPlaying():
-            totalTime = self.getTotalTime()
-            # find start time, ignore first and last 10% of movie
-            startTime = random.randint(int(totalTime * 0.1), int(totalTime * 0.9))
-            endTime = startTime + 10
-
-            print "Playback from: %d to %d" % (startTime, endTime)
-            self.seekTime(startTime)
-
-            self.tenSecondTimer = threading.Timer(10.0, self.stopPlayback)
-            self.tenSecondTimer.start()
+        retires = 0
+        while not self.isPlaying() and retires < 20:
+            xbmc.sleep(250) # keep sleeping to get onPlayBackStarted() event
+            retires += 1
 
         print "playWindowed end"
 
-    def stopPlayback(self):
-        if self.isPlaying():
-            self.stop()
+    def onTenSecondsPassed(self):
+        self.stop()
 
         retries = 0
-        while self.isPlaying() and retires < 8:
-            xbmc.sleep(250)
+        while self.isPlaying() and retries < 20:
+            xbmc.sleep(250) # keep sleeping to get onPlayBackStopped() event
             retries += 1
-            print "retries %d" % retries
 
         print "stopPlayback end"
-
-
 
     def onPlayBackStarted(self):
         print "!!!!!!!!!!!!PlayBack Started"
 
-    def onPlayBackEnded(self):
-        print "!!!!!!!!!!!!PlayBack Ended"
+        totalTime = self.getTotalTime()
+        # find start time, ignore first and last 10% of movie
+        self.startTime = random.randint(int(totalTime * 0.1), int(totalTime * 0.9))
+
+        print "Playback from %d secs. to %d secs." % (self.startTime, self.startTime + 10)
+        self.seekTime(self.startTime)
+
+        self.tenSecondTimer = threading.Timer(10.0, self.onTenSecondsPassed)
+        self.tenSecondTimer.start()
 
     def onPlayBackStopped(self):
         print "!!!!!!!!!!!!PlayBack Stopped"
-
-    def onPlayBackPaused(self):
-        print "!!!!!!!!!!!!PlayBack Paused"
-
-    def onPlayBackResumed(self):
-        print "!!!!!!!!!!!!PlayBack Resumed"
+        self.stop()
 

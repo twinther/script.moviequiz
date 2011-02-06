@@ -4,8 +4,8 @@
         <setting id="question.limit.enabled" label="30510" type="bool" default="false" />
         <setting id="question.limit" label="30511" type="number" default="20"  visible="eq(-1,true)"/>
 
-		<setting id="movie.rating.enabled" label="30512" type="bool" default="false" />
-		<setting id="movie.rating" label="30513" type="labelenum" default="R" values="R|PG-13|PG|G" visible="eq(-1,true)"/>
+		<setting id="rating.limit.enabled" label="30512" type="bool" default="false" />
+		<setting id="rating.limit" label="30513" type="labelenum" default="R" values="R|PG-13|PG|G" visible="eq(-1,true)"/>
 	</category>
 </settings>
 

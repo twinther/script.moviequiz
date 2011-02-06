@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <strings>
+    <!-- -->
+    <string id="30000">Spørgsmål %d af %d</string>
+    <string id="30001">Rigtige:</string>
+    <string id="30002">Forkerte:</string>
 
     <!-- Questions -->
     <string id="30400">Hvilken film er det?</string>
@@ -8,6 +12,7 @@
     <string id="30403">Hvilken tagline hører til [B]%s[/B]?</string><!-- %s is movie title -->
     <string id="30404">Hvem var instruktør på [B]%s[/B]?</string><!-- %s is movie title -->
     <string id="30405">Hvilken studie udgav [B]%s[/B]?</string><!-- %s is movie title -->
+    <string id="30406">Hvem er denne skuespiller?</string>
 
     <!-- Settings strings -->
     <string id="30500">Generelt</string>

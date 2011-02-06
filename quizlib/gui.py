@@ -2,72 +2,65 @@ import os
 import threading
 
 import xbmc
+import xbmcaddon
 import xbmcgui
 
-from player import TenSecondPlayer
-from db import Database
 import question
+import player
+import db
+from strings import *
 
 __author__ = 'twinther'
 
-class QuizGui(xbmcgui.WindowXML):
-    question = None
+C_MAIN_VIDEO_VISIBILITY = 5000
+C_MAIN_PHOTO_VISIBILITY = 5001
+C_MAIN_CORRECT_VISIBILITY = 5002
+C_MAIN_INCORRECT_VISIBILITY = 5003
 
+C_MAIN_CORRECT_SCORE = 4101
+C_MAIN_INCORRECT_SCORE = 4103
+C_MAIN_QUESTION_COUNT = 4104
+
+C_MAIN_QUESTION_LABEL = 4300
+
+class QuizGui(xbmcgui.WindowXML):
     def __init__(self, xmlFilename, scriptPath):
         xbmcgui.WindowXML.__init__(self, xmlFilename, scriptPath)
 
-
     def onInit(self):
         print "onInit"
-        try:
-            xbmcgui.lock()
-            self.database = Database()
+        self.addon = xbmcaddon.Addon(id = 'script.moviequiz')
+        self.database = db.Database()
+        self.player = player.TenSecondPlayer()
 
-            self.getControl(5000).setVisible(False)
-            self.getControl(5001).setVisible(False)
-            self.getControl(5002).setVisible(False)
-            self.getControl(5003).setVisible(False)
+        self.hide(C_MAIN_VIDEO_VISIBILITY)
+        self.hide(C_MAIN_PHOTO_VISIBILITY)
+        self.hide(C_MAIN_CORRECT_VISIBILITY)
+        self.hide(C_MAIN_INCORRECT_VISIBILITY)
 
-            splash = SplashDialog('script-moviequiz-splash.xml', os.getcwd(), database = self.database)
-        finally:
-            xbmcgui.unlock()
-            splash.doModal()
-            del splash
+        splash = SplashDialog('script-moviequiz-splash.xml', os.getcwd(), database = self.database)
+        splash.doModal()
+        del splash
 
-        self.correctAnswer = None
-        self.player = TenSecondPlayer()
-
-        self.score = {'correct' : 0, 'wrong' : 0}
-        self.thumbnails = [None, None, None, None]
-
-        self._update_score()
-        self._setup_question()
+        self._setup_game()
 
 
     def onAction(self, action):
-        print "onAction " + str(action)
-
-        print "onAction 2 " + str(action.getId())
         if action.getId() == 9 or action.getId() == 10:
-            if self.player is not None and self.player.isPlaying():
+            if hasattr(self, 'player') and self.player.isPlaying():
                 self.player.stop()
             self.close()
 
-        print action.getId()
-
 
     def onClick(self, controlId):
-        print "onClick " + str(controlId)
-
-        if controlId >= 4000 or controlId <= 4003:
+        if hasattr(self, 'question') and (controlId >= 4000 or controlId <= 4003):
             answer = self.question.getAnswer(controlId - 4000)
             if answer.correct:
                 self.score['correct'] += 1
-                self.getControl(5002).setVisible(True)
+                self.show(C_MAIN_CORRECT_VISIBILITY)
             else:
                 self.score['wrong'] += 1
-                self.getControl(5003).setVisible(True)
-            self._update_score()
+                self.show(C_MAIN_INCORRECT_VISIBILITY)
 
             if self.player.isPlaying():
                 self.player.stop()
@@ -77,43 +70,70 @@ class QuizGui(xbmcgui.WindowXML):
 
 
     def onFocus(self, controlId):
-        print "onFocus " + str(controlId)
-
         self._update_thumb()
 
+    def _setup_game(self):
+        maxQuestions = -1
+        if self.addon.getSetting('question.limit.enabled') == 'true':
+            maxQuestions = int(self.addon.getSetting('question.limit'))
+
+        self.questionLimit = {'count' : 0, 'max' : maxQuestions}
+        self.score = {'correct' : 0, 'wrong' : 0}
+
+        self._setup_question()
+
+    def _game_over(self):
+        xbmcgui.Dialog().ok('Game over', 'You scored %d of %d' % (self.score['correct'], self.score['wrong']))
+        self.close()
+
     def _setup_question(self):
-        #self.question = question.WhichStudioReleasedMovieQuestion(self.database)
-        self.question = question.getRandomQuestion()(self.database)
-        self.getControl(4300).setLabel(self.question.getText())
+        self.questionLimit['count'] += 1
+        if self.questionLimit['count'] > self.questionLimit['max']:
+            self._game_over()
+            return
+
+        maxRating = None
+        if self.addon.getSetting('rating.limit.enabled') == 'true':
+            maxRating = self.addon.getSetting('rating.limit')
+
+        #self.question = question.WhatTagLineBelongsToMovieQuestion(self.database, maxRating)
+        self.question = question.getRandomQuestion()(self.database, maxRating)
+        self.getControl(C_MAIN_QUESTION_LABEL).setLabel(self.question.getText())
 
         for idx, answer in enumerate(self.question.getAnswers()):
             self.getControl(4000 + idx).setLabel(answer.text + " (" + str(answer.correct) + ")")
 
         self._update_thumb()
+        self._update_stats()
 
         correctAnswer = self.question.getCorrectAnswer()
         if correctAnswer.videoFile is not None:
-            print "videoFile: %s" % correctAnswer.videoFile
-            self.getControl(5000).setVisible(True)
-            self.getControl(5001).setVisible(False)
+            self.show(C_MAIN_VIDEO_VISIBILITY)
+            self.hide(C_MAIN_PHOTO_VISIBILITY)
             xbmc.sleep(1500) # give skin animation time to execute
-            #self.player.playWindowed("/home/tommy/Videos/daily-pixels-3805-vind-halo-reach-faa-det-foer-alle-andre.mp4")
-            self.player.playWindowed(correctAnswer.videoFile)
+            self.player.playWindowed("/home/tommy/Videos/daily-pixels-3805-vind-halo-reach-faa-det-foer-alle-andre.mp4")
+            #self.player.playWindowed(correctAnswer.videoFile)
 
         elif correctAnswer.photoFile is not None:
-            print "photoFile: %s" % correctAnswer.photoFile
             self.getControl(4400).setImage(correctAnswer.photoFile)
 
-            self.getControl(5000).setVisible(False)
-            self.getControl(5001).setVisible(True)
+            self.hide(C_MAIN_VIDEO_VISIBILITY)
+            self.show(C_MAIN_PHOTO_VISIBILITY)
 
 
-    def _update_score(self):
-        self.getControl(4101).setLabel(str(self.score['correct']))
-        self.getControl(4103).setLabel(str(self.score['wrong']))
+    def _update_stats(self):
+        self.getControl(C_MAIN_CORRECT_SCORE).setLabel(str(self.score['correct']))
+        self.getControl(C_MAIN_INCORRECT_SCORE).setLabel(str(self.score['wrong']))
+
+        if self.addon.getSetting('question.limit.enabled') == 'true':
+            questionCount = strings(G_QUESTION_X_OF_Y, (self.questionLimit['count'], self.questionLimit['max']))
+            self.getControl(C_MAIN_QUESTION_COUNT).setLabel(questionCount)
+        else:
+            self.getControl(C_MAIN_QUESTION_COUNT).setLabel('')
+
 
     def _update_thumb(self):
-        if self.question is None:
+        if not hasattr(self, 'question'):
             return # not initialized yet
 
         controlId = self.getFocusId()
@@ -129,7 +149,11 @@ class QuizGui(xbmcgui.WindowXML):
         self.getControl(5002).setVisible(False)
         self.getControl(5003).setVisible(False)
 
+    def show(self, controlId):
+        self.getControl(controlId).setVisible(True)
 
+    def hide(self, controlId):
+        self.getControl(controlId).setVisible(False)
 
 
 

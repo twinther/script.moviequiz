@@ -13,8 +13,8 @@ class Database(object):
         self.conn.close()
         print "Database closed"
 
-    def fetchall(self, sql, parameters = list()):
-        if not isinstance(parameters, list):
+    def fetchall(self, sql, parameters = tuple()):
+        if not isinstance(parameters, tuple):
             parameters = [parameters]
 
         c = self.conn.cursor()
@@ -23,8 +23,8 @@ class Database(object):
 
         return result
 
-    def fetchone(self, sql, parameters = list()):
-        if not isinstance(parameters, list):
+    def fetchone(self, sql, parameters = tuple()):
+        if not isinstance(parameters, tuple):
             parameters = [parameters]
 
         c = self.conn.cursor()

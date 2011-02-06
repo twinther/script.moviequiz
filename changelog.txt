@@ -4,6 +4,7 @@ Version 0.1.1 - xxxx-xx-xx
 - New question types
   - Who directed this movie?
   - What studio released this movie?
+  - What actor is this?
 
 Version 0.1.0 - 2011-01-29
 - First public version

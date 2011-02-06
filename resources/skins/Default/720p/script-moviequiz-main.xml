@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <window id="5000">
     <allowoverlay>no</allowoverlay>
-    <defaultcontrol always="true">4000</defaultcontrol>
+    <defaultcontrol always="false">4000</defaultcontrol>
     <coordinates>
         <system>1</system>
         <posx>0</posx>
@@ -94,18 +94,29 @@
         </control>
 
 
-        <control type="label" id="4100">
+        <control type="label" id="4104">
             <posx>25</posx>
             <posy>25</posy>
+            <width>225</width>
+            <height>400</height>
+            <label>Question x of y</label>
+            <textcolor>ffffffff</textcolor>
+            <font>font13</font>
+        </control>
+
+        <control type="label" id="4100">
+            <description>Correct label</description>
+            <posx>25</posx>
+            <posy>65</posy>
             <width>125</width>
             <height>40</height>
-            <label>Correct:</label>
+            <label>$ADDON[script.moviequiz 30001]</label>
             <textcolor>ffffffff</textcolor>
             <font>font13</font>
         </control>
         <control type="label" id="4101">
             <posx>200</posx>
-            <posy>25</posy>
+            <posy>65</posy>
             <width>100</width>
             <height>40</height>
             <label>n/a</label>
@@ -115,17 +126,18 @@
         </control>
 
         <control type="label" id="4102">
+            <description>Wrong label</description>
             <posx>25</posx>
-            <posy>65</posy>
+            <posy>105</posy>
             <width>125</width>
             <height>40</height>
-            <label>Wrong:</label>
+            <label>$ADDON[script.moviequiz 30002]</label>
             <textcolor>ffffffff</textcolor>
             <font>font13</font>
         </control>
         <control type="label" id="4103">
             <posx>200</posx>
-            <posy>65</posy>
+            <posy>105</posy>
             <width>100</width>
             <height>40</height>
             <label>n/a</label>
@@ -136,6 +148,7 @@
 
 
         <control type="image" id="4200">
+            <description>cover image</description>
             <posx>25</posx>
             <posy>500</posy>
             <width>132</width>
