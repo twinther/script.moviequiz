@@ -101,7 +101,7 @@ class QuizGui(xbmcgui.WindowXML):
         self.getControl(C_MAIN_QUESTION_LABEL).setLabel(self.question.getText())
 
         for idx, answer in enumerate(self.question.getAnswers()):
-            self.getControl(4000 + idx).setLabel(answer.text + " (" + str(answer.correct) + ")")
+            self.getControl(4000 + idx).setLabel(answer.text)#" + " (" + str(answer.correct) + ")")
 
         self._update_thumb()
         self._update_stats()
