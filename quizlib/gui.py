@@ -83,7 +83,7 @@ class QuizGui(xbmcgui.WindowXML):
         self._setup_question()
 
     def _game_over(self):
-        xbmcgui.Dialog().ok('Game over', 'You scored %d of %d' % (self.score['correct'], self.score['wrong']))
+        xbmcgui.Dialog().ok('Game over', 'You scored %d of %d' % (self.score['correct'], self.questionLimit['max']))
         self.close()
 
     def _setup_question(self):
@@ -111,8 +111,8 @@ class QuizGui(xbmcgui.WindowXML):
             self.show(C_MAIN_VIDEO_VISIBILITY)
             self.hide(C_MAIN_PHOTO_VISIBILITY)
             xbmc.sleep(1500) # give skin animation time to execute
-            self.player.playWindowed("/home/tommy/Videos/daily-pixels-3805-vind-halo-reach-faa-det-foer-alle-andre.mp4")
-            #self.player.playWindowed(correctAnswer.videoFile)
+            #self.player.playWindowed("/home/tommy/Videos/daily-pixels-3805-vind-halo-reach-faa-det-foer-alle-andre.mp4")
+            self.player.playWindowed(correctAnswer.videoFile)
 
         elif correctAnswer.photoFile is not None:
             self.getControl(4400).setImage(correctAnswer.photoFile)
