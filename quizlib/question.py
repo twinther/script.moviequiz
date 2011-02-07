@@ -155,7 +155,7 @@ class ActorNotInMovieQuestion(Question):
             WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor
             %s
             GROUP BY alm.idActor HAVING count(mv.idMovie) > 3 ORDER BY random() LIMIT 10
-            """, self._get_max_rating_clause())
+            """ % self._get_max_rating_clause())
         # try to find an actor with a cached photo (if non are found we simply use the last actor selected)
         for row in rows:
             photoFile = thumb.getCachedThumb('actor' + row['strActor'])
