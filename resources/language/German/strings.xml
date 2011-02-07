@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<strings>
+    <!-- -->
+    <string id="30000">Frage %d von %d</string>
+    <string id="30001">Richtig:</string>
+    <string id="30002">Falsch:</string>
+
+    <!-- Questions -->
+    <string id="30400">Welcher Film ist das?</string>
+    <string id="30401">In welchem Film spielt [B]%s[/B] nicht mit?</string><!-- %s is actor name -->
+    <string id="30402">In welchem Jahr wurde [B]%s[/B] veröffentlicht?</string><!-- %s is movie title -->
+    <string id="30403">Welche Tagline gehört zu [B]%s[/B]?</string><!-- %s is movie title -->
+    <string id="30404">Wer führte Regie bei [B]%s[/B]?</string><!-- %s is movie title -->
+    <string id="30405">Welches Studio veröffentlichte [B]%s[/B]?</string><!-- %s is movie title -->
+    <string id="30406">Welcher Schauspieler ist das?</string>
+
+    <!-- Settings strings -->
+    <string id="30500">Allgemein</string>
+    <string id="30510">Limitiere Anzahl der Frage </string>
+    <string id="30511">Fragen Limit</string>
+    <string id="30512">Limitiere Filme anhand der Altersfreigabe</string>
+    <string id="30513">Max. Altersfreigabe</string>
+
+</strings>

@@ -1,5 +1,7 @@
 Version 0.1.1 - xxxx-xx-xx
 - Initial i18n support
+  - French by solexalex
+  - German by mad-max
 - Initial settings support
 - New question types
   - Who directed this movie?
