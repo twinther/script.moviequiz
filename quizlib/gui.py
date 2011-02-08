@@ -23,6 +23,8 @@ C_MAIN_QUESTION_COUNT = 4104
 
 C_MAIN_QUESTION_LABEL = 4300
 
+
+
 class QuizGui(xbmcgui.WindowXML):
     def __init__(self, xmlFilename, scriptPath):
         xbmcgui.WindowXML.__init__(self, xmlFilename, scriptPath)
@@ -64,9 +66,19 @@ class QuizGui(xbmcgui.WindowXML):
 
             if self.player.isPlaying():
                 self.player.stop()
-            self._setup_question()
 
             threading.Timer(3.0, self._hide_icons).start()
+            if self.addon.getSetting('show.correct.answer') and not answer.correct:
+                for idx, answer in enumerate(self.question.getAnswers()):
+                    if answer.correct:
+                        self.getControl(4000 + idx).setLabel('[B]%s[/B]' % answer.text)
+                    else:
+                        self.getControl(4000 + idx).setLabel(textColor = '0x88888888')
+
+                xbmc.sleep(3000)
+
+            self._setup_question()
+
 
 
     def onFocus(self, controlId):
@@ -101,7 +113,7 @@ class QuizGui(xbmcgui.WindowXML):
         self.getControl(C_MAIN_QUESTION_LABEL).setLabel(self.question.getText())
 
         for idx, answer in enumerate(self.question.getAnswers()):
-            self.getControl(4000 + idx).setLabel(answer.text)
+            self.getControl(4000 + idx).setLabel(answer.text, textColor = '0xFFFFFFFF')
 
         self._update_thumb()
         self._update_stats()

@@ -20,5 +20,7 @@
     <string id="30511">Question limit</string>
     <string id="30512">Limit movie selection based on MPAA Rating</string>
 	<string id="30513">Max. MPAA Rating</string>
-
+    <string id="30514">Display the correct answer, when you answer incorrectly</string>
+    
+    <string id="39999">Translated by Tommy Winther</string>
 </strings>

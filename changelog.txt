@@ -1,5 +1,6 @@
 Version 0.1.2 - xxxx-xx-xx
 - Attempt to reset XBMC video bookmark after playback
+- Added settings to show/not show the correct answer, when an incorrect is chosen
 
 Version 0.1.1 - 2011-02-07
 - Initial i18n support

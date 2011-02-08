@@ -74,7 +74,7 @@ class TenSecondPlayer(xbmc.Player):
         print "bookmark stuff"
         # Restore bookmark details
         if self.bookmark is not None:
-            xbmc.sleep(1000) # Delay to allow XBMC to store the bookmark before resetting it
+            xbmc.sleep(1000) # Delay to allow XBMC to store the bookmark before we reset it
             print "Bookmark: %s" % str(self.bookmark)
             if self.bookmark.has_key('idFile'):
                 print "deleting bookmark"
