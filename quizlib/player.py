@@ -6,10 +6,13 @@ __author__ = 'tommy'
 import xbmc
 
 class TenSecondPlayer(xbmc.Player):
-    def __init__(self):
+    def __init__(self, database = None):
         xbmc.Player.__init__(self)
         self.tenSecondTimer = None
         self.startTime = None
+
+        self.database = database
+        self.bookmark = None
 
     def stop(self):
         print "cancel"
@@ -19,10 +22,18 @@ class TenSecondPlayer(xbmc.Player):
             xbmc.Player.stop(self)
 
 
-    def playWindowed(self, file):
+    def playWindowed(self, file, idFile):
         print "!!!!!!!!!!!!! PlayWindowed"
         if self.tenSecondTimer is not None:
             self.stop()
+
+        print "idFile " + str(idFile)
+        # Get bookmark details, so we can restore after playback
+        self.bookmark = self.database.fetchone("""
+            SELECT idBookmark, timeInSeconds FROM bookmark WHERE idFile = ?
+        """, idFile)
+        if self.bookmark is None:
+            self.bookmark = {'idFile' : idFile}
 
         self.play(item = file, windowed = True)
 
@@ -60,3 +71,18 @@ class TenSecondPlayer(xbmc.Player):
         print "!!!!!!!!!!!!PlayBack Stopped"
         self.stop()
 
+        print "bookmark stuff"
+        # Restore bookmark details
+        if self.bookmark is not None:
+            xbmc.sleep(1000) # Delay to allow XBMC to store the bookmark before resetting it
+            print "Bookmark: %s" % str(self.bookmark)
+            if self.bookmark.has_key('idFile'):
+                print "deleting bookmark"
+                self.database.execute("""
+                    DELETE FROM bookmark WHERE idFile = ?
+                """, self.bookmark['idFile'])
+            else:
+                print "resetting bookmark"
+                self.database.execute("""
+                    UPDATE bookmark SET timeInSeconds = ? WHERE idBookmark = ?
+                """, (self.bookmark['timeInSeconds'], self.bookmark['idBookmark']))

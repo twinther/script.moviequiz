@@ -31,7 +31,7 @@ class QuizGui(xbmcgui.WindowXML):
         print "onInit"
         self.addon = xbmcaddon.Addon(id = 'script.moviequiz')
         self.database = db.Database()
-        self.player = player.TenSecondPlayer()
+        self.player = player.TenSecondPlayer(database = self.database)
 
         self.hide(C_MAIN_VIDEO_VISIBILITY)
         self.hide(C_MAIN_PHOTO_VISIBILITY)
@@ -101,7 +101,7 @@ class QuizGui(xbmcgui.WindowXML):
         self.getControl(C_MAIN_QUESTION_LABEL).setLabel(self.question.getText())
 
         for idx, answer in enumerate(self.question.getAnswers()):
-            self.getControl(4000 + idx).setLabel(answer.text)#" + " (" + str(answer.correct) + ")")
+            self.getControl(4000 + idx).setLabel(answer.text)
 
         self._update_thumb()
         self._update_stats()
@@ -111,8 +111,8 @@ class QuizGui(xbmcgui.WindowXML):
             self.show(C_MAIN_VIDEO_VISIBILITY)
             self.hide(C_MAIN_PHOTO_VISIBILITY)
             xbmc.sleep(1500) # give skin animation time to execute
-            #self.player.playWindowed("/home/tommy/Videos/daily-pixels-3805-vind-halo-reach-faa-det-foer-alle-andre.mp4")
-            self.player.playWindowed(correctAnswer.videoFile)
+            self.player.playWindowed("/home/tommy/Videos/daily-pixels-3805-vind-halo-reach-faa-det-foer-alle-andre.mp4", correctAnswer.idFile)
+            #self.player.playWindowed(correctAnswer.videoFile, correctAnswer.idFile)
 
         elif correctAnswer.photoFile is not None:
             self.getControl(4400).setImage(correctAnswer.photoFile)

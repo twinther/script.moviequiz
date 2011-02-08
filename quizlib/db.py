@@ -6,7 +6,7 @@ __author__ = 'twinther'
 class Database(object):
     def __init__(self):
         self.db_file = xbmc.translatePath('special://profile/Database/MyVideos34.db')
-        self.conn = sqlite3.connect(self.db_file)
+        self.conn = sqlite3.connect(self.db_file, isolation_level = None)
         self.conn.row_factory = sqlite_dict_factory
 
     def __del__(self):
@@ -33,6 +33,16 @@ class Database(object):
 
         return result
 
+    def execute(self, sql, parameters = tuple()):
+        if not isinstance(parameters, tuple):
+            parameters = [parameters]
+
+        c = self.conn.cursor()
+        print "before execute"
+        c.execute(sql, parameters)
+        print "before commit"
+        self.conn.commit()
+        print "commit"
 
 
 def sqlite_dict_factory(cursor, row):
