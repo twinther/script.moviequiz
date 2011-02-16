@@ -95,12 +95,18 @@ class QuizGui(xbmcgui.WindowXML):
         self._setup_question()
 
     def _game_over(self):
-        xbmcgui.Dialog().ok('Game over', 'You scored %d of %d' % (self.score['correct'], self.questionLimit['max']))
+        line1 = 'Game over'
+        line2 = 'You scored %d of %d' % (self.score['correct'], self.questionLimit['max'])
+
+        w = ClapperDialog('script-moviequiz-clapper.xml', os.getcwd(), line1 = line1, line2 = line2)
+        w.doModal()
+        del w
+        
         self.close()
 
     def _setup_question(self):
         self.questionLimit['count'] += 1
-        if self.questionLimit['count'] > self.questionLimit['max']:
+        if self.questionLimit['max'] > 0 and self.questionLimit['count'] > self.questionLimit['max']:
             self._game_over()
             return
 
@@ -108,8 +114,11 @@ class QuizGui(xbmcgui.WindowXML):
         if self.addon.getSetting('rating.limit.enabled') == 'true':
             maxRating = self.addon.getSetting('rating.limit')
 
-        #self.question = question.WhatTagLineBelongsToMovieQuestion(self.database, maxRating)
-        self.question = question.getRandomQuestion()(self.database, maxRating)
+        try:
+            self.question = question.getRandomQuestion(self.database, maxRating)
+        except question.QuestionException:
+            pass
+
         self.getControl(C_MAIN_QUESTION_LABEL).setLabel(self.question.getText())
 
         for idx, answer in enumerate(self.question.getAnswers()):
@@ -197,3 +206,31 @@ class SplashDialog(xbmcgui.WindowXMLDialog):
 
     def onFocus(self, controlId):
         print "SplashDialog.onFocus " + str(controlId)
+
+
+class ClapperDialog(xbmcgui.WindowXMLDialog):
+    def __init__(self, xmlFilename, scriptPath, line1 = None, line2 = None, line3 = None):
+        self.line1 = line1
+        self.line2 = line2
+        self.line3 = line3
+
+        xbmcgui.WindowXMLDialog.__init__(self, xmlFilename, scriptPath)
+
+
+    def onInit(self):
+        print "ClapperDialog.onInit"
+
+        self.getControl(4000).setLabel(self.line1)
+        self.getControl(4001).setLabel(self.line2)
+        self.getControl(4002).setLabel(self.line3)
+
+    def onAction(self, action):
+        print "SplashDialog.onAction " + str(action)
+        self.close()
+
+    def onClick(self, controlId):
+        print "SplashDialog.onClick " + str(controlId)
+
+    def onFocus(self, controlId):
+        print "SplashDialog.onFocus " + str(controlId)
+

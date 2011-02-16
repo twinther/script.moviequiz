@@ -2,6 +2,7 @@ import os
 import random
 import datetime
 import thumb
+import db
 
 from strings import *
 
@@ -354,12 +355,25 @@ class WhatActorIsThisQuestion(Question):
         self.text = strings(Q_WHAT_ACTOR_IS_THIS)
 
 
-def getRandomQuestion():
+class QuestionException(Exception):
+    def __init__(self):
+        pass
+
+def getRandomQuestion(database, maxRating):
     """
         Gets random question from one of the Question subclasses.
     """
     subclasses = Question.__subclasses__()
-    return subclasses[random.randint(0, len(subclasses) - 1)]
+    random.shuffle(subclasses)
+
+    for subclass in subclasses:
+        try:
+            return subclass(database, maxRating)
+        except db.DbException, ex:
+            print "Exception in %s: %s" % (subclass, ex.message)
+
+
+
 
 
 

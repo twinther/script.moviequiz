@@ -21,6 +21,9 @@ class Database(object):
         c.execute(sql, parameters)
         result = c.fetchall()
 
+        if result is None:
+            raise DbException(sql)
+
         return result
 
     def fetchone(self, sql, parameters = tuple()):
@@ -30,6 +33,9 @@ class Database(object):
         c = self.conn.cursor()
         c.execute(sql, parameters)
         result = c.fetchone()
+
+        if result is None:
+            raise DbException(sql)
 
         return result
 
@@ -44,6 +50,10 @@ class Database(object):
         self.conn.commit()
         print "commit"
 
+
+class DbException(Exception):
+    def __init__(self, sql):
+        Exception.__init__(self, sql)
 
 def sqlite_dict_factory(cursor, row):
     d = {}
