@@ -72,6 +72,7 @@ class QuizGui(xbmcgui.WindowXML):
                 for idx, answer in enumerate(self.question.getAnswers()):
                     if answer.correct:
                         self.getControl(4000 + idx).setLabel('[B]%s[/B]' % answer.text)
+                        self.setFocusId(4000 + idx)
                     else:
                         self.getControl(4000 + idx).setLabel(textColor = '0x88888888')
 
@@ -132,8 +133,8 @@ class QuizGui(xbmcgui.WindowXML):
             self.show(C_MAIN_VIDEO_VISIBILITY)
             self.hide(C_MAIN_PHOTO_VISIBILITY)
             xbmc.sleep(1500) # give skin animation time to execute
-            self.player.playWindowed("/home/tommy/Videos/daily-pixels-3805-vind-halo-reach-faa-det-foer-alle-andre.mp4", correctAnswer.idFile)
-            #self.player.playWindowed(correctAnswer.videoFile, correctAnswer.idFile)
+            #self.player.playWindowed("/home/tommy/Videos/daily-pixels-3805-vind-halo-reach-faa-det-foer-alle-andre.mp4", correctAnswer.idFile)
+            self.player.playWindowed(correctAnswer.videoFile, correctAnswer.idFile)
 
         elif correctAnswer.photoFile is not None:
             self.getControl(4400).setImage(correctAnswer.photoFile)

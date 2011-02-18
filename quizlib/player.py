@@ -1,5 +1,6 @@
 import random
 import threading
+import db
 
 __author__ = 'tommy'
 
@@ -29,10 +30,11 @@ class TenSecondPlayer(xbmc.Player):
 
         print "idFile " + str(idFile)
         # Get bookmark details, so we can restore after playback
-        self.bookmark = self.database.fetchone("""
-            SELECT idBookmark, timeInSeconds FROM bookmark WHERE idFile = ?
-        """, idFile)
-        if self.bookmark is None:
+        try:
+            self.bookmark = self.database.fetchone("""
+                SELECT idBookmark, timeInSeconds FROM bookmark WHERE idFile = ?
+            """, idFile)
+        except db.DbException:
             self.bookmark = {'idFile' : idFile}
 
         self.play(item = file, windowed = True)
@@ -59,7 +61,7 @@ class TenSecondPlayer(xbmc.Player):
 
         totalTime = self.getTotalTime()
         # find start time, ignore first and last 10% of movie
-        self.startTime = random.randint(int(totalTime * 0.1), int(totalTime * 0.9))
+        self.startTime = random.randint(int(totalTime * 0.1), int(totalTime * 0.8))
 
         print "Playback from %d secs. to %d secs." % (self.startTime, self.startTime + 10)
         self.seekTime(self.startTime)
@@ -69,7 +71,8 @@ class TenSecondPlayer(xbmc.Player):
 
     def onPlayBackStopped(self):
         print "!!!!!!!!!!!!PlayBack Stopped"
-        self.stop()
+        if self.tenSecondTimer is not None:
+            self.tenSecondTimer.cancel()
 
         print "bookmark stuff"
         # Restore bookmark details
@@ -78,11 +81,18 @@ class TenSecondPlayer(xbmc.Player):
             print "Bookmark: %s" % str(self.bookmark)
             if self.bookmark.has_key('idFile'):
                 print "deleting bookmark"
-                self.database.execute("""
-                    DELETE FROM bookmark WHERE idFile = ?
-                """, self.bookmark['idFile'])
+                try:
+                    self.database.execute("""
+                        DELETE FROM bookmark WHERE idFile = ?
+                    """, self.bookmark['idFile'])
+                except db.DbException, ex:
+                    print "Exception!"
             else:
                 print "resetting bookmark"
-                self.database.execute("""
-                    UPDATE bookmark SET timeInSeconds = ? WHERE idBookmark = ?
-                """, (self.bookmark['timeInSeconds'], self.bookmark['idBookmark']))
+                try:
+                    self.database.execute("""
+                        UPDATE bookmark SET timeInSeconds = ? WHERE idBookmark = ?
+                    """, (self.bookmark['timeInSeconds'], self.bookmark['idBookmark']))
+                except db.DbException, ex:
+                    print "Exception!"
+

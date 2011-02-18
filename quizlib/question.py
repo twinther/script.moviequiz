@@ -273,9 +273,9 @@ class WhoDirectedThisMovieQuestion(Question):
         self.answers.append(Answer(True, row['idActor'], row['strActor'], row['idFile'], row['strPath'], row['strFilename']))
 
         otherAnswers = self.database.fetchall("""
-            SELECT a.idActor, a.strActor, mv.strPath, mv.strFilename
-            FROM movieview mv, directorlinkmovie dlm, actors a
-            WHERE mv.idMovie = dlm.idMovie AND dlm.idDirector = a.idActor AND a.idActor != ?
+            SELECT a.idActor, a.strActor
+            FROM actors a
+            WHERE a.idActor != ?
             %s
             ORDER BY random() LIMIT 3
         """ % self._get_max_rating_clause(), row['idActor'])
@@ -303,9 +303,9 @@ class WhatStudioReleasedMovieQuestion(Question):
         self.answers.append(Answer(True, row['idStudio'], row['strStudio'], row['idFile'], row['strPath'], row['strFilename']))
 
         otherAnswers = self.database.fetchall("""
-            SELECT s.idStudio, s.strStudio, mv.strPath, mv.strFilename
-            FROM movieview mv, studiolinkmovie slm, studio s
-            WHERE mv.idMovie = slm.idMovie AND slm.idStudio = s.idStudio AND s.idStudio != ?
+            SELECT s.idStudio, s.strStudio
+            FROM studio s
+            WHERE s.idStudio != ?
             %s
             ORDER BY random() LIMIT 3
         """ % self._get_max_rating_clause(), row['idStudio'])
