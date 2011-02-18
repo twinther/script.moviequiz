@@ -11,7 +11,15 @@
     <animation effect="fade" start="100" end="0" time="200">WindowClose</animation> 
     <controls>
 
-        <!-- Background -->
+        <control type="image">
+            <posx>0</posx>
+            <posy>0</posy>
+            <width>1280</width>
+            <height>720</height>
+            <texture>quiz-background-glass.png</texture>
+            <animation effect="fade" start="0" end="100" time="200">WindowOpen</animation>
+        </control>
+
         <control type="image">
             <posx>294</posx>
             <posy>37</posy>
@@ -20,48 +28,56 @@
             <texture>quiz-clapper-top.png</texture>
             <animation effect="rotate" start="10" end="-7" center="294,188" time="200">WindowOpen</animation>
         </control>
-        <control type="image" id="6000">
+        <control type="group">
             <posx>303</posx>
             <posy>188</posy>
             <width>675</width>
             <height>444</height>
-            <texture>quiz-clapper.png</texture>
-        </control>
+            <animation effect="rotate" start="-10" end="0" center="294,188" time="200">WindowOpen</animation>
 
-        <control type="label" id="4000">
-            <description>Line 1</description>
-            <posx>303</posx>
-            <posy>280</posy>
-            <width>675</width>
-            <height>40</height>
-            <label>XBMC Movie Quiz</label>
-            <textcolor>ffffffff</textcolor>
-            <font>font30_title</font>
-            <align>center</align>
-        </control>
+            <control type="image" id="6000">
+                <posx>0</posx>
+                <posy>0</posy>
+                <width>675</width>
+                <height>444</height>
+                <texture>quiz-clapper.png</texture>
+            </control>
 
-        <control type="label" id="4001">
-            <description>Line 2</description>
-            <posx>303</posx>
-            <posy>375</posy>
-            <width>671</width>
-            <height>40</height>
-            <label>XBMC Movie Quiz</label>
-            <textcolor>ffffffff</textcolor>
-            <font>font30_title</font>
-            <align>center</align>
-        </control>
+            <control type="label" id="4000">
+                <description>Line 1</description>
+                <posx>10</posx>
+                <posy>69</posy>
+                <width>655</width>
+                <height>70</height>
+                <textcolor>ffffffff</textcolor>
+                <font>font30_title</font>
+                <align>center</align>
+                <aligny>center</aligny>
+            </control>
 
-        <control type="label" id="4002">
-            <description>Line 3</description>
-            <posx>303</posx>
-            <posy>462</posy>
-            <width>675</width>
-            <height>40</height>
-            <label>XBMC Movie Quiz</label>
-            <textcolor>ffffffff</textcolor>
-            <font>font30_title</font>
-            <align>center</align>
+            <control type="label" id="4001">
+                <description>Line 2</description>
+                <posx>10</posx>
+                <posy>154</posy>
+                <width>655</width>
+                <height>70</height>
+                <textcolor>ffffffff</textcolor>
+                <font>font30_title</font>
+                <align>center</align>
+                <aligny>center</aligny>
+            </control>
+
+            <control type="label" id="4002">
+                <description>Line 3</description>
+                <posx>10</posx>
+                <posy>244</posy>
+                <width>655</width>
+                <height>70</height>
+                <textcolor>ffffffff</textcolor>
+                <font>font30_title</font>
+                <align>center</align>
+                <aligny>center</aligny>
+            </control>
         </control>
 
     </controls>
