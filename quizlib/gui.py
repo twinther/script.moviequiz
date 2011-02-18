@@ -68,7 +68,7 @@ class QuizGui(xbmcgui.WindowXML):
                 self.player.stop()
 
             threading.Timer(3.0, self._hide_icons).start()
-            if self.addon.getSetting('show.correct.answer') and not answer.correct:
+            if self.addon.getSetting('show.correct.answer') == 'true' and not answer.correct:
                 for idx, answer in enumerate(self.question.getAnswers()):
                     if answer.correct:
                         self.getControl(4000 + idx).setLabel('[B]%s[/B]' % answer.text)
