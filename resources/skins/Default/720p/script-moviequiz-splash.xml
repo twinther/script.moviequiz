@@ -54,13 +54,13 @@
         <!--</control>-->
 
         <control type="label" id="4000">
-            <posx>780</posx>
-            <posy>220</posy>
+            <desc>Collection trivia</label>
+            <posx>880</posx>
+            <posy>320</posy>
             <width>250</width>
             <height>500</height>
-            <font>font13_title</font>
+            <font>font13</font>
             <textcolor>ff560805</textcolor>
-            <label>Collection trivia</label>
 
         </control>
 

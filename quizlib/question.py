@@ -38,13 +38,14 @@ class Answer(object):
 class Question(object):
     MPAA_RATINGS = ['R', 'Rated R', 'PG-13', 'Rated PG-13', 'PG', 'Rated PG', 'G', 'Rated G']
 
-    def __init__(self, database, maxRating):
+    def __init__(self, database, maxRating, onlyWatchedMovies):
         self.database = database
         self.text = None
         self.answers = list()
 
         # Maximum allowed MPAA rating
         self.maxRating = maxRating
+        self.onlyWatchedMovies = onlyWatchedMovies
 
     def getText(self):
         return self.text
@@ -82,31 +83,36 @@ class Question(object):
 
         return ' AND TRIM(c12) IN (\'%s\')' % '\',\''.join(ratings)
 
+    def _get_watched_movies_clause(self):
+        if self.onlyWatchedMovies:
+            return ' AND mv.playCount IS NOT NULL'
+        else:
+            return ''
 
 class WhatMovieIsThisQuestion(Question):
     """
         WhatMovieIsThisQuestion
     """
 
-    def __init__(self, database, maxRating):
-        Question.__init__(self, database, maxRating)
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        Question.__init__(self, database, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
             SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.c14 AS genre, mv.strPath, mv.strFilename, slm.idSet
             FROM movieview mv, setlinkmovie slm
             WHERE mv.idMovie = slm.idMovie
-            %s
+            %s %s
             ORDER BY random() LIMIT 1
-            """ % self._get_max_rating_clause())
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
         self.answers.append(Answer(True, row['idMovie'], row['title'], row['idFile'], row['strPath'], row['strFilename']))
 
         # Find other movies in set
         otherMoviesInSet = self.database.fetchall("""
             SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFilename
             FROM movieview mv, setlinkmovie slm WHERE mv.idMovie = slm.idMovie AND slm.idSet = ? AND mv.idMovie != ?
-            %s
+            %s %s
             ORDER BY random() LIMIT 3
-            """ % self._get_max_rating_clause(), (row['idSet'], row['idMovie']))
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), (row['idSet'], row['idMovie']))
         for movie in otherMoviesInSet:
             self.answers.append(Answer(False, movie['idMovie'], movie['title'], movie['idFile'], movie['strPath'], movie['strFilename']))
         print self._get_movie_ids()
@@ -116,9 +122,10 @@ class WhatMovieIsThisQuestion(Question):
             otherMoviesInGenre = self.database.fetchall("""
                 SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.c14 AS genre, mv.strPath, mv.strFilename
                 FROM movieview mv WHERE genre = ? AND mv.idMovie NOT IN (%s)
-                %s
+                %s %s
                 ORDER BY random() LIMIT ?
-                """ % (self._get_movie_ids(), self._get_max_rating_clause()), (row['genre'], 4 - len(self.answers)))
+                """ % (self._get_movie_ids(), self._get_max_rating_clause(), self._get_watched_movies_clause()),
+                    (row['genre'], 4 - len(self.answers)))
             for movie in otherMoviesInGenre:
                 self.answers.append(Answer(False, movie['idMovie'], movie['title'], movie['idFile'], movie['strPath'], movie['strFilename']))
             print self._get_movie_ids()
@@ -128,9 +135,10 @@ class WhatMovieIsThisQuestion(Question):
             theRest = self.database.fetchall("""
                 SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFilename
                 FROM movieview mv WHERE mv.idMovie NOT IN (%s)
-                %s
+                %s %s
                 ORDER BY random() LIMIT ?
-                """ % (self._get_movie_ids(), self._get_max_rating_clause()), 4 - len(self.answers))
+                """ % (self._get_movie_ids(), self._get_max_rating_clause(), self._get_watched_movies_clause()),
+                         4 - len(self.answers))
             for movie in theRest:
                 self.answers.append(Answer(False, movie['idMovie'], movie['title'], movie['idFile'], movie['strPath'], movie['strFilename']))
             print self._get_movie_ids()
@@ -143,8 +151,8 @@ class ActorNotInMovieQuestion(Question):
     """
         ActorNotInMovieQuestion
     """
-    def __init__(self, database, maxRating):
-        Question.__init__(self, database, maxRating)
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        Question.__init__(self, database, maxRating, onlyWatchedMovies)
 
         actor = None
         photoFile = None
@@ -152,9 +160,9 @@ class ActorNotInMovieQuestion(Question):
             SELECT a.idActor, a.strActor
             FROM movieview mv, actorlinkmovie alm, actors a
             WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor
-            %s
+            %s %s
             GROUP BY alm.idActor HAVING count(mv.idMovie) > 3 ORDER BY random() LIMIT 10
-            """ % self._get_max_rating_clause())
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
         # try to find an actor with a cached photo (if non are found we simply use the last actor selected)
         for row in rows:
             photoFile = thumb.getCachedThumb('actor' + row['strActor'])
@@ -169,18 +177,18 @@ class ActorNotInMovieQuestion(Question):
             SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename
             FROM movieview mv WHERE mv.idMovie NOT IN (
                 SELECT DISTINCT alm.idMovie FROM actorlinkmovie alm WHERE alm.idActor = ?
-            ) %s
+            ) %s %s
             ORDER BY random() LIMIT 1
-            """ % self._get_max_rating_clause(), actor['idActor'])
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), actor['idActor'])
         self.answers.append(Answer(True, row['idMovie'], row['title'], photoFile = photoFile))
 
         # Movie actor is in
         movies = self.database.fetchall("""
             SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename
             FROM movieview mv, actorlinkmovie alm WHERE mv.idMovie = alm.idMovie AND alm.idActor = ?
-            %s
+            %s %s
             ORDER BY random() LIMIT 3
-            """ % self._get_max_rating_clause(), actor['idActor'])
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), actor['idActor'])
         for movie in movies:
             self.answers.append(Answer(False, movie['idMovie'], movie['title']))
 
@@ -193,15 +201,15 @@ class WhatYearWasMovieReleasedQuestion(Question):
     """
         WhatYearWasMovieReleasedQuestion
     """
-    def __init__(self, database, maxRating):
-        Question.__init__(self, database, maxRating)
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        Question.__init__(self, database, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
             SELECT mv.idFile, mv.c00 AS title, mv.c07 AS year, mv.strPath, mv.strFilename
             FROM movieview mv WHERE year != 1900
-            %s
+            %s %s
             ORDER BY random() LIMIT 1
-            """ % self._get_max_rating_clause())
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
 
         skew = random.randint(0, 10)
         minYear = int(row['year']) - skew
@@ -232,23 +240,23 @@ class WhatTagLineBelongsToMovieQuestion(Question):
     """
         WhatTagLineBelongsToMovieQuestion
     """
-    def __init__(self, database, maxRating):
-        Question.__init__(self, database, maxRating)
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        Question.__init__(self, database, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
             SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.c03 AS tagline, mv.strPath, mv.strFilename
             FROM movieview mv WHERE TRIM(tagline) != \'\'
-            %s
+            %s %s
             ORDER BY random() LIMIT 1
-            """ % self._get_max_rating_clause())
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
         self.answers.append(Answer(True, row['idMovie'], row['tagline'], row['idFile'], row['strPath'], row['strFilename']))
 
         otherAnswers = self.database.fetchall("""
             SELECT mv.idMovie, mv.idFile, mv.c03 AS tagline, mv.strPath, mv.strFilename
             FROM movieview mv WHERE TRIM(tagline) != \'\' AND mv.idMovie != ?
-            %s
+            %s %s
             ORDER BY random() LIMIT 3
-            """ % self._get_max_rating_clause(), row['idMovie'])
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), row['idMovie'])
         for movie in otherAnswers:
             self.answers.append(Answer(False, movie['idMovie'], movie['tagline'], row['idFile'], row['strPath'], row['strFilename']))
 
@@ -260,25 +268,24 @@ class WhoDirectedThisMovieQuestion(Question):
     """
         WhoDirectedThisMovieQuestion
     """
-    def __init__(self, database, maxRating):
-        Question.__init__(self, database, maxRating)
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        Question.__init__(self, database, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
             SELECT idActor, a.strActor, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFilename
             FROM movieview mv, directorlinkmovie dlm, actors a
             WHERE mv.idMovie = dlm.idMovie AND dlm.idDirector = a.idActor
-            %s
+            %s %s
             ORDER BY random() LIMIT 1
-        """ % self._get_max_rating_clause())
+        """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
         self.answers.append(Answer(True, row['idActor'], row['strActor'], row['idFile'], row['strPath'], row['strFilename']))
 
         otherAnswers = self.database.fetchall("""
             SELECT a.idActor, a.strActor
             FROM actors a
             WHERE a.idActor != ?
-            %s
             ORDER BY random() LIMIT 3
-        """ % self._get_max_rating_clause(), row['idActor'])
+        """, row['idActor'])
         for movie in otherAnswers:
             self.answers.append(Answer(False, movie['idActor'], movie['strActor'], row['idFile'], row['strPath'], row['strFilename']))
 
@@ -290,25 +297,24 @@ class WhatStudioReleasedMovieQuestion(Question):
     """
         WhatStudioReleasedMovieQuestion
     """
-    def __init__(self, database, maxRating):
-        Question.__init__(self, database, maxRating)
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        Question.__init__(self, database, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
             SELECT s.idStudio, s.strStudio, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFilename
             FROM movieview mv, studiolinkmovie slm, studio s
             WHERE mv.idMovie = slm.idMovie AND slm.idStudio = s.idStudio
-            %s
+            %s %s
             ORDER BY random() LIMIT 1
-        """ % self._get_max_rating_clause())
+        """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
         self.answers.append(Answer(True, row['idStudio'], row['strStudio'], row['idFile'], row['strPath'], row['strFilename']))
 
         otherAnswers = self.database.fetchall("""
             SELECT s.idStudio, s.strStudio
             FROM studio s
             WHERE s.idStudio != ?
-            %s
             ORDER BY random() LIMIT 3
-        """ % self._get_max_rating_clause(), row['idStudio'])
+        """, row['idStudio'])
         for movie in otherAnswers:
             self.answers.append(Answer(False, movie['idStudio'], movie['strStudio'], row['idFile'], row['strPath'], row['strFilename']))
 
@@ -320,8 +326,8 @@ class WhatActorIsThisQuestion(Question):
     """
         WhatActorIsThisQuestion
     """
-    def __init__(self, database, maxRating):
-        Question.__init__(self, database, maxRating)
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        Question.__init__(self, database, maxRating, onlyWatchedMovies)
 
         actor = None
         photoFile = None
@@ -359,7 +365,7 @@ class QuestionException(Exception):
     def __init__(self):
         pass
 
-def getRandomQuestion(database, maxRating):
+def getRandomQuestion(database, maxRating, onlyWatchedMovies):
     """
         Gets random question from one of the Question subclasses.
     """
@@ -368,9 +374,9 @@ def getRandomQuestion(database, maxRating):
 
     for subclass in subclasses:
         try:
-            return subclass(database, maxRating)
+            return subclass(database, maxRating, onlyWatchedMovies)
         except db.DbException, ex:
-            print "Exception in %s: %s" % (subclass, ex.message)
+            print "Exception in %s: %s" % (subclass, ex)
 
 
 

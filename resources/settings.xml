@@ -8,6 +8,7 @@
 		<setting id="rating.limit" label="30513" type="labelenum" default="R" values="R|PG-13|PG|G" visible="eq(-1,true)"/>
 
         <setting id="show.correct.answer" label="30514" type="bool" default="false" />
+        <setting id="only.watched.movies" label="30515" type="bool" default="true" />
 	</category>
 </settings>
 

@@ -10,6 +10,13 @@ Q_WHAT_ACTOR_IS_THIS = 30406
 
 G_QUESTION_X_OF_Y = 30000
 
+M_COLLECTION_TRIVIA = 30110
+M_MOVIE_COUNT = 30111
+M_ACTOR_COUNT = 30112
+M_DIRECTOR_COUNT = 30113
+M_STUDIO_COUNT = 30114
+M_HOURS_OF_ENTERTAINMENT = 30115
+
 def strings(id, replacements = None):
     string = xbmcaddon.Addon(id = 'script.moviequiz').getLocalizedString(id)
     if replacements is not None:

@@ -23,26 +23,71 @@ C_MAIN_QUESTION_COUNT = 4104
 
 C_MAIN_QUESTION_LABEL = 4300
 
+class MenuGui(xbmcgui.WindowXML):
+    def __init__(self, xmlFilename, scriptPath, addon):
+        xbmcgui.WindowXML.__init__(self, xmlFilename, scriptPath)
+        self.addon = addon
+
+    def onInit(self):
+        print "MenuGui.onInit"
+
+        self.database = db.Database()
+
+        movies = self.database.fetchone('SELECT COUNT(*) AS count, (SUM(c11) / 60) AS total_hours FROM movie')
+        actors = self.database.fetchone('SELECT COUNT(DISTINCT idActor) AS count FROM actorlinkmovie')
+        directors = self.database.fetchone('SELECT COUNT(DISTINCT idDirector) AS count FROM directorlinkmovie')
+        studios = self.database.fetchone('SELECT COUNT(idStudio) AS count FROM studio')
+
+        collectionTrivia = strings(M_COLLECTION_TRIVIA) + '\n' + \
+            (strings(M_MOVIE_COUNT) % movies['count']) + '\n' + \
+            (strings(M_ACTOR_COUNT) % actors['count']) + '\n' + \
+            (strings(M_DIRECTOR_COUNT) % directors['count']) + '\n' + \
+            (strings(M_STUDIO_COUNT) % studios['count']) + '\n\n' + \
+            (strings(M_HOURS_OF_ENTERTAINMENT) % movies['total_hours'])
+
+        self.getControl(5000).setLabel(collectionTrivia)
+
+    def onAction(self, action):
+        if action.getId() == 9 or action.getId() == 10:
+            self.close()
+
+    def onClick(self, controlId):
+        if controlId == 4000:
+            path = self.addon.getAddonInfo('path')
+            w = QuizGui('script-moviequiz-main.xml', path, database = self.database, addon = self.addon)
+            w.doModal()
+            del w
+
+        elif controlId == 4001:
+            path = self.addon.getAddonInfo('path')
+            w = ClapperDialog('script-moviequiz-clapper.xml', path, line1 = 'Coming soon...', line2 = '...to a [I]XBMC[/I] near you!')
+            w.doModal()
+            del w
+
+        elif controlId == 4002:
+            xbmcaddon.Addon(id = 'script.moviequiz').openSettings()
+
+        elif controlId == 4003:
+            self.close()
+
+    def onFocus(self, controlId):
+        pass
 
 
 class QuizGui(xbmcgui.WindowXML):
-    def __init__(self, xmlFilename, scriptPath):
+    def __init__(self, xmlFilename, scriptPath, database, addon):
         xbmcgui.WindowXML.__init__(self, xmlFilename, scriptPath)
+        self.database = database
+        self.addon = addon
 
     def onInit(self):
         print "onInit"
-        self.addon = xbmcaddon.Addon(id = 'script.moviequiz')
-        self.database = db.Database()
         self.player = player.TenSecondPlayer(database = self.database)
 
         self.hide(C_MAIN_VIDEO_VISIBILITY)
         self.hide(C_MAIN_PHOTO_VISIBILITY)
         self.hide(C_MAIN_CORRECT_VISIBILITY)
         self.hide(C_MAIN_INCORRECT_VISIBILITY)
-
-        splash = SplashDialog('script-moviequiz-splash.xml', os.getcwd(), database = self.database)
-        splash.doModal()
-        del splash
 
         self._setup_game()
 
@@ -92,6 +137,8 @@ class QuizGui(xbmcgui.WindowXML):
 
         self.questionLimit = {'count' : 0, 'max' : maxQuestions}
         self.score = {'correct' : 0, 'wrong' : 0}
+        print self.questionLimit
+        
 
         self._setup_question()
 
@@ -99,7 +146,8 @@ class QuizGui(xbmcgui.WindowXML):
         line1 = 'Game over'
         line2 = 'You scored %d of %d' % (self.score['correct'], self.questionLimit['max'])
 
-        w = ClapperDialog('script-moviequiz-clapper.xml', os.getcwd(), line1 = line1, line2 = line2)
+        path = self.addon.getAddonInfo('path')
+        w = ClapperDialog('script-moviequiz-clapper.xml', path, line1 = line1, line2 = line2)
         w.doModal()
         del w
         
@@ -114,9 +162,10 @@ class QuizGui(xbmcgui.WindowXML):
         maxRating = None
         if self.addon.getSetting('rating.limit.enabled') == 'true':
             maxRating = self.addon.getSetting('rating.limit')
+        onlyWatchedMovies = self.addon.getSetting('only.watched.movies') == 'true'
 
         try:
-            self.question = question.getRandomQuestion(self.database, maxRating)
+            self.question = question.getRandomQuestion(self.database, maxRating, onlyWatchedMovies)
         except question.QuestionException:
             pass
 
@@ -220,6 +269,13 @@ class ClapperDialog(xbmcgui.WindowXMLDialog):
 
     def onInit(self):
         print "ClapperDialog.onInit"
+
+        if self.line1 is None:
+            self.line1 = ''
+        if self.line2 is None:
+            self.line2 = ''
+        if self.line3 is None:
+            self.line3 = ''
 
         self.getControl(4000).setLabel(self.line1)
         self.getControl(4001).setLabel(self.line2)

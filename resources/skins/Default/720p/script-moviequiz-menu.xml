@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<window id="5000">
+    <allowoverlay>no</allowoverlay>
+    <defaultcontrol always="false">4000</defaultcontrol>
+    <coordinates>
+        <system>1</system>
+        <posx>0</posx>
+        <posy>0</posy>
+    </coordinates>
+    <animation effect="fade" start="0" end="100" time="200">WindowOpen</animation>
+    <animation effect="fade" start="100" end="0" time="200">WindowClose</animation>
+    <controls>
+        <!-- Background -->
+        <control type="image">
+            <posx>0</posx>
+            <posy>0</posy>
+            <width>1280</width>
+            <height>720</height>
+            <texture>quiz-menu-background.png</texture>
+        </control>
+
+        <control type="button" id="4000">
+            <posx>125</posx>
+            <posy>250</posy>
+            <width>350</width>
+            <height>50</height>
+            <textoffsetx>8</textoffsetx>
+            <textoffsety>4</textoffsety>
+            <label>$ADDON[script.moviequiz 30100]</label>
+            <textcolor>ffffffff</textcolor>
+            <font>font30_title</font>
+            <texturefocus>quiz-button-background.png</texturefocus>
+            <texturenofocus />
+            <onup>4003</onup>
+            <ondown>4001</ondown>
+        </control>
+        <control type="button" id="4001">
+            <posx>125</posx>
+            <posy>300</posy>
+            <width>350</width>
+            <height>50</height>
+            <textoffsetx>8</textoffsetx>
+            <textoffsety>4</textoffsety>
+            <label>$ADDON[script.moviequiz 30101]</label>
+            <textcolor>ffffffff</textcolor>
+            <font>font30_title</font>
+            <texturefocus>quiz-button-background.png</texturefocus>
+            <texturenofocus />
+            <onup>4000</onup>
+            <ondown>4002</ondown>
+            <enable>false</enable>
+        </control>
+        <control type="button" id="4002">
+            <posx>125</posx>
+            <posy>350</posy>
+            <width>350</width>
+            <height>50</height>
+            <textoffsetx>8</textoffsetx>
+            <textoffsety>4</textoffsety>
+            <label>$ADDON[script.moviequiz 30102]</label>
+            <textcolor>ffffffff</textcolor>
+            <font>font30_title</font>
+            <texturefocus>quiz-button-background.png</texturefocus>
+            <texturenofocus />
+            <onup>4001</onup>
+            <ondown>4003</ondown>
+        </control>
+        <control type="button" id="4003">
+            <posx>125</posx>
+            <posy>400</posy>
+            <width>350</width>
+            <height>50</height>
+            <textoffsetx>8</textoffsetx>
+            <textoffsety>4</textoffsety>
+            <label>$ADDON[script.moviequiz 30103]</label>
+            <textcolor>ffffffff</textcolor>
+            <font>font30_title</font>
+            <texturefocus>quiz-button-background.png</texturefocus>
+            <texturenofocus />
+            <onup>4002</onup>
+            <ondown>4000</ondown>
+        </control>
+
+        <control type="label" id="5000">
+            <description>Collection trivia</description>
+            <posx>800</posx>
+            <posy>370</posy>
+            <width>650</width>
+            <height>400</height>
+            <font>font30</font>
+            <textcolor>ff560805</textcolor>
+        </control>
+
+    </controls>
+</window>

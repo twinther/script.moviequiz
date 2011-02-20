@@ -1,9 +1,13 @@
 import os
+import xbmcaddon
 
-from quizlib.gui import QuizGui
+from quizlib.gui import MenuGui
 
 if __name__ == '__main__':
-    w = QuizGui('script-moviequiz-main.xml', os.getcwd())
+    addon = xbmcaddon.Addon(id = 'script.moviequiz')
+    path = addon.getAddonInfo('path')
+
+    w = MenuGui('script-moviequiz-menu.xml', path, addon = addon)
     w.doModal()
     del w
 
