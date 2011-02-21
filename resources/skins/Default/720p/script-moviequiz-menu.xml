@@ -91,5 +91,17 @@
             <textcolor>ff560805</textcolor>
         </control>
 
+        <control type="label">
+            <description>translated by</description>
+            <posx>1270</posx>
+            <posy>688</posy>
+            <width>1280</width>
+            <height>40</height>
+            <font>font13</font>
+            <label>$ADDON[script.moviequiz 39999]</label>
+            <textcolor>ffffffff</textcolor>
+            <align>right</align>
+        </control>
+
     </controls>
 </window>
