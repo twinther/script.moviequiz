@@ -4,6 +4,8 @@
     <string id="30000">Spørgsmål %d af %d</string>
     <string id="30001">Rigtige:</string>
     <string id="30002">Forkerte:</string>
+    <string id="30003">Spillet er slut</string>
+    <string id="30004">Du fik %d af %d rigtige</string><!-- 1st %d is score, 2nd %d is total question -->
 
     <!-- Menu -->
     <string id="30100">Spil Movie Quiz</string>

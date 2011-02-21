@@ -4,6 +4,8 @@
     <string id="30000">Question %d of %d</string>
     <string id="30001">Correct:</string>
     <string id="30002">Wrong:</string>
+    <string id="30003">Game Over</string>
+    <string id="30004">You scored %d of %d</string><!-- 1st %d is score, 2nd %d is total question -->
 
     <!-- Menu -->
     <string id="30100">Play Movie Quiz</string>
