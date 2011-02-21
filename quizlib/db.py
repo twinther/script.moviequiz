@@ -8,10 +8,11 @@ class Database(object):
         self.db_file = xbmc.translatePath('special://profile/Database/MyVideos34.db')
         self.conn = sqlite3.connect(self.db_file, isolation_level = None)
         self.conn.row_factory = sqlite_dict_factory
+        xbmc.log("Database opened")
 
     def __del__(self):
         self.conn.close()
-        print "Database closed"
+        xbmc.log("Database closed")
 
     def fetchall(self, sql, parameters = tuple()):
         if not isinstance(parameters, tuple):

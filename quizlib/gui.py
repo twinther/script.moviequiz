@@ -1,8 +1,6 @@
-import os
 import threading
 
 import xbmc
-import xbmcaddon
 import xbmcgui
 
 import question
@@ -31,12 +29,12 @@ class MenuGui(xbmcgui.WindowXML):
     def onInit(self):
         print "MenuGui.onInit"
 
-        self.database = db.Database()
-
-        movies = self.database.fetchone('SELECT COUNT(*) AS count, (SUM(c11) / 60) AS total_hours FROM movie')
-        actors = self.database.fetchone('SELECT COUNT(DISTINCT idActor) AS count FROM actorlinkmovie')
-        directors = self.database.fetchone('SELECT COUNT(DISTINCT idDirector) AS count FROM directorlinkmovie')
-        studios = self.database.fetchone('SELECT COUNT(idStudio) AS count FROM studio')
+        database = db.Database()
+        movies = database.fetchone('SELECT COUNT(*) AS count, (SUM(c11) / 60) AS total_hours FROM movie')
+        actors = database.fetchone('SELECT COUNT(DISTINCT idActor) AS count FROM actorlinkmovie')
+        directors = database.fetchone('SELECT COUNT(DISTINCT idDirector) AS count FROM directorlinkmovie')
+        studios = database.fetchone('SELECT COUNT(idStudio) AS count FROM studio')
+        del database
 
         collectionTrivia = strings(M_COLLECTION_TRIVIA) + '\n' + \
             (strings(M_MOVIE_COUNT) % movies['count']) + '\n' + \
@@ -54,7 +52,7 @@ class MenuGui(xbmcgui.WindowXML):
     def onClick(self, controlId):
         if controlId == 4000:
             path = self.addon.getAddonInfo('path')
-            w = QuizGui('script-moviequiz-main.xml', path, database = self.database, addon = self.addon)
+            w = QuizGui('script-moviequiz-main.xml', path, addon = self.addon)
             w.doModal()
             del w
 
@@ -75,13 +73,14 @@ class MenuGui(xbmcgui.WindowXML):
 
 
 class QuizGui(xbmcgui.WindowXML):
-    def __init__(self, xmlFilename, scriptPath, database, addon):
+    def __init__(self, xmlFilename, scriptPath, addon):
         xbmcgui.WindowXML.__init__(self, xmlFilename, scriptPath)
-        self.database = database
         self.addon = addon
 
     def onInit(self):
         print "onInit"
+
+        self.database = db.Database()
         self.player = player.TenSecondPlayer(database = self.database)
 
         self.hide(C_MAIN_VIDEO_VISIBILITY)
@@ -143,8 +142,8 @@ class QuizGui(xbmcgui.WindowXML):
         self._setup_question()
 
     def _game_over(self):
-        line1 = 'Game over'
-        line2 = 'You scored %d of %d' % (self.score['correct'], self.questionLimit['max'])
+        line1 = strings(G_GAME_OVER)
+        line2 = strings(G_YOU_SCORED) % (self.score['correct'], self.questionLimit['max'])
 
         path = self.addon.getAddonInfo('path')
         w = ClapperDialog('script-moviequiz-clapper.xml', path, line1 = line1, line2 = line2)
@@ -182,7 +181,6 @@ class QuizGui(xbmcgui.WindowXML):
             self.show(C_MAIN_VIDEO_VISIBILITY)
             self.hide(C_MAIN_PHOTO_VISIBILITY)
             xbmc.sleep(1500) # give skin animation time to execute
-            #self.player.playWindowed("/home/tommy/Videos/daily-pixels-3805-vind-halo-reach-faa-det-foer-alle-andre.mp4", correctAnswer.idFile)
             self.player.playWindowed(correctAnswer.videoFile, correctAnswer.idFile)
 
         elif correctAnswer.photoFile is not None:
@@ -227,37 +225,7 @@ class QuizGui(xbmcgui.WindowXML):
         self.getControl(controlId).setVisible(False)
 
 
-
-class SplashDialog(xbmcgui.WindowXMLDialog):
-    def __init__(self, xmlFilename, scriptPath, database):
-        xbmcgui.WindowXMLDialog.__init__(self, xmlFilename, scriptPath)
-        self.database = database
-
-    def onInit(self):
-        print "SplashDialog.onInit"
-
-        movies = self.database.fetchone('SELECT COUNT(*) AS count, (SUM(c11) / 60) AS total_hours FROM movie')
-        actors = self.database.fetchone('SELECT COUNT(DISTINCT idActor) AS count FROM actorlinkmovie')
-        directors = self.database.fetchone('SELECT COUNT(DISTINCT idDirector) AS count FROM directorlinkmovie')
-
-        collectionTrivia = 'Collection Trivia\n%d movies\n%d actors\n%d directors\n%d hours of\n           entertainment' \
-            % (movies['count'], actors['count'], directors['count'], movies['total_hours'])
-
-
-
-        self.getControl(4000).setLabel(collectionTrivia)
-
-    def onAction(self, action):
-        print "SplashDialog.onAction " + str(action)
-        self.close()
-
-    def onClick(self, controlId):
-        print "SplashDialog.onClick " + str(controlId)  
-
-    def onFocus(self, controlId):
-        print "SplashDialog.onFocus " + str(controlId)
-
-
+        
 class ClapperDialog(xbmcgui.WindowXMLDialog):
     def __init__(self, xmlFilename, scriptPath, line1 = None, line2 = None, line3 = None):
         self.line1 = line1
@@ -282,12 +250,12 @@ class ClapperDialog(xbmcgui.WindowXMLDialog):
         self.getControl(4002).setLabel(self.line3)
 
     def onAction(self, action):
-        print "SplashDialog.onAction " + str(action)
+        print "ClapperDialog.onAction " + str(action)
         self.close()
 
     def onClick(self, controlId):
-        print "SplashDialog.onClick " + str(controlId)
+        print "ClapperDialog.onClick " + str(controlId)
 
     def onFocus(self, controlId):
-        print "SplashDialog.onFocus " + str(controlId)
+        print "ClapperDialog.onFocus " + str(controlId)
 
