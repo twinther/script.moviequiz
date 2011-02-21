@@ -5,6 +5,19 @@
     <string id="30001">Richtig:</string>
     <string id="30002">Falsch:</string>
 
+	<!-- Menu -->
+    <string id="30100">Movie Quiz spielen</string>
+    <string id="30101">TV Quiz spielen</string>
+    <string id="30102">Einstellungen</string>
+    <string id="30103">Beenden</string>
+
+    <string id="30110">[B]Collection Trivia[/B]</string>
+    <string id="30111">%d Filme</string><!-- %d is movie count -->
+    <string id="30112">%d Schauspieler</string><!-- %d is actor count -->
+    <string id="30113">%d Regisseure</string><!-- %d is director count -->
+    <string id="30114">%d Studios</string><!-- %d is studio count -->
+    <string id="30115">%d Stunden Unterhaltung</string>
+
     <!-- Questions -->
     <string id="30400">Welcher Film ist das?</string>
     <string id="30401">In welchem Film spielt [B]%s[/B] nicht mit?</string><!-- %s is actor name -->
@@ -20,5 +33,8 @@
     <string id="30511">Fragen Limit</string>
     <string id="30512">Limitiere Filme anhand der Altersfreigabe</string>
     <string id="30513">Max. Altersfreigabe</string>
+    <string id="30514">Zeige korrekte Antwort, wenn falsche ausgewählt wurde</string>
+    <string id="30515">Nutze nur gesehene Filme für das Quiz</string>
 
+    <string id="39999">Übersetzt bei mad-max</string>
 </strings>
