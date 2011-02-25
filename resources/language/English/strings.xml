@@ -7,6 +7,10 @@
     <string id="30003">Game Over</string>
     <string id="30004">You scored %d of %d</string><!-- 1st %d is score, 2nd %d is total question -->
 
+    <string id="30005">Specials</string>
+    <string id="30006">Season %d</string>
+
+
     <!-- Menu -->
     <string id="30100">Play Movie Quiz</string>
     <string id="30101">Play TV Quiz</string>
@@ -20,7 +24,7 @@
     <string id="30114">%d studios</string><!-- %d is studio count -->
     <string id="30115">%d hours of entertainment</string>
 
-    <!-- Questions -->
+    <!-- Movie Questions -->
     <string id="30400">What movie is this?</string>
     <string id="30401">What movie is [B]%s[/B] not in?</string><!-- %s is actor name -->
     <string id="30402">What year was [B]%s[/B] released?</string><!-- %s is movie title -->
@@ -28,6 +32,12 @@
     <string id="30404">Who directed [B]%s[/B]?</string><!-- %s is movie title -->
     <string id="30405">What studio released [B]%s[/B]?</string><!-- %s is movie title -->
     <string id="30406">What actor is this?</string>
+
+    <!-- Movie Questions -->
+    <string id="30450">What TV show is this?</string>
+    <string id="30451">What season of [B]%s[/B] is this?</string><!-- %s is tvshow title -->
+
+
 
     <!-- Settings strings -->
     <string id="30500">General</string>

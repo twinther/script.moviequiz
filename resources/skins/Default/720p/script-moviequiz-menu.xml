@@ -48,7 +48,6 @@
             <texturenofocus />
             <onup>4000</onup>
             <ondown>4002</ondown>
-            <enable>false</enable>
         </control>
         <control type="button" id="4002">
             <posx>125</posx>

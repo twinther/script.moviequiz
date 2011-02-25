@@ -10,3 +10,11 @@ def getCachedThumb(file):
     crc = xbmc.getCacheThumbName(file.lower())
     return xbmc.translatePath('special://profile/Thumbnails/Video/%s/%s' % (crc[0], crc))
 
+def getCachedActorThumb(name):
+    return getCachedThumb('actor' + name)
+
+def getCachedSeasonThumb(path, label): # todo figure out what label is
+    return getCachedThumb('season' + path + label)
+
+def getCachedTVShowThumb(path):
+    return getCachedThumb(path)

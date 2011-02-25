@@ -52,18 +52,18 @@ class MenuGui(xbmcgui.WindowXML):
     def onClick(self, controlId):
         if controlId == 4000:
             path = self.addon.getAddonInfo('path')
-            w = QuizGui('script-moviequiz-main.xml', path, addon = self.addon)
+            w = QuizGui('script-moviequiz-main.xml', path, addon = self.addon, type = question.TYPE_MOVIE)
             w.doModal()
             del w
 
         elif controlId == 4001:
             path = self.addon.getAddonInfo('path')
-            w = ClapperDialog('script-moviequiz-clapper.xml', path, line1 = 'Coming soon...', line2 = '...to a [I]XBMC[/I] near you!')
+            w = QuizGui('script-moviequiz-main.xml', path, addon = self.addon, type = question.TYPE_TV)
             w.doModal()
             del w
 
         elif controlId == 4002:
-            xbmcaddon.Addon(id = 'script.moviequiz').openSettings()
+            self.addon.openSettings()
 
         elif controlId == 4003:
             self.close()
@@ -73,9 +73,10 @@ class MenuGui(xbmcgui.WindowXML):
 
 
 class QuizGui(xbmcgui.WindowXML):
-    def __init__(self, xmlFilename, scriptPath, addon):
+    def __init__(self, xmlFilename, scriptPath, addon, type):
         xbmcgui.WindowXML.__init__(self, xmlFilename, scriptPath)
         self.addon = addon
+        self.type = type
 
     def onInit(self):
         print "onInit"
@@ -101,7 +102,7 @@ class QuizGui(xbmcgui.WindowXML):
     def onClick(self, controlId):
         if hasattr(self, 'question') and (controlId >= 4000 or controlId <= 4003):
             answer = self.question.getAnswer(controlId - 4000)
-            if answer.correct:
+            if answer is not None and answer.correct:
                 self.score['correct'] += 1
                 self.show(C_MAIN_CORRECT_VISIBILITY)
             else:
@@ -136,8 +137,6 @@ class QuizGui(xbmcgui.WindowXML):
 
         self.questionLimit = {'count' : 0, 'max' : maxQuestions}
         self.score = {'correct' : 0, 'wrong' : 0}
-        print self.questionLimit
-        
 
         self._setup_question()
 
@@ -164,14 +163,20 @@ class QuizGui(xbmcgui.WindowXML):
         onlyWatchedMovies = self.addon.getSetting('only.watched.movies') == 'true'
 
         try:
-            self.question = question.getRandomQuestion(self.database, maxRating, onlyWatchedMovies)
+            self.question = question.getRandomQuestion(self.type, self.database, maxRating, onlyWatchedMovies)
         except question.QuestionException:
             pass
 
         self.getControl(C_MAIN_QUESTION_LABEL).setLabel(self.question.getText())
 
-        for idx, answer in enumerate(self.question.getAnswers()):
-            self.getControl(4000 + idx).setLabel(answer.text, textColor = '0xFFFFFFFF')
+        answers = self.question.getAnswers()
+        for idx in range(0, 4):
+            if idx >= len(answers):
+                self.getControl(4000 + idx).setLabel('')
+                self.getControl(4000 + idx).setEnabled(False)
+            else:
+                self.getControl(4000 + idx).setLabel(answers[idx].text, textColor = '0xFFFFFFFF')
+                self.getControl(4000 + idx).setEnabled(True)
 
         self._update_thumb()
         self._update_stats()
@@ -208,7 +213,7 @@ class QuizGui(xbmcgui.WindowXML):
         controlId = self.getFocusId()
         if controlId >= 4000 or controlId <= 4003:
             answer = self.question.getAnswer(controlId - 4000)
-            if answer.coverFile is not None:
+            if answer is not None and answer.coverFile is not None:
                 self.getControl(4200).setVisible(True)
                 self.getControl(4200).setImage(answer.coverFile)
             else:

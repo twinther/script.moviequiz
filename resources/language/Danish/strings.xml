@@ -7,6 +7,10 @@
     <string id="30003">Spillet er slut</string>
     <string id="30004">Du fik %d af %d rigtige</string><!-- 1st %d is score, 2nd %d is total question -->
 
+    <string id="30005">Specials</string>
+    <string id="30006">Sæson %s</string>
+
+
     <!-- Menu -->
     <string id="30100">Spil Movie Quiz</string>
     <string id="30101">Spil TV Quiz</string>
@@ -28,6 +32,10 @@
     <string id="30404">Hvem var instruktør på [B]%s[/B]?</string><!-- %s is movie title -->
     <string id="30405">Hvilken studie udgav [B]%s[/B]?</string><!-- %s is movie title -->
     <string id="30406">Hvem er denne skuespiller?</string>
+
+    <!-- Movie Questions -->
+    <string id="30450">Hvilken TV-serie er det?</string>
+    <string id="30451">Hvilken sæson af [B]%s[/B] er det?</string><!-- %s is tvshow title -->
 
     <!-- Settings strings -->
     <string id="30500">Generelt</string>
