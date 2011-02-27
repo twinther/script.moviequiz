@@ -9,6 +9,7 @@
 
     <string id="30005">Specials</string>
     <string id="30006">Sæson %s</string>
+    <string id="30007">%e. %B %Y</string><!-- episode first aired date format: http://docs.python.org/library/time.html#time.strftime -->
 
 
     <!-- Menu -->
@@ -36,6 +37,10 @@
     <!-- Movie Questions -->
     <string id="30450">Hvilken TV-serie er det?</string>
     <string id="30451">Hvilken sæson af [B]%s[/B] er det?</string><!-- %s is tvshow title -->
+    <string id="30452">Hvilket afsnit af [B]%s[/B] er det?</string><!-- %s is tvshow title -->
+    <string id="30453">Hvornår blev [B]%s[/B] af [B]%s[/B] sendt første gang?</string><!-- 1st %s is episode, 2nd %s is tvshow title -->
+    <string id="30454">Hvornår blev [B]%s[/B] sendt første gang?</string><!-- %s is tvshow title -->
+
 
     <!-- Settings strings -->
     <string id="30500">Generelt</string>

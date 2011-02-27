@@ -3,6 +3,7 @@ import random
 import datetime
 import thumb
 import db
+import time
 
 from strings import *
 
@@ -404,6 +405,15 @@ class TVQuestion(Question):
 
         return ' AND TRIM(c12) IN (\'%s\')' % '\',\''.join(ratings)
 
+    def _get_season_title(self, season):
+        if not int(season):
+            return strings(Q_SPECIALS)
+        else:
+            return strings(Q_SEASON_NO) % int(season)
+
+    def _get_episode_title(self, season, episode, title):
+        return "%dx%02d - %s" % (int(season), int(episode), title)
+
 
 class WhatTVShowIsThisQuestion(TVQuestion):
     """
@@ -460,7 +470,7 @@ class WhatSeasonIsThisQuestion(TVQuestion):
         a.setCoverFile(thumb.getCachedTVShowThumb(row['strPath']))
         self.answers.append(a)
 
-        # Fill with random episodes from other shows
+        # Fill with random seasons from this show
         shows = self.database.fetchall("""
             SELECT DISTINCT ev.c12 AS season
             FROM episodeview ev
@@ -476,11 +486,125 @@ class WhatSeasonIsThisQuestion(TVQuestion):
 
         self.text = strings(Q_WHAT_SEASON_IS_THIS) % row['title']
 
-    def _get_season_title(self, season):
-        if not int(season):
-            return strings(Q_SPECIALS)
-        else:
-            return strings(Q_SEASON_NO) % int(season)
+class WhatEpisodeIsThisQuestion(TVQuestion):
+    """
+        WhatEpisodeIsThisQuestion
+    """
+
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        TVQuestion.__init__(self, database, maxRating, onlyWatchedMovies)
+
+        row = self.database.fetchone("""
+            SELECT ev.idFile, ev.c00 AS episodeTitle, ev.c12 AS season, ev.c13 AS episode, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFilename,
+                (SELECT COUNT(DISTINCT c13) FROM episodeview WHERE idShow=ev.idShow) AS episodes
+            FROM episodeview ev, tvshowview tv
+            WHERE ev.idShow=tv.idShow AND episodes > 2
+            %s
+            ORDER BY random() LIMIT 1
+            """ % self._get_watched_episodes_clause())
+        answerText = self._get_episode_title(row['season'], row['episode'], row['episodeTitle'])
+        a = Answer(True, row['episode'], answerText, row['idFile'], row['strPath'], row['strFilename'])
+        a.setCoverFile(thumb.getCachedTVShowThumb(row['strPath']))
+        self.answers.append(a)
+
+        # Fill with random episodes from this show
+        shows = self.database.fetchall("""
+            SELECT ev.c00 AS episodeTitle, ev.c12 AS season, ev.c13 AS episode
+            FROM episodeview ev
+            WHERE ev.idShow = ? AND season = ? AND episode != ?
+            ORDER BY random() LIMIT 3
+            """, (row['idShow'], row['season'], row['episode']))
+        for show in shows:
+            answerText = self._get_episode_title(show['season'], show['episode'], show['episodeTitle'])
+            a = Answer(False, show['episode'], answerText)
+            a.setCoverFile(thumb.getCachedTVShowThumb(row['strPath']))
+            self.answers.append(a)
+
+        self.answers = sorted(self.answers, key=lambda answer: int(answer.id))
+
+        self.text = strings(Q_WHAT_EPISODE_IS_THIS) % row['title']
+
+
+class WhenWasEpisodeFirstAiredQuestion(TVQuestion):
+    """
+        WhenWasEpisodeFirstAiredQuestion
+    """
+
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        TVQuestion.__init__(self, database, maxRating, onlyWatchedMovies)
+
+        row = self.database.fetchone("""
+            SELECT ev.idFile, ev.c00 AS episodeTitle, ev.c12 AS season, ev.c13 AS episode, ev.c05 AS firstAired, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFilename,
+                (SELECT COUNT(DISTINCT c13) FROM episodeview WHERE idShow=ev.idShow) AS episodes
+            FROM episodeview ev, tvshowview tv
+            WHERE ev.idShow=tv.idShow AND episodes > 2 AND firstAired != ''
+            %s
+            ORDER BY random() LIMIT 1
+            """ % self._get_watched_episodes_clause())
+        a = Answer(True, row['episode'], self._format_date(row['firstAired']), row['idFile'], row['strPath'], row['strFilename'])
+        self.answers.append(a)
+
+        # Fill with random episodes from this show
+        shows = self.database.fetchall("""
+            SELECT ev.c00 AS episodeTitle, ev.c12 AS season, ev.c13 AS episode, ev.c05 AS firstAired
+            FROM episodeview ev
+            WHERE ev.idShow = ? AND season = ? AND episode != ? AND firstAired != ''
+            ORDER BY random() LIMIT 3
+            """, (row['idShow'], row['season'], row['episode']))
+        for show in shows:
+            a = Answer(False, show['episode'], self._format_date(show['firstAired']), None, row['strPath'], row['strFilename'])
+            self.answers.append(a)
+
+        self.answers = sorted(self.answers, key=lambda answer: int(answer.id))
+
+        self.text = strings(Q_WHEN_WAS_EPISODE_FIRST_AIRED) % (self._get_episode_title(row['season'], row['episode'], row['episodeTitle']), row['title'])
+
+    def _format_date(self, dateString):
+        d = time.strptime(dateString, '%Y-%m-%d')
+        return time.strftime(strings(Q_FIRST_AIRED_DATEFORMAT), d)
+
+class WhenWasTVShowFirstAiredQuestion(TVQuestion):
+    """
+        WhenWasEpisodeFirstAiredQuestion
+    """
+
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        TVQuestion.__init__(self, database, maxRating, onlyWatchedMovies)
+
+        row = self.database.fetchone("""
+            SELECT ev.idFile, ev.c12 AS season, ev.c13 AS episode, ev.c05 AS firstAired, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFilename
+            FROM episodeview ev, tvshowview tv
+            WHERE ev.idShow=tv.idShow AND episode = 1 AND episode != 0 AND firstAired != ''
+            %s
+            ORDER BY random() LIMIT 1
+            """ % self._get_watched_episodes_clause())
+
+        row['year'] = time.strptime(row['firstAired'], '%Y-%m-%d').tm_year
+
+        skew = random.randint(0, 10)
+        minYear = int(row['year']) - skew
+        maxYear = int(row['year']) + (10 - skew)
+
+        thisYear = datetime.datetime.today().year
+        if maxYear > thisYear:
+            maxYear = thisYear
+            minYear = thisYear - 10
+
+        years = list()
+        years.append(int(row['year']))
+        while len(years) < 4:
+            year = random.randint(minYear, maxYear)
+            if not year in years:
+                years.append(year)
+
+        list.sort(years)
+
+        for year in years:
+            answer = Answer(year == int(row['year']), year, str(year), row['idFile'], row['strPath'], row['strFilename'])
+            answer.setCoverFile(thumb.getCachedTVShowThumb(row['strPath']))
+            self.answers.append(answer)
+
+        self.text = strings(Q_WHEN_WAS_TVSHOW_FIRST_AIRED) % (row['title'] + ' - ' + self._get_season_title(row['season']))
 
 
 class QuestionException(Exception):
