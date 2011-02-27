@@ -33,6 +33,7 @@
     <string id="30404">Who directed [B]%s[/B]?</string><!-- %s is movie title -->
     <string id="30405">What studio released [B]%s[/B]?</string><!-- %s is movie title -->
     <string id="30406">What actor is this?</string>
+    <string id="30407">Who plays [B]%s[/B] in [B]%s[/B]?</string><!-- 1st %s is role, 2nd %s is movie title -->
 
     <!-- Movie Questions -->
     <string id="30450">What TV show is this?</string>
@@ -40,6 +41,7 @@
     <string id="30452">What episode of [B]%s[/B] is this?</string><!-- %s is tvshow title -->
     <string id="30453">When was [B]%s[/B] of [B]%s[/B] first aired?</string><!-- 1st %s is episode, 2nd %s is tvshow title -->
     <string id="30454">When was [B]%s[/B] first aired?</string><!-- %s is tvshow title -->
+    <string id="30455">Who plays [B]%s[/B] in [B]%s[/B]?</string><!-- 1st %s is role, 2nd %s is tvshow title -->
 
 
 

@@ -20,6 +20,8 @@ TV Question:
 
 
 Version 0.1.3 - xxxx-xx-xx
+http://www.htbackdrops.com/v2/displayimage.php?album=14&pid=4213
+
 - Menu background image from http://upload.wikimedia.org/wikipedia/commons/archive/0/0f/20090626193204!Walk_of_fame.JPG
 - Option to only use watched movies in questions
 

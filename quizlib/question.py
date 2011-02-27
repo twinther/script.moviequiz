@@ -379,6 +379,44 @@ class WhatActorIsThisQuestion(MovieQuestion):
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_ACTOR_IS_THIS)
 
+class WhoPlayedRoleInMovieQuestion(MovieQuestion):
+    """
+        WhoPlayedRoleInMovieQuestion
+    """
+
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        MovieQuestion.__init__(self, database, maxRating, onlyWatchedMovies)
+
+        row = self.database.fetchone("""
+            SELECT alm.idActor, a.strActor, alm.strRole, mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename
+            FROM movieview mv, actorlinkmovie alm, actors a
+            WHERE mv.idMovie=alm.idMovie AND alm.idActor=a.idActor AND alm.strRole != ''
+            ORDER BY random() LIMIT 1
+            """)
+        role = row['strRole']
+        if role.find('|'):
+            roles = role.split('|')
+            # find random role
+            role = roles[random.randint(0, len(roles)-1)]
+
+        a = Answer(True, row['idActor'], row['strActor'], videoPath = row['strPath'], videoFilename = row['strFilename'])
+        a.setCoverFile(thumb.getCachedActorThumb(row['strActor']))
+        self.answers.append(a)
+
+        shows = self.database.fetchall("""
+            SELECT alm.idActor, a.strActor, alm.strRole
+            FROM actorlinkmovie alm, actors a
+            WHERE alm.idActor=a.idActor AND alm.idMovie = ? AND alm.idActor != ?
+            ORDER BY random() LIMIT 3
+            """, (row['idMovie'], row['idActor']))
+        for show in shows:
+            a = Answer(False, show['idActor'], show['strActor'])
+            a.setCoverFile(thumb.getCachedActorThumb(show['strActor']))
+            self.answers.append(a)
+
+        random.shuffle(self.answers)
+
+        self.text = strings(Q_WHO_PLAYED_ROLE_IN_MOVIE) % (role, row['title'])
 
 #
 # TV QUESTIONS
@@ -606,6 +644,45 @@ class WhenWasTVShowFirstAiredQuestion(TVQuestion):
 
         self.text = strings(Q_WHEN_WAS_TVSHOW_FIRST_AIRED) % (row['title'] + ' - ' + self._get_season_title(row['season']))
 
+class WhoPlayedRoleInTVShowQuestion(TVQuestion):
+    """
+        WhoPlayedRoleInTVShowQuestion
+    """
+
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        TVQuestion.__init__(self, database, maxRating, onlyWatchedMovies)
+
+        row = self.database.fetchone("""
+            SELECT alt.idActor, a.strActor, alt.strRole, tv.idShow, tv.c00 AS title, tv.strPath
+            FROM tvshowview tv, actorlinktvshow alt, actors a
+            WHERE tv.idShow = alt.idShow AND alt.idActor=a.idActor AND alt.strRole != ''
+            ORDER BY random() LIMIT 1
+            """)
+        role = row['strRole']
+        if role.find('|'):
+            roles = role.split('|')
+            # find random role
+            role = roles[random.randint(0, len(roles)-1)]
+
+        a = Answer(True, row['idActor'], row['strActor'], photoFile = thumb.getCachedTVShowThumb(row['strPath']))
+        a.setCoverFile(thumb.getCachedActorThumb(row['strActor']))
+        self.answers.append(a)
+
+        shows = self.database.fetchall("""
+            SELECT alt.idActor, a.strActor, alt.strRole
+            FROM actorlinktvshow alt, actors a
+            WHERE alt.idActor=a.idActor AND alt.idShow = ?  AND alt.idActor != ?
+            ORDER BY random() LIMIT 3
+            """, (row['idShow'], row['idActor']))
+        for show in shows:
+            a = Answer(False, show['idActor'], show['strActor'])
+            a.setCoverFile(thumb.getCachedActorThumb(show['strActor']))
+            self.answers.append(a)
+
+        random.shuffle(self.answers)
+
+        self.text = strings(Q_WHO_PLAYED_ROLE_IN_TVSHOW) % (role, row['title'])
+
 
 class QuestionException(Exception):
     def __init__(self):
@@ -617,7 +694,7 @@ def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
     """
     subclasses = []
     if type == TYPE_MOVIE:
-        subclasses = MovieQuestion.__subclasses__()
+        subclasses = [WhoPlayedRoleInMovieQuestion] #MovieQuestion.__subclasses__()
     elif type == TYPE_TV:
         subclasses = TVQuestion.__subclasses__()
     random.shuffle(subclasses)

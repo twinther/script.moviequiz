@@ -1,4 +1,5 @@
 import threading
+import os
 
 import xbmc
 import xbmcgui
@@ -80,6 +81,11 @@ class QuizGui(xbmcgui.WindowXML):
 
     def onInit(self):
         print "onInit"
+
+# todo       if self.type == question.TYPE_TV:
+#            path = os.path.join(self.addon.getAddonInfo('path'), 'resources', 'skins', 'Default', 'media', 'quiz-background-tvshows.jpg')
+#            print path
+#            self.getControl(4500).setImage(path)
 
         self.database = db.Database()
         self.player = player.TenSecondPlayer(database = self.database)
