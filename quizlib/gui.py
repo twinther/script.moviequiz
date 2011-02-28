@@ -31,6 +31,15 @@ class MenuGui(xbmcgui.WindowXML):
         print "MenuGui.onInit"
 
         database = db.Database()
+
+        row = database.fetchone("SELECT COUNT(*) AS cnt FROM sqlite_master WHERE name='movieview'")
+        if not int(row['cnt']):
+            self.getControl(4000).setEnabled(False)
+
+        row = database.fetchone("SELECT COUNT(*) AS cnt FROM sqlite_master WHERE name='tvshowview'")
+        if not int(row['cnt']):
+            self.getControl(4001).setEnabled(False)
+
         movies = database.fetchone('SELECT COUNT(*) AS count, (SUM(c11) / 60) AS total_hours FROM movie')
         actors = database.fetchone('SELECT COUNT(DISTINCT idActor) AS count FROM actorlinkmovie')
         directors = database.fetchone('SELECT COUNT(DISTINCT idDirector) AS count FROM directorlinkmovie')
@@ -45,6 +54,8 @@ class MenuGui(xbmcgui.WindowXML):
             (strings(M_HOURS_OF_ENTERTAINMENT) % movies['total_hours'])
 
         self.getControl(5000).setLabel(collectionTrivia)
+
+
 
     def onAction(self, action):
         if action.getId() == 9 or action.getId() == 10:
@@ -168,10 +179,7 @@ class QuizGui(xbmcgui.WindowXML):
             maxRating = self.addon.getSetting('rating.limit')
         onlyWatchedMovies = self.addon.getSetting('only.watched.movies') == 'true'
 
-        try:
-            self.question = question.getRandomQuestion(self.type, self.database, maxRating, onlyWatchedMovies)
-        except question.QuestionException:
-            pass
+        self.question = question.getRandomQuestion(self.type, self.database, maxRating, onlyWatchedMovies)
 
         self.getControl(C_MAIN_QUESTION_LABEL).setLabel(self.question.getText())
 

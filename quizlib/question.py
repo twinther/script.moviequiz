@@ -118,36 +118,40 @@ class WhatMovieIsThisQuestion(MovieQuestion):
 
         row = self.database.fetchone("""
             SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.c14 AS genre, mv.strPath, mv.strFilename, slm.idSet
-            FROM movieview mv, setlinkmovie slm
-            WHERE mv.idMovie = slm.idMovie
+            FROM movieview mv LEFT JOIN setlinkmovie slm ON mv.idMovie = slm.idMovie
+            WHERE 1=1
             %s %s
             ORDER BY random() LIMIT 1
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
         self.answers.append(Answer(True, row['idMovie'], row['title'], row['idFile'], row['strPath'], row['strFilename']))
 
+        print row
+
         # Find other movies in set
-        otherMoviesInSet = self.database.fetchall("""
-            SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFilename
-            FROM movieview mv, setlinkmovie slm WHERE mv.idMovie = slm.idMovie AND slm.idSet = ? AND mv.idMovie != ?
-            %s %s
-            ORDER BY random() LIMIT 3
-            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), (row['idSet'], row['idMovie']))
-        for movie in otherMoviesInSet:
-            self.answers.append(Answer(False, movie['idMovie'], movie['title'], movie['idFile'], movie['strPath'], movie['strFilename']))
-        print self._get_movie_ids()
+        if row['idSet'] is not None:
+            otherMoviesInSet = self.database.fetchall("""
+                SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFilename
+                FROM movieview mv, setlinkmovie slm WHERE mv.idMovie = slm.idMovie AND slm.idSet = ? AND mv.idMovie != ?
+                %s %s
+                ORDER BY random() LIMIT 3
+                """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), (row['idSet'], row['idMovie']))
+            for movie in otherMoviesInSet:
+                self.answers.append(Answer(False, movie['idMovie'], movie['title'], movie['idFile'], movie['strPath'], movie['strFilename']))
 
         # Find other movies in genre
         if len(self.answers) < 4:
-            otherMoviesInGenre = self.database.fetchall("""
-                SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.c14 AS genre, mv.strPath, mv.strFilename
-                FROM movieview mv WHERE genre = ? AND mv.idMovie NOT IN (%s)
-                %s %s
-                ORDER BY random() LIMIT ?
-                """ % (self._get_movie_ids(), self._get_max_rating_clause(), self._get_watched_movies_clause()),
-                    (row['genre'], 4 - len(self.answers)))
-            for movie in otherMoviesInGenre:
-                self.answers.append(Answer(False, movie['idMovie'], movie['title'], movie['idFile'], movie['strPath'], movie['strFilename']))
-            print self._get_movie_ids()
+            try:
+                otherMoviesInGenre = self.database.fetchall("""
+                    SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.c14 AS genre, mv.strPath, mv.strFilename
+                    FROM movieview mv WHERE genre = ? AND mv.idMovie NOT IN (%s)
+                    %s %s
+                    ORDER BY random() LIMIT ?
+                    """ % (self._get_movie_ids(), self._get_max_rating_clause(), self._get_watched_movies_clause()),
+                        (row['genre'], 4 - len(self.answers)))
+                for movie in otherMoviesInGenre:
+                    self.answers.append(Answer(False, movie['idMovie'], movie['title'], movie['idFile'], movie['strPath'], movie['strFilename']))
+            except db.DbException:
+                pass # ignore in case user has no other movies in genre
 
         # Fill with random movies
         if len(self.answers) < 4:
@@ -279,6 +283,9 @@ class WhatTagLineBelongsToMovieQuestion(MovieQuestion):
         for movie in otherAnswers:
             self.answers.append(Answer(False, movie['idMovie'], movie['tagline'], row['idFile'], row['strPath'], row['strFilename']))
 
+        if len(self.answers) < 3:
+            raise QuestionException('Not enough taglines; got %d taglines' % len(self.answers))
+
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_TAGLINE_BELONGS_TO_MOVIE, row['title'])
 
@@ -363,6 +370,9 @@ class WhatActorIsThisQuestion(MovieQuestion):
                 break
             else:
                 photoFile = None
+
+        if actor is None:
+            raise QuestionException("Didn't find any actors with photoFile")
 
         # The actor
         self.answers.append(Answer(True, actor['idActor'], actor['strActor'], photoFile = photoFile))
@@ -685,8 +695,8 @@ class WhoPlayedRoleInTVShowQuestion(TVQuestion):
 
 
 class QuestionException(Exception):
-    def __init__(self):
-        pass
+    def __init__(self, msg):
+        Exception.__init__(self, msg)
 
 def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
     """
@@ -694,7 +704,7 @@ def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
     """
     subclasses = []
     if type == TYPE_MOVIE:
-        subclasses = [WhoPlayedRoleInMovieQuestion] #MovieQuestion.__subclasses__()
+        subclasses = MovieQuestion.__subclasses__()
     elif type == TYPE_TV:
         subclasses = TVQuestion.__subclasses__()
     random.shuffle(subclasses)
@@ -702,8 +712,10 @@ def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
     for subclass in subclasses:
         try:
             return subclass(database, maxRating, onlyWatchedMovies)
+        except QuestionException, ex:
+            print "QuestionException in %s: %s" % (subclass, ex)
         except db.DbException, ex:
-            print "Exception in %s: %s" % (subclass, ex)
+            print "DbException in %s: %s" % (subclass, ex)
 
 
 
