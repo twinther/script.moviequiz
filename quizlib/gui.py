@@ -46,16 +46,19 @@ class MenuGui(xbmcgui.WindowXML):
         studios = database.fetchone('SELECT COUNT(idStudio) AS count FROM studio')
         del database
 
-        collectionTrivia = strings(M_COLLECTION_TRIVIA) + '\n' + \
-            (strings(M_MOVIE_COUNT) % movies['count']) + '\n' + \
-            (strings(M_ACTOR_COUNT) % actors['count']) + '\n' + \
-            (strings(M_DIRECTOR_COUNT) % directors['count']) + '\n' + \
-            (strings(M_STUDIO_COUNT) % studios['count']) + '\n\n' + \
-            (strings(M_HOURS_OF_ENTERTAINMENT) % movies['total_hours'])
+        trivia = [
+                strings(M_TRANSLATED_BY),
+                strings(M_COLLECTION_TRIVIA),
+                strings(M_MOVIE_COUNT) % movies['count'],
+                strings(M_ACTOR_COUNT) % actors['count'],
+                strings(M_DIRECTOR_COUNT) % directors['count'],
+                strings(M_STUDIO_COUNT) % studios['count'],
+                strings(M_HOURS_OF_ENTERTAINMENT) % movies['total_hours']
+        ]
 
-        self.getControl(5000).setLabel(collectionTrivia)
 
-
+        label = '  *  '.join(trivia)
+        self.getControl(6000).setLabel(label)
 
     def onAction(self, action):
         if action.getId() == 9 or action.getId() == 10:
@@ -64,13 +67,13 @@ class MenuGui(xbmcgui.WindowXML):
     def onClick(self, controlId):
         if controlId == 4000:
             path = self.addon.getAddonInfo('path')
-            w = QuizGui('script-moviequiz-main.xml', path, addon = self.addon, type = question.TYPE_MOVIE)
+            w = QuizGui('script-moviequiz-main.xml', path, addon=self.addon, type=question.TYPE_MOVIE)
             w.doModal()
             del w
 
         elif controlId == 4001:
             path = self.addon.getAddonInfo('path')
-            w = QuizGui('script-moviequiz-main.xml', path, addon = self.addon, type = question.TYPE_TV)
+            w = QuizGui('script-moviequiz-main.xml', path, addon=self.addon, type=question.TYPE_TV)
             w.doModal()
             del w
 
@@ -93,13 +96,13 @@ class QuizGui(xbmcgui.WindowXML):
     def onInit(self):
         print "onInit"
 
-# todo       if self.type == question.TYPE_TV:
-#            path = os.path.join(self.addon.getAddonInfo('path'), 'resources', 'skins', 'Default', 'media', 'quiz-background-tvshows.jpg')
-#            print path
-#            self.getControl(4500).setImage(path)
+        # todo       if self.type == question.TYPE_TV:
+        #            path = os.path.join(self.addon.getAddonInfo('path'), 'resources', 'skins', 'Default', 'media', 'quiz-background-tvshows.jpg')
+        #            print path
+        #            self.getControl(4500).setImage(path)
 
         self.database = db.Database()
-        self.player = player.TenSecondPlayer(database = self.database)
+        self.player = player.TenSecondPlayer(database=self.database)
 
         self.hide(C_MAIN_VIDEO_VISIBILITY)
         self.hide(C_MAIN_PHOTO_VISIBILITY)
@@ -113,6 +116,7 @@ class QuizGui(xbmcgui.WindowXML):
         if action.getId() == 9 or action.getId() == 10:
             if hasattr(self, 'player') and self.player.isPlaying():
                 self.player.stop()
+            self._game_over()
             self.close()
 
 
@@ -136,12 +140,11 @@ class QuizGui(xbmcgui.WindowXML):
                         self.getControl(4000 + idx).setLabel('[B]%s[/B]' % answer.text)
                         self.setFocusId(4000 + idx)
                     else:
-                        self.getControl(4000 + idx).setLabel(textColor = '0x88888888')
+                        self.getControl(4000 + idx).setLabel(textColor='0x88888888')
 
                 xbmc.sleep(3000)
 
             self._setup_question()
-
 
 
     def onFocus(self, controlId):
@@ -152,20 +155,22 @@ class QuizGui(xbmcgui.WindowXML):
         if self.addon.getSetting('question.limit.enabled') == 'true':
             maxQuestions = int(self.addon.getSetting('question.limit'))
 
-        self.questionLimit = {'count' : 0, 'max' : maxQuestions}
-        self.score = {'correct' : 0, 'wrong' : 0}
+        self.questionLimit = {'count': 0, 'max': maxQuestions}
+        self.score = {'correct': 0, 'wrong': 0}
 
         self._setup_question()
 
     def _game_over(self):
+        total = self.score['correct'] + self.score['wrong']
+
         line1 = strings(G_GAME_OVER)
-        line2 = strings(G_YOU_SCORED) % (self.score['correct'], self.questionLimit['max'])
+        line2 = strings(G_YOU_SCORED) % (self.score['correct'], total)
 
         path = self.addon.getAddonInfo('path')
-        w = ClapperDialog('script-moviequiz-clapper.xml', path, line1 = line1, line2 = line2)
+        w = ClapperDialog('script-moviequiz-clapper.xml', path, line1=line1, line2=line2)
         w.doModal()
         del w
-        
+
         self.close()
 
     def _setup_question(self):
@@ -189,13 +194,15 @@ class QuizGui(xbmcgui.WindowXML):
                 self.getControl(4000 + idx).setLabel('')
                 self.getControl(4000 + idx).setEnabled(False)
             else:
-                self.getControl(4000 + idx).setLabel(answers[idx].text, textColor = '0xFFFFFFFF')
+                self.getControl(4000 + idx).setLabel(answers[idx].text, textColor='0xFFFFFFFF')
                 self.getControl(4000 + idx).setEnabled(True)
 
         self._update_thumb()
         self._update_stats()
 
         correctAnswer = self.question.getCorrectAnswer()
+        print "videoFile = %s" % correctAnswer.videoFile
+        print "photoFile = %s" % correctAnswer.photoFile
         if correctAnswer.videoFile is not None:
             self.show(C_MAIN_VIDEO_VISIBILITY)
             self.hide(C_MAIN_PHOTO_VISIBILITY)
@@ -232,21 +239,20 @@ class QuizGui(xbmcgui.WindowXML):
                 self.getControl(4200).setImage(answer.coverFile)
             else:
                 self.getControl(4200).setVisible(False)
-                    
+
     def _hide_icons(self):
-        self.getControl(5002).setVisible(False)
-        self.getControl(5003).setVisible(False)
+        self.hide(C_MAIN_CORRECT_VISIBILITY)
+        self.hide(C_MAIN_INCORRECT_VISIBILITY)
 
     def show(self, controlId):
-        self.getControl(controlId).setVisible(True)
+        self.getControl(controlId).setVisible(False) # Visibility is inverted in skin
 
     def hide(self, controlId):
-        self.getControl(controlId).setVisible(False)
+        self.getControl(controlId).setVisible(True) # Visibility is inverted in skin
 
 
-        
 class ClapperDialog(xbmcgui.WindowXMLDialog):
-    def __init__(self, xmlFilename, scriptPath, line1 = None, line2 = None, line3 = None):
+    def __init__(self, xmlFilename, scriptPath, line1=None, line2=None, line3=None):
         self.line1 = line1
         self.line2 = line2
         self.line3 = line3

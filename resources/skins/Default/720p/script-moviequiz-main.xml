@@ -39,7 +39,7 @@
             <posy>24</posy>
             <width>336</width>
             <height>452</height>
-            <visible>Control.IsVisible(5001)</visible>
+            <visible>!Control.IsVisible(5001)</visible>
             <animation effect="fade" start="100" end="0" time="1000">Hidden</animation>
             <animation effect="fade" start="0" end="100" delay="1000" time="500">Visible</animation>
 
@@ -65,7 +65,7 @@
             <posy>24</posy>
             <width>788</width>
             <height>452</height>
-            <visible>Control.IsVisible(5000)</visible>
+            <visible>!Control.IsVisible(5000)</visible>
             <animation effect="slide" end="0,-500" time="1000">Hidden</animation>
             <animation effect="slide" start="0,-500" time="1000" delay="500">Visible</animation>
 
@@ -82,7 +82,7 @@
                 <width>340</width>
                 <height>64</height>
                 <texture>quiz-loading.png</texture>
-                <visible>!Control.IsVisible(5000)</visible>
+                <visible>Control.IsVisible(5000)</visible>
                 <animation effect="fade" start="100" end="0" time="1000" delay="5000">Hidden</animation>
             </control>
             <control type="videowindow" id="2">
@@ -243,7 +243,7 @@
             <width>150</width>
             <height>150</height>
             <texture>quiz-correct.png</texture>
-            <visible>Control.IsVisible(5002)</visible>
+            <visible>!Control.IsVisible(5002)</visible>
             <animation effect="fade" start="100" end="0" time="1000">Hidden</animation>
             <animation effect="slide" start="200,0" time="1000">Visible</animation>
         </control>
@@ -253,7 +253,7 @@
             <width>150</width>
             <height>150</height>
             <texture>quiz-wrong.png</texture>
-            <visible>Control.IsVisible(5003)</visible>
+            <visible>!Control.IsVisible(5003)</visible>
             <animation effect="fade" start="100" end="0" time="1000">Hidden</animation>
             <animation effect="slide" start="200,0" time="1000" delay="500">Visible</animation>
         </control>

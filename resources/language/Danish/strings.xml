@@ -18,7 +18,7 @@
     <string id="30102">Indstillinger</string>
     <string id="30103">Afslut</string>
 
-    <string id="30110">[B]Collection Trivia[/B]</string>
+    <string id="30110">[B]Din filmsamling i tal[/B]</string>
     <string id="30111">%d film</string><!-- %d is movie count -->
     <string id="30112">%d skuespillere</string><!-- %d is actor count -->
     <string id="30113">%d instruktører</string><!-- %d is director count -->

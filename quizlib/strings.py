@@ -32,6 +32,8 @@ M_DIRECTOR_COUNT = 30113
 M_STUDIO_COUNT = 30114
 M_HOURS_OF_ENTERTAINMENT = 30115
 
+M_TRANSLATED_BY = 39999
+
 def strings(id, replacements = None):
     string = xbmcaddon.Addon(id = 'script.moviequiz').getLocalizedString(id)
     if replacements is not None:

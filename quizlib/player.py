@@ -16,7 +16,7 @@ class TenSecondPlayer(xbmc.Player):
         self.bookmark = None
 
     def stop(self):
-        print "cancel"
+        xbmc.log("TenSecondPlayer.stop()")
         if self.tenSecondTimer is not None:
             self.tenSecondTimer.cancel()
         if self.isPlaying():
@@ -24,11 +24,10 @@ class TenSecondPlayer(xbmc.Player):
 
 
     def playWindowed(self, file, idFile):
-        print "!!!!!!!!!!!!! PlayWindowed"
+        xbmc.log("TenSecondPlayer.playWindowed()")
         if self.tenSecondTimer is not None:
             self.stop()
 
-        print "idFile " + str(idFile)
         # Get bookmark details, so we can restore after playback
         try:
             self.bookmark = self.database.fetchone("""
@@ -44,9 +43,9 @@ class TenSecondPlayer(xbmc.Player):
             xbmc.sleep(250) # keep sleeping to get onPlayBackStarted() event
             retires += 1
 
-        print "playWindowed end"
 
     def onTenSecondsPassed(self):
+        xbmc.log("TenSecondPlayer.onTenSecondsPassed()")
         self.stop()
 
         retries = 0
@@ -54,23 +53,22 @@ class TenSecondPlayer(xbmc.Player):
             xbmc.sleep(250) # keep sleeping to get onPlayBackStopped() event
             retries += 1
 
-        print "stopPlayback end"
 
     def onPlayBackStarted(self):
-        print "!!!!!!!!!!!!PlayBack Started"
+        xbmc.log("TenSecondPlayer.onPlayBackStarted()")
 
         totalTime = self.getTotalTime()
         # find start time, ignore first and last 10% of movie
         self.startTime = random.randint(int(totalTime * 0.1), int(totalTime * 0.8))
 
-        print "Playback from %d secs. to %d secs." % (self.startTime, self.startTime + 10)
+        xbmc.log("Playback from %d secs. to %d secs." % (self.startTime, self.startTime + 10))
         self.seekTime(self.startTime)
 
         self.tenSecondTimer = threading.Timer(10.0, self.onTenSecondsPassed)
         self.tenSecondTimer.start()
 
     def onPlayBackStopped(self):
-        print "!!!!!!!!!!!!PlayBack Stopped"
+        xbmc.log("TenSecondPlayer.onPlayBackStopped()")
         if self.tenSecondTimer is not None:
             self.tenSecondTimer.cancel()
 
