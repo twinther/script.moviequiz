@@ -5,6 +5,12 @@
     <string id="30001">Richtig:</string>
     <string id="30002">Falsch:</string>
 
+    <string id="30003">Game Over</string>
+    <string id="30004">Du hast %d von %d</string><!-- 1st %d is score, 2nd %d is total question -->
+
+    <string id="30005">Specials</string>
+    <string id="30006">Staffel %d</string>
+    <string id="30007">%B %e, %Y</string><!-- episode first aired date format: http://docs.python.org/library/time.html#time.strftime -->
 	<!-- Menu -->
     <string id="30100">Movie Quiz spielen</string>
     <string id="30101">TV Quiz spielen</string>
@@ -26,8 +32,18 @@
     <string id="30404">Wer führte Regie bei [B]%s[/B]?</string><!-- %s is movie title -->
     <string id="30405">Welches Studio veröffentlichte [B]%s[/B]?</string><!-- %s is movie title -->
     <string id="30406">Welcher Schauspieler ist das?</string>
+	<string id="30407">Wer spielt [B]%s[/B] in [B]%s[/B]?</string><!-- 1st %s is role, 2nd %s is movie title -->
 
-    <!-- Settings strings -->
+	<!-- Movie Questions -->
+    <string id="30450">Welche TV-Serie ist das?</string>
+    <string id="30451">Welche Staffel von [B]%s[/B] ist das?</string><!-- %s is tvshow title -->
+    <string id="30452">Welche Episode von [B]%s[/B] ist das?</string><!-- %s is tvshow title -->
+    <string id="30453">Wann wurde [B]%s[/B] von [B]%s[/B] zuerst ausgestrahlt?</string><!-- 1st %s is episode, 2nd %s is tvshow title -->
+    <string id="30454">Wann wurde [B]%s[/B] zuerst ausgestrahlt?</string><!-- %s is tvshow title -->
+    <string id="30455">Wer spielt [B]%s[/B] in [B]%s[/B]?</string><!-- 1st %s is role, 2nd %s is tvshow title -->
+
+
+  <!-- Settings strings -->
     <string id="30500">Allgemein</string>
     <string id="30510">Limitiere Anzahl der Frage </string>
     <string id="30511">Fragen Limit</string>
