@@ -1,5 +1,4 @@
 import threading
-import os
 
 import xbmc
 import xbmcgui
@@ -83,6 +82,7 @@ class MenuGui(xbmcgui.WindowXML):
         elif controlId == 4003:
             self.close()
 
+    #noinspection PyUnusedLocal
     def onFocus(self, controlId):
         pass
 
@@ -96,18 +96,15 @@ class QuizGui(xbmcgui.WindowXML):
     def onInit(self):
         print "onInit"
 
-        # todo       if self.type == question.TYPE_TV:
-        #            path = os.path.join(self.addon.getAddonInfo('path'), 'resources', 'skins', 'Default', 'media', 'quiz-background-tvshows.jpg')
-        #            print path
-        #            self.getControl(4500).setImage(path)
+        try :
+            xbmcgui.lock()
+            if self.type == question.TYPE_TV:
+                self.getControl(4500).setVisible(False)
+        finally:
+            xbmcgui.unlock()
 
         self.database = db.Database()
         self.player = player.TenSecondPlayer(database=self.database)
-
-        self.hide(C_MAIN_VIDEO_VISIBILITY)
-        self.hide(C_MAIN_PHOTO_VISIBILITY)
-        self.hide(C_MAIN_CORRECT_VISIBILITY)
-        self.hide(C_MAIN_INCORRECT_VISIBILITY)
 
         self._setup_game()
 
@@ -147,6 +144,7 @@ class QuizGui(xbmcgui.WindowXML):
             self._setup_question()
 
 
+    #noinspection PyUnusedLocal
     def onFocus(self, controlId):
         self._update_thumb()
 
