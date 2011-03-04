@@ -34,7 +34,8 @@ class TenSecondPlayer(xbmc.Player):
         xbmc.log(">> TenSecondPlayer.playWindowed()")
         self.startingPlayback = True
         if self.tenSecondTimer is not None:
-            self.stop()
+            #self.stop()
+            self.tenSecondTimer.cancel()
 
         # Get bookmark details, so we can restore after playback
         try:

@@ -18,12 +18,18 @@
     <string id="30102">Settings</string>
     <string id="30103">Exit</string>
 
-    <string id="30110">[B]Collection Trivia[/B]</string>
+    <string id="30110">[B]Movie collection trivia[/B]</string>
     <string id="30111">%d movies</string><!-- %d is movie count -->
     <string id="30112">%d actors</string><!-- %d is actor count -->
     <string id="30113">%d directors</string><!-- %d is director count -->
     <string id="30114">%d studios</string><!-- %d is studio count -->
     <string id="30115">%d hours of entertainment</string>
+
+    <string id="30120">[B]TV shows collection trivia[/B]</string>
+    <string id="30121">%d TV shows</string><!-- %d is TV show count -->
+    <string id="30122">%d seasons</string><!-- %d is season count -->
+    <string id="30123">%d episodes</string><!-- %d is episodes count -->
+
 
     <!-- Movie Questions -->
     <string id="30400">What movie is this?</string>
@@ -35,7 +41,7 @@
     <string id="30406">What actor is this?</string>
     <string id="30407">Who plays [B]%s[/B] in [B]%s[/B]?</string><!-- 1st %s is role, 2nd %s is movie title -->
 
-    <!-- Movie Questions -->
+    <!-- TV show Questions -->
     <string id="30450">What TV show is this?</string>
     <string id="30451">What season of [B]%s[/B] is this?</string><!-- %s is tvshow title -->
     <string id="30452">What episode of [B]%s[/B] is this?</string><!-- %s is tvshow title -->
@@ -44,15 +50,19 @@
     <string id="30455">Who plays [B]%s[/B] in [B]%s[/B]?</string><!-- 1st %s is role, 2nd %s is tvshow title -->
 
 
-
     <!-- Settings strings -->
     <string id="30500">General</string>
+    <string id="30501">Movies</string>
+    <string id="30502">TV Shows</string>
+
     <string id="30510">Limit number of questions</string>
     <string id="30511">Question limit</string>
-    <string id="30512">Limit movie selection based on MPAA Rating</string>
-	<string id="30513">Max. MPAA Rating</string>
+    <string id="30512">Limit movie selection based on MPAA rating</string>
+	<string id="30513">Max. MPAA rating</string>
     <string id="30514">Display the correct answer, when you answer incorrectly</string>
     <string id="30515">Only use watched movies in the questions</string>
-    
+    <string id="30516">Limit TV show selection based on Content rating</string>
+	<string id="30517">Max. Content rating</string>
+
     <string id="39999">Translated by Tommy Winther</string>
 </strings>

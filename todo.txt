@@ -1,0 +1,19 @@
+TODOs and suggestions in no particular order
+
+- Add support for non-interactive execution to run from Cinema Experience
+- Add support for MySQL database
+- DVD ISO's plays menu instead of movie
+- Add support for online movie quote questions
+- Add support for global statistics, eg. "lifetime" correct/incorrect answers and such
+
+Movie Question suggestions:
+* What´s the newest/oldest movie? (choose movies from newer/past year -+1)
+* Which actor was also in movie xy besides actor z?
+* How many movies do you have for year xy?
+- Which movie of this 4 is the longest (runtime)?
+- Which movie of this 4 is the shortest (runtime)?
+- Which of this Movie is not a <genre>-Movie? (very easy)
+- Which Movie is not directed by <director>?
+
+TV Question:
+- When was season first aired?

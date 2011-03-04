@@ -29,31 +29,46 @@ class MenuGui(xbmcgui.WindowXML):
     def onInit(self):
         print "MenuGui.onInit"
 
+        trivia = [strings(M_TRANSLATED_BY)]
+
         database = db.Database()
 
         row = database.fetchone("SELECT COUNT(*) AS cnt FROM sqlite_master WHERE name='movieview'")
         if not int(row['cnt']):
             self.getControl(4000).setEnabled(False)
+        else:
+            movies = database.fetchone('SELECT COUNT(*) AS count, (SUM(c11) / 60) AS total_hours FROM movie')
+            actors = database.fetchone('SELECT COUNT(DISTINCT idActor) AS count FROM actorlinkmovie')
+            directors = database.fetchone('SELECT COUNT(DISTINCT idDirector) AS count FROM directorlinkmovie')
+            studios = database.fetchone('SELECT COUNT(idStudio) AS count FROM studio')
+
+            trivia += [
+                    strings(M_MOVIE_COLLECTION_TRIVIA),
+                    strings(M_MOVIE_COUNT) % movies['count'],
+                    strings(M_ACTOR_COUNT) % actors['count'],
+                    strings(M_DIRECTOR_COUNT) % directors['count'],
+                    strings(M_STUDIO_COUNT) % studios['count'],
+                    strings(M_HOURS_OF_ENTERTAINMENT) % movies['total_hours']
+            ]
+
 
         row = database.fetchone("SELECT COUNT(*) AS cnt FROM sqlite_master WHERE name='tvshowview'")
         if not int(row['cnt']):
             self.getControl(4001).setEnabled(False)
+        else:
+            shows = database.fetchone('SELECT COUNT(*) AS count FROM tvshow')
+            seasons = database.fetchone('SELECT SUM(season_count) AS count FROM (SELECT idShow, COUNT(DISTINCT c12) AS season_count from episodeview GROUP BY idShow)')
+            episodes = databas.fetchone('SELECT COUNT(*) AS count FROM episode')
 
-        movies = database.fetchone('SELECT COUNT(*) AS count, (SUM(c11) / 60) AS total_hours FROM movie')
-        actors = database.fetchone('SELECT COUNT(DISTINCT idActor) AS count FROM actorlinkmovie')
-        directors = database.fetchone('SELECT COUNT(DISTINCT idDirector) AS count FROM directorlinkmovie')
-        studios = database.fetchone('SELECT COUNT(idStudio) AS count FROM studio')
+            trivia += [
+                strings(M_TVSHOW_COLLECTION_TRIVIA),
+                strings(M_TVSHOW_COUNT) % shows['count'],
+                strings(M_SEASON_COUNT) % seasons['count'],
+                strings(M_EPISODE_COUNT) % episodes['count']
+            ]
+
         del database
 
-        trivia = [
-                strings(M_TRANSLATED_BY),
-                strings(M_COLLECTION_TRIVIA),
-                strings(M_MOVIE_COUNT) % movies['count'],
-                strings(M_ACTOR_COUNT) % actors['count'],
-                strings(M_DIRECTOR_COUNT) % directors['count'],
-                strings(M_STUDIO_COUNT) % studios['count'],
-                strings(M_HOURS_OF_ENTERTAINMENT) % movies['total_hours']
-        ]
 
 
         label = '  *  '.join(trivia)
@@ -178,8 +193,10 @@ class QuizGui(xbmcgui.WindowXML):
             return
 
         maxRating = None
-        if self.addon.getSetting('rating.limit.enabled') == 'true':
-            maxRating = self.addon.getSetting('rating.limit')
+        if self.type == question.TYPE_MOVIE and self.addon.getSetting('movie.rating.limit.enabled') == 'true':
+            maxRating = self.addon.getSetting('movie.rating.limit')
+        elif self.type == question.TYPE_TV and self.addon.getSetting('tvshow.rating.limit.enabled') == 'true':
+            maxRating = self.addon.getSetting('tvshow.rating.limit')
         onlyWatchedMovies = self.addon.getSetting('only.watched.movies') == 'true'
 
         self.question = question.getRandomQuestion(self.type, self.database, maxRating, onlyWatchedMovies)
@@ -205,7 +222,8 @@ class QuizGui(xbmcgui.WindowXML):
             self.show(C_MAIN_VIDEO_VISIBILITY)
             self.hide(C_MAIN_PHOTO_VISIBILITY)
             xbmc.sleep(1500) # give skin animation time to execute
-            self.player.playWindowed(correctAnswer.videoFile, correctAnswer.idFile)
+            #self.player.playWindowed(correctAnswer.videoFile, correctAnswer.idFile)
+            self.player.playWindowed('/home/tommy/panda_s01e02.mp4', -1)
 
         elif correctAnswer.photoFile is not None:
             self.getControl(4400).setImage(correctAnswer.photoFile)
@@ -271,6 +289,12 @@ class ClapperDialog(xbmcgui.WindowXMLDialog):
         self.getControl(4000).setLabel(self.line1)
         self.getControl(4001).setLabel(self.line2)
         self.getControl(4002).setLabel(self.line3)
+
+        threading.Timer(5, self.delayedClose).start()
+
+    def delayedClose(self):
+        print "ClapperDialog.delayedClose"
+        self.close()
 
     def onAction(self, action):
         print "ClapperDialog.onAction " + str(action)

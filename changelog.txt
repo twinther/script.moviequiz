@@ -1,30 +1,18 @@
-TODO
-- Add support for MySQL database
-- DVD ISO's plays menu instead of movie
-
-Movie Question suggestions:
-* What´s the newest/oldest movie? (choose movies from newer/past year -+1)
-* Which actor was also in movie xy besides actor z?
-* How many movies do you have for year xy?
-- Which movie of this 4 is the longest (runtime)?
-- Which movie of this 4 is the shortest (runtime)?
-- Which of this Movie is not a <genre>-Movie? (very easy)
-- Which Movie is not directed by <director>?
-- Who played/voiced <role> in <movie>?
-
-TV Question:
-- When was season first aired?
-- Who played <role> in <tv show>?
-
-http://www.htbackdrops.com/v2/displayimage.php?album=14&pid=4213
-
-Walk of fame icon photos by http://www.flickr.com/photos/xurble/
+Version 0.2.0 - 2011-03-xx
+- Attempt to fix crash related to calling xbmc.Player.stop()
+- Finished up TV show question settings, limit by content rating
+- Improved menu gui
+  - Walk of Fame icon photos by http://www.flickr.com/photos/xurble/
+- Added TV shows backdrop from http://www.htbackdrops.com/v2/displayimage.php?album=14&pid=4213
 
 Version 0.1.3 - 2011-02-28
 - Added TV shows quiz and main menu
 - Option to only use watched movies in questions
 - Menu background image from http://upload.wikimedia.org/wikipedia/commons/archive/0/0f/20090626193204!Walk_of_fame.JPG
 - Lots of improvements in question logic
+- New Question types:
+  - Who played <role> in <tv show>?
+  - Who played <role> in <movie>?
 
 Version 0.1.2 - 2011-02-18
 - Attempt to reset XBMC video bookmark after playback

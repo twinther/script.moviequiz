@@ -1,4 +1,3 @@
-import os
 import xbmcaddon
 
 from quizlib.gui import MenuGui

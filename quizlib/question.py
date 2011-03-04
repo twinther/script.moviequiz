@@ -461,7 +461,7 @@ class WhoPlayedRoleInMovieQuestion(MovieQuestion):
 #
 
 class TVQuestion(Question):
-    RATINGS = ['TV-MA', 'TV-14', 'TV-PG', 'TV-G', 'TV-Y7-FV', 'TV-Y7', 'TV-Y']
+    CONTENT_RATINGS = ['TV-MA', 'TV-14', 'TV-PG', 'TV-G', 'TV-Y7-FV', 'TV-Y7', 'TV-Y']
     
     def __init__(self, database, maxRating, onlyWatchedMovies):
         Question.__init__(self, database, maxRating, onlyWatchedMovies)
@@ -476,10 +476,10 @@ class TVQuestion(Question):
         if self.maxRating is None:
             return ''
 
-        idx = self.RATINGS.index(self.maxRating)
-        ratings = self.RATINGS[idx:]
+        idx = self.CONTENT_RATINGS.index(self.maxRating)
+        ratings = self.CONTENT_RATINGS[idx:]
 
-        return ' AND TRIM(c12) IN (\'%s\')' % '\',\''.join(ratings)
+        return ' AND TRIM(tv.c13) IN (\'%s\')' % '\',\''.join(ratings)
 
     def _get_season_title(self, season):
         if not int(season):
@@ -503,9 +503,9 @@ class WhatTVShowIsThisQuestion(TVQuestion):
             SELECT ev.idFile, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFilename, tv.strPath AS showPath
             FROM episodeview ev, tvshowview tv
             WHERE ev.idShow=tv.idShow
-            %s
+            %s %s
             ORDER BY random() LIMIT 1
-            """ % self._get_watched_episodes_clause())
+            """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
         a = Answer(True, row['idShow'], row['title'], row['idFile'])
         a.setVideoFile(row['strPath'], row['strFilename'])
         a.setCoverFile(thumb.getCachedTVShowThumb(row['showPath']))
@@ -540,9 +540,9 @@ class WhatSeasonIsThisQuestion(TVQuestion):
                 (SELECT COUNT(DISTINCT c12) FROM episodeview WHERE idShow=ev.idShow) AS seasons
             FROM episodeview ev, tvshowview tv
             WHERE ev.idShow=tv.idShow AND seasons > 2
-            %s
+            %s %s
             ORDER BY random() LIMIT 1
-            """ % self._get_watched_episodes_clause())
+            """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
         a = Answer(True, row['season'], self._get_season_title(row['season']), row['idFile'])
         a.setVideoFile(row['strPath'], row['strFilename'])
         a.setCoverFile(thumb.getCachedTVShowThumb(row['strPath']))
@@ -577,9 +577,9 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
                 (SELECT COUNT(DISTINCT c13) FROM episodeview WHERE idShow=ev.idShow) AS episodes
             FROM episodeview ev, tvshowview tv
             WHERE ev.idShow=tv.idShow AND episodes > 2
-            %s
+            %s %s
             ORDER BY random() LIMIT 1
-            """ % self._get_watched_episodes_clause())
+            """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
         answerText = self._get_episode_title(row['season'], row['episode'], row['episodeTitle'])
         a = Answer(True, row['episode'], answerText, row['idFile'])
         a.setVideoFile(row['strPath'], row['strFilename'])
@@ -617,9 +617,9 @@ class WhenWasEpisodeFirstAiredQuestion(TVQuestion):
                 (SELECT COUNT(DISTINCT c13) FROM episodeview WHERE idShow=ev.idShow) AS episodes
             FROM episodeview ev, tvshowview tv
             WHERE ev.idShow=tv.idShow AND episodes > 2 AND firstAired != ''
-            %s
+            %s %s
             ORDER BY random() LIMIT 1
-            """ % self._get_watched_episodes_clause())
+            """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
         a = Answer(True, row['episode'], self._format_date(row['firstAired']), row['idFile'])
         a.setVideoFile(row['strPath'], row['strFilename'], True)
         self.answers.append(a)
@@ -656,9 +656,9 @@ class WhenWasTVShowFirstAiredQuestion(TVQuestion):
             SELECT ev.idFile, ev.c12 AS season, ev.c13 AS episode, ev.c05 AS firstAired, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFilename
             FROM episodeview ev, tvshowview tv
             WHERE ev.idShow=tv.idShow AND episode = 1 AND episode != 0 AND firstAired != ''
-            %s
+            %s %s
             ORDER BY random() LIMIT 1
-            """ % self._get_watched_episodes_clause())
+            """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
 
         row['year'] = time.strptime(row['firstAired'], '%Y-%m-%d').tm_year
 
