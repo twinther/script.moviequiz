@@ -28,9 +28,9 @@
             <animation effect="fade" start="100" end="50" time="400" condition="!Control.HasFocus(4000)">Conditional</animation>
         </control>
         <control type="button" id="4000">
-            <posx>334</posx>
+            <posx>294</posx>
             <posy>460</posy>
-            <width>256</width>
+            <width>336</width>
             <height>40</height>
             <label>$ADDON[script.moviequiz 30100]</label>
             <align>center</align>
@@ -51,9 +51,9 @@
             <animation effect="fade" start="100" end="50" time="400" condition="!Control.HasFocus(4001)">Conditional</animation>
         </control>
         <control type="button" id="4001">
-            <posx>690</posx>
+            <posx>650</posx>
             <posy>460</posy>
-            <width>256</width>
+            <width>336</width>
             <height>40</height>
             <label>$ADDON[script.moviequiz 30101]</label>
             <align>center</align>
