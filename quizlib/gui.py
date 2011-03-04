@@ -222,8 +222,7 @@ class QuizGui(xbmcgui.WindowXML):
             self.show(C_MAIN_VIDEO_VISIBILITY)
             self.hide(C_MAIN_PHOTO_VISIBILITY)
             xbmc.sleep(1500) # give skin animation time to execute
-            #self.player.playWindowed(correctAnswer.videoFile, correctAnswer.idFile)
-            self.player.playWindowed('/home/tommy/panda_s01e02.mp4', -1)
+            self.player.playWindowed(correctAnswer.videoFile, correctAnswer.idFile)
 
         elif correctAnswer.photoFile is not None:
             self.getControl(4400).setImage(correctAnswer.photoFile)
