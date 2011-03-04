@@ -58,7 +58,7 @@ class MenuGui(xbmcgui.WindowXML):
         else:
             shows = database.fetchone('SELECT COUNT(*) AS count FROM tvshow')
             seasons = database.fetchone('SELECT SUM(season_count) AS count FROM (SELECT idShow, COUNT(DISTINCT c12) AS season_count from episodeview GROUP BY idShow)')
-            episodes = databas.fetchone('SELECT COUNT(*) AS count FROM episode')
+            episodes = database.fetchone('SELECT COUNT(*) AS count FROM episode')
 
             trivia += [
                 strings(M_TVSHOW_COLLECTION_TRIVIA),
