@@ -1,26 +1,28 @@
-Version 0.2.0 - 2011-03-xx
+[B]Version 0.2.0 - 2011-03-xx[/B]
 - Attempt to fix crash related to calling xbmc.Player.stop()
 - Finished up TV show question settings, limit by content rating
 - Improved menu gui
   - Walk of Fame icon photos by http://www.flickr.com/photos/xurble/
-- Added TV shows backdrop from http://www.htbackdrops.com/v2/displayimage.php?album=14&pid=4213
+- Added TV shows backdrop from
+    http://www.htbackdrops.com/v2/displayimage.php?album=14&pid=4213
 
-Version 0.1.3 - 2011-02-28
+[B]Version 0.1.3 - 2011-02-28[/B]
 - Added TV shows quiz and main menu
 - Option to only use watched movies in questions
-- Menu background image from http://upload.wikimedia.org/wikipedia/commons/archive/0/0f/20090626193204!Walk_of_fame.JPG
+- Menu background image from
+    http://upload.wikimedia.org/wikipedia/commons/archive/0/0f/20090626193204!Walk_of_fame.JPG
 - Lots of improvements in question logic
 - New Question types:
   - Who played <role> in <tv show>?
   - Who played <role> in <movie>?
 
-Version 0.1.2 - 2011-02-18
+[B]Version 0.1.2 - 2011-02-18[/B]
 - Attempt to reset XBMC video bookmark after playback
 - Added settings to show/not show the correct answer, when an incorrect is chosen
 - Better random question logic in case a question type doesn't contain enough data
 - Added custom dialog for game over screen, etc.
 
-Version 0.1.1 - 2011-02-07
+[B]Version 0.1.1 - 2011-02-07[/B]
 - Initial i18n support
   - French by solexalex
   - German by mad-max
@@ -30,21 +32,21 @@ Version 0.1.1 - 2011-02-07
   - What studio released this movie?
   - What actor is this?
 
-Version 0.1.0 - 2011-01-29
+[B]Version 0.1.0 - 2011-01-29[/B]
 - First public version
 
-Version 0.0.3 - 2011-01-28
+[B]Version 0.0.3 - 2011-01-28[/B]
 - Animations and better graphics
 - New question type
   - What tagline belongs to this movie?
 
-Version 0.0.2 - 2011-01-23
+[B]Version 0.0.2 - 2011-01-23[/B]
 - Multiple question types
   - What movie is this?
   - What movie is actor not in?
   - What year was movie released?
 
-Version 0.0.1 - 2011-01-22
+[B]Version 0.0.1 - 2011-01-22[/B]
 - Proof of concept
 - Backdrop image from http://www.htbackdrops.com/v2/displayimage.php?album=14&pid=7082
 
