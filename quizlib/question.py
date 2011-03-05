@@ -4,6 +4,7 @@ import datetime
 import thumb
 import db
 import time
+import re
 
 from strings import *
 
@@ -431,8 +432,8 @@ class WhoPlayedRoleInMovieQuestion(MovieQuestion):
             ORDER BY random() LIMIT 1
             """)
         role = row['strRole']
-        if role.find('|'):
-            roles = role.split('|')
+        if re.search('[|/]', role):
+            roles = re.split('[|/]', role)
             # find random role
             role = roles[random.randint(0, len(roles)-1)]
 
@@ -703,10 +704,12 @@ class WhoPlayedRoleInTVShowQuestion(TVQuestion):
             ORDER BY random() LIMIT 1
             """)
         role = row['strRole']
-        if role.find('|'):
-            roles = role.split('|')
+        if re.search('[|/]', role):
+            roles = re.split('[|/]', role)
             # find random role
             role = roles[random.randint(0, len(roles)-1)]
+
+
 
         a = Answer(True, row['idActor'], row['strActor'])
         a.setPhotoFile(thumb.getCachedTVShowThumb(row['strPath']))
