@@ -1,14 +1,20 @@
 import random
 import threading
 import db
-
-__author__ = 'tommy'
-
 import xbmc
 
 class TenSecondPlayer(xbmc.Player):
+    """TenSecondPlayer is a subclass of xbmc.Player that stops playback after about ten seconds."""
+
     def __init__(self, database = None):
+        """
+        Creates and instance of TenSecondPlayer.
+        
+        Keyword arguments;
+        database - db.Database instance for loading and saving XBMC bookmark information
+        """
         xbmc.Player.__init__(self)
+        xbmc.log(">> TenSecondPlayer.__init__()")
         self.tenSecondTimer = None
         self.startTime = None
 
@@ -17,6 +23,10 @@ class TenSecondPlayer(xbmc.Player):
         self.startingPlayback = False
 
     def stop(self):
+        """
+        Cancels the Timer in case it's active and stars a new Timer for a delayed stop.
+        This method doesn't actually stop playback, this is handled by delayedStop().
+        """
         xbmc.log(">> TenSecondPlayer.stop()")
         # call xbmc.Player.stop() in a seperate thread to attempt to avoid xbmc lockups/crashes
         threading.Timer(0.5, self.delayedStop).start()
@@ -24,6 +34,11 @@ class TenSecondPlayer(xbmc.Player):
             self.tenSecondTimer.cancel()
     
     def delayedStop(self):
+        """
+        Stops playback by calling xbmc.Player.stop()
+
+        This is done in a seperate thread to attempt to avoid xbmc lockups/crashes
+        """
         xbmc.log(">> TenSecondPlayer.delayedStop()")
         if not self.startingPlayback and self.isPlaying():
             xbmc.Player.stop(self)
@@ -31,6 +46,12 @@ class TenSecondPlayer(xbmc.Player):
 
 
     def playWindowed(self, file, idFile):
+        """
+        Starts playback bby calling xbmc.Player.play(windowed = True).
+
+        It also loads bookmark information and keeps track on the Timer
+        for stopping playback.
+        """
         xbmc.log(">> TenSecondPlayer.playWindowed()")
         self.startingPlayback = True
         if self.tenSecondTimer is not None:
@@ -55,6 +76,11 @@ class TenSecondPlayer(xbmc.Player):
 
 
     def onTenSecondsPassed(self):
+        """
+        Invoked when the player has played for about ten seconds.
+        
+        The playback is stopped by calling xbmc.Player.stop()
+        """
         xbmc.log(">> TenSecondPlayer.onTenSecondsPassed()")
         if self.startingPlayback:
             return
