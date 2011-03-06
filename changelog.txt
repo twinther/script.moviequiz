@@ -1,4 +1,4 @@
-[B]Version 0.2.0 - 2011-03-xx[/B]
+[B]Version 0.2.0 - 2011-03-06[/B]
 - Attempt to fix crash related to calling xbmc.Player.stop()
 - Finished up TV show question settings, limit by content rating
 - Improved menu gui
