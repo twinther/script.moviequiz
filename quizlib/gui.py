@@ -1,5 +1,5 @@
 import threading
-
+import os
 import xbmc
 import xbmcgui
 
@@ -117,6 +117,7 @@ class QuizGui(xbmcgui.WindowXML):
     def __init__(self, xmlFilename, scriptPath, addon, type):
         xbmcgui.WindowXML.__init__(self, xmlFilename, scriptPath)
         self.addon = addon
+
         self.type = type
 
     def onInit(self):
@@ -263,9 +264,13 @@ class QuizGui(xbmcgui.WindowXML):
         if controlId >= self.C_MAIN_FIRST_ANSWER or controlId <= self.C_MAIN_LAST_ANSWER:
             answer = self.question.getAnswer(controlId - self.C_MAIN_FIRST_ANSWER)
             coverImage = self.getControl(self.C_MAIN_COVER_IMAGE)
-            if answer is not None and answer.coverFile is not None:
+            if answer is not None and answer.coverFile is not None and os.path.exists(answer.coverFile):
                 coverImage.setVisible(True)
                 coverImage.setImage(answer.coverFile)
+            elif answer is not None and answer.coverFile is not None :
+                path = self.addon.getAddonInfo('path')
+                coverImage.setVisible(True)
+                coverImage.setImage(os.path.join(path, 'resources', 'skins', 'Default', 'media', 'quiz-no-photo.png'))
             else:
                 coverImage.setVisible(False)
 
