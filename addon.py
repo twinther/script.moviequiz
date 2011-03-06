@@ -13,9 +13,10 @@ def runStandalone(addon, path):
     del w
 
 def runCinemaExperience(addon, path, type, automatic, maxRating, genre, questionLimit):
-    xbmc.log("Starting Movie Quiz in Cinema Experience mode")
+    xbmc.log("Starting Movie Quiz in Cinema Experience mode with params: type=%s, automatic=%s, maxRating=%s, genre=%s, questionLimit=%d"
+        % (type, automatic, maxRating, genre, questionLimit))
 
-    w = QuizGui('script-moviequiz-main.xml', path, addon=addon, type=type)
+    w = QuizGui('script-moviequiz-main.xml', path, addon=addon, interactive=not automatic, type=type, questionLimit=questionLimit, maxRating=maxRating)
     w.doModal()
     del w
 
@@ -24,7 +25,7 @@ if __name__ == '__main__':
     addon = xbmcaddon.Addon(id = 'script.moviequiz')
     path = addon.getAddonInfo('path')
 
-    sys.argv = ['movies;automatic;;comedy;5']
+    #sys.argv = ['movies;automatic;;comedy;5']
 
     if len(sys.argv) > 0 and sys.argv[0].strip() != '':
         args = sys.argv[0].split(';')
@@ -38,6 +39,8 @@ if __name__ == '__main__':
         else:
             automatic = False
         maxRating = args[2]
+        if not maxRating.strip():
+            maxRating = None
         genre = args[3]
         questionLimit = int(args[4])
 

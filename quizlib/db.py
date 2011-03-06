@@ -6,7 +6,7 @@ __author__ = 'twinther'
 class Database(object):
     def __init__(self):
         self.db_file = xbmc.translatePath('special://profile/Database/MyVideos34.db')
-        self.conn = sqlite3.connect(self.db_file, isolation_level = None)
+        self.conn = sqlite3.connect(self.db_file, isolation_level = None, check_same_thread = False)
         self.conn.row_factory = self._sqlite_dict_factory
         xbmc.log("Database opened")
 
