@@ -64,8 +64,6 @@ class MenuGui(xbmcgui.WindowXML):
 
         del database
 
-
-
         label = '  *  '.join(trivia)
         self.getControl(self.C_MENU_COLLECTION_TRIVIA).setLabel(label)
 
@@ -117,8 +115,12 @@ class QuizGui(xbmcgui.WindowXML):
     def __init__(self, xmlFilename, scriptPath, addon, type):
         xbmcgui.WindowXML.__init__(self, xmlFilename, scriptPath)
         self.addon = addon
-
         self.type = type
+
+        self.database = db.Database()
+        self.player = player.TenSecondPlayer(database=self.database)
+        self.question = None
+        self.score = {'correct': 0, 'wrong': 0}
 
     def onInit(self):
         print "onInit"
@@ -129,9 +131,6 @@ class QuizGui(xbmcgui.WindowXML):
                 self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setVisible(False)
         finally:
             xbmcgui.unlock()
-
-        self.database = db.Database()
-        self.player = player.TenSecondPlayer(database=self.database)
 
         self._setup_game()
 
@@ -170,7 +169,6 @@ class QuizGui(xbmcgui.WindowXML):
 
             self._setup_question()
 
-
     #noinspection PyUnusedLocal
     def onFocus(self, controlId):
         self._update_thumb()
@@ -181,7 +179,6 @@ class QuizGui(xbmcgui.WindowXML):
             maxQuestions = int(self.addon.getSetting('question.limit'))
 
         self.questionLimit = {'count': 0, 'max': maxQuestions}
-        self.score = {'correct': 0, 'wrong': 0}
 
         self._setup_question()
 
@@ -229,19 +226,20 @@ class QuizGui(xbmcgui.WindowXML):
         self._update_stats()
 
         correctAnswer = self.question.getCorrectAnswer()
-        print "videoFile = %s" % correctAnswer.videoFile
-        print "photoFile = %s" % correctAnswer.photoFile
-        if correctAnswer.videoFile is not None:
+        if self.question.getDisplay() == question.DISPLAY_VIDEO:
             self.show(self.C_MAIN_VIDEO_VISIBILITY)
             self.hide(self.C_MAIN_PHOTO_VISIBILITY)
             xbmc.sleep(1500) # give skin animation time to execute
-            self.player.playWindowed(correctAnswer.videoFile, correctAnswer.idFile)
+            self.player.playWindowed(self.question.getVideoFile(), correctAnswer.idFile)
 
-        elif correctAnswer.photoFile is not None:
-            self.getControl(self.C_MAIN_PHOTO).setImage(correctAnswer.photoFile)
+        elif self.question.getDisplay() == question.DISPLAY_PHOTO:
+            self.getControl(self.C_MAIN_PHOTO).setImage(self.question.getPhotoFile())
 
             self.hide(self.C_MAIN_VIDEO_VISIBILITY)
             self.show(self.C_MAIN_PHOTO_VISIBILITY)
+
+        elif self.question.getDisplay() == question.DISPLAY_QUOTE:
+            pass
 
 
     def _update_stats(self):
@@ -257,7 +255,7 @@ class QuizGui(xbmcgui.WindowXML):
 
 
     def _update_thumb(self):
-        if not hasattr(self, 'question'):
+        if self.question is None:
             return # not initialized yet
 
         controlId = self.getFocusId()
