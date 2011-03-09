@@ -13,7 +13,13 @@ def getCachedThumb(file):
 def getCachedActorThumb(name):
     return getCachedThumb('actor' + name)
 
-def getCachedSeasonThumb(path, label): # todo figure out what label is
+def getCachedSeasonThumb(path, label):
+    """
+    Keyword arguments:
+    label - the localized string representation of the season.
+            for English this can be Specials, Season 1, Season 10, etc
+
+    """
     return getCachedThumb('season' + path + label)
 
 def getCachedTVShowThumb(path):
