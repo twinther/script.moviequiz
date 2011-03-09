@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <window id="5000">
     <allowoverlay>no</allowoverlay>
-    <defaultcontrol always="false">4000</defaultcontrol>
+    <defaultcontrol always="false">4001</defaultcontrol>
     <coordinates>
         <system>1</system>
         <posx>0</posx>
@@ -19,15 +19,19 @@
             <texture>quiz-menu-background.png</texture>
         </control>
 
-        <control type="image">
+        <control type="button" id="4001">
+            <description>Movie Quiz</description>
             <posx>334</posx>
             <posy>200</posy>
             <width>256</width>
             <height>256</height>
-            <texture>quiz-button-movie.png</texture>
-            <animation effect="fade" start="100" end="50" time="400" condition="!Control.HasFocus(4000)">Conditional</animation>
+            <texturefocus>quiz-button-movie.png</texturefocus>
+            <texturenofocus>quiz-button-movie.png</texturenofocus>
+            <onleft>4000</onleft>
+            <onright>4002</onright>
+            <animation effect="fade" start="100" end="50" time="400" condition="!Control.HasFocus(4001)">Conditional</animation>
         </control>
-        <control type="button" id="4000">
+        <control type="label">
             <posx>294</posx>
             <posy>460</posy>
             <width>336</width>
@@ -35,22 +39,22 @@
             <label>$ADDON[script.moviequiz 30100]</label>
             <align>center</align>
             <textcolor>ffffffff</textcolor>
-            <texturefocus/>
-            <texturenofocus/>
             <font>font30</font>
-            <onleft>4002</onleft>
-            <onright>4001</onright>
         </control>
 
-        <control type="image">
+        <control type="button" id="4002">
+            <description>TV Show Quiz</description>
             <posx>690</posx>
             <posy>200</posy>
             <width>256</width>
             <height>256</height>
-            <texture>quiz-button-tvshows.png</texture>
-            <animation effect="fade" start="100" end="50" time="400" condition="!Control.HasFocus(4001)">Conditional</animation>
+            <texturefocus>quiz-button-tvshows.png</texturefocus>
+            <texturenofocus>quiz-button-tvshows.png</texturenofocus>
+            <onleft>4001</onleft>
+            <onright>4003</onright>
+            <animation effect="fade" start="100" end="50" time="400" condition="!Control.HasFocus(4002)">Conditional</animation>
         </control>
-        <control type="button" id="4001">
+        <control type="label">
             <posx>650</posx>
             <posy>460</posy>
             <width>336</width>
@@ -58,22 +62,22 @@
             <label>$ADDON[script.moviequiz 30101]</label>
             <align>center</align>
             <textcolor>ffffffff</textcolor>
-            <texturefocus/>
-            <texturenofocus/>
             <font>font30</font>
-            <onleft>4000</onleft>
-            <onright>4003</onright>
         </control>
 
-        <control type="image">
+        <control type="button" id="4000">
+            <description>Settings</description>
             <posx>112</posx>
             <posy>490</posy>
             <width>96</width>
             <height>96</height>
-            <texture>quiz-button-radio.png</texture>
-            <animation effect="fade" start="100" end="50" time="400" condition="!Control.HasFocus(4002)">Conditional</animation>
+            <texturefocus>quiz-button-radio.png</texturefocus>
+            <texturenofocus>quiz-button-radio.png</texturenofocus>
+            <onleft>4003</onleft>
+            <onright>4001</onright>
+            <animation effect="fade" start="100" end="50" time="400" condition="!Control.HasFocus(4000)">Conditional</animation>
         </control>
-        <control type="button" id="4002">
+        <control type="button">
             <posx>34</posx>
             <posy>590</posy>
             <width>256</width>
@@ -81,22 +85,22 @@
             <label>$ADDON[script.moviequiz 30102]</label>
             <align>center</align>
             <textcolor>ffffffff</textcolor>
-            <texturefocus/>
-            <texturenofocus/>
             <font>font13</font>
-            <onleft>4003</onleft>
-            <onright>4000</onright>
         </control>
 
-        <control type="image">
+        <control type="button" id="4003">
+            <description>Exit</description>
             <posx>1072</posx>
             <posy>490</posy>
             <width>96</width>
             <height>96</height>
-            <texture>quiz-button-theater.png</texture>
+            <texturefocus>quiz-button-theater.png</texturefocus>
+            <texturenofocus>quiz-button-theater.png</texturenofocus>
+            <onleft>4002</onleft>
+            <onright>4000</onright>
             <animation effect="fade" start="100" end="50" time="400" condition="!Control.HasFocus(4003)">Conditional</animation>
         </control>
-        <control type="button" id="4003">
+        <control type="label">
             <posx>990</posx>
             <posy>590</posy>
             <width>256</width>
@@ -104,11 +108,7 @@
             <label>$ADDON[script.moviequiz 30103]</label>
             <align>center</align>
             <textcolor>ffffffff</textcolor>
-            <texturefocus/>
-            <texturenofocus/>
             <font>font13</font>
-            <onleft>4001</onleft>
-            <onright>4002</onright>
         </control>
 
         <control type="label" id="6000">
@@ -121,6 +121,29 @@
             <textcolor>ffffffff</textcolor>
             <scroll>true</scroll>
             <scrollsuffix>  *  </scrollsuffix>
+        </control>
+
+        <control type="image">
+            <posx>230</posx>
+            <posy>580</posy>
+            <width>820</width>
+            <height>80</height>
+            <texture>quiz-button-background.png</texture>
+        </control>
+        <control type="label">
+            <description>note about lockup</description>
+            <posx>230</posx>
+            <posy>580</posy>
+            <width>820</width>
+            <height>80</height>
+            <font>font13</font>
+            <align>center</align>
+            <textcolor>ffffffff</textcolor>
+            <wrapmultiline>true</wrapmultiline>
+            <label>[B]Warning! There is a known bug in XBMC 10.x that affects this addon
+and is causing XBMC to lockups and crash. It is fixed in XBMC 11.0.
+See http://trac.xbmc.org/ticket/11290 for details.[/B]</label>
+
         </control>
 
         <control type="image">
