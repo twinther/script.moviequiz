@@ -7,8 +7,8 @@
     <string id="30003">Game Over</string>
     <string id="30004">You scored %d of %d</string><!-- 1st %d is score, 2nd %d is total question -->
 
-    <string id="30005">Specials</string>
-    <string id="30006">Season %d</string>
+    <string id="30005">Specials</string><!-- same value as id="20381" in main xbmc strings.xml -->
+    <string id="30006">Season %i</string><!-- same value as id="20358" in main xbmc strings.xml -->
     <string id="30007">%B %e, %Y</string><!-- episode first aired date format: http://docs.python.org/library/time.html#time.strftime -->
 
 
@@ -40,6 +40,7 @@
     <string id="30405">What studio released [B]%s[/B]?</string><!-- %s is movie title -->
     <string id="30406">What actor is this?</string>
     <string id="30407">Who plays [B]%s[/B] in [B]%s[/B]?</string><!-- 1st %s is role, 2nd %s is movie title -->
+    <string id="30408">What movie is this quote from?</string>
 
     <!-- TV show Questions -->
     <string id="30450">What TV show is this?</string>

@@ -7,8 +7,8 @@
     <string id="30003">Spillet er slut</string>
     <string id="30004">Du fik %d af %d rigtige</string><!-- 1st %d is score, 2nd %d is total question -->
 
-    <string id="30005">Specials</string>
-    <string id="30006">Sæson %s</string>
+    <string id="30005">Specials</string><!-- same value as id="20381" in main xbmc strings.xml -->  
+    <string id="30006">Sæson %s</string><!-- same value as id="20358" in main xbmc strings.xml -->
     <string id="30007">%e. %B %Y</string><!-- episode first aired date format: http://docs.python.org/library/time.html#time.strftime -->
 
 
@@ -39,6 +39,7 @@
     <string id="30405">Hvilken studie udgav [B]%s[/B]?</string><!-- %s is movie title -->
     <string id="30406">Hvem er denne skuespiller?</string>
     <string id="30407">Hvem spiller [B]%s[/B] i [B]%s[/B]?</string><!-- 1st %s is role, 2nd %s is movie title -->
+    <string id="30408">Hvilken film er dette citat fra?</string>
 
     <!-- TV show Questions -->
     <string id="30450">Hvilken TV-serie er det?</string>
