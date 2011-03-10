@@ -11,12 +11,17 @@ class Database(object):
         xbmc.log("Database opened")
 
     def __del__(self):
+        self.close()
+
+    def close(self):
         self.conn.close()
         xbmc.log("Database closed")
 
     def fetchall(self, sql, parameters = tuple()):
         if not isinstance(parameters, tuple):
             parameters = [parameters]
+
+        xbmc.log("Executing fetchall SQL [%s]" % sql)
 
         c = self.conn.cursor()
         c.execute(sql, parameters)
@@ -30,6 +35,8 @@ class Database(object):
     def fetchone(self, sql, parameters = tuple()):
         if not isinstance(parameters, tuple):
             parameters = [parameters]
+
+        xbmc.log("Executing fetchone SQL [%s]" % sql)
 
         c = self.conn.cursor()
         c.execute(sql, parameters)
