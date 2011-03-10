@@ -2,16 +2,13 @@ import urllib2
 import re
 import os
 
-class Downloader(object):
+class QuotesDownloader(object):
     
     def __init__(self, cachePath):
         self.cachePath = cachePath
 
     def downloadQuotes(self, title, year):
-        return self._downloadQuotes(title, year)
-
-    def _downloadQuotes(self, title, year):
-        return None # implemented in subclasses
+        return None
 
     def downloadAndCacheUrl(self, url, cacheFilename):
         # TODO expire cache?
@@ -34,12 +31,12 @@ class Downloader(object):
 
 
 
-class MovieQuotesDownloader(Downloader):
+class MovieQuotesDownloader(QuotesDownloader):
     BASE_URL = 'http://www.moviequotes.com/%s'
     REPOSITORY_URL = BASE_URL % 'repository.cgi'
     REPOSITORY_PAGE_URL = BASE_URL % 'repository.cgi?pg=t&tt=%d'
 
-    def _downloadQuotes(self, title, year):
+    def downloadQuotes(self, title, year):
         preparedTitle = self._prepareTitle(title)
         page = self._findAlphabeticalPage(preparedTitle)
         print page
@@ -51,7 +48,12 @@ class MovieQuotesDownloader(Downloader):
             return None
 
         quotes = self._findQuotes(url, title, year)
-        return self._filterAndCleanup(quotes)
+        quotes = self._filterAndCleanup(quotes)
+
+        if len(quotes) > 0:
+            return quotes
+        else:
+            return None
 
     def _prepareTitle(self, title):
         if title[0:4] == 'The ':
@@ -105,24 +107,16 @@ class MovieQuotesDownloader(Downloader):
         return quotes
 
     def _filterAndCleanup(self, quotes):
-        filteredQuotes =  []
+        filteredQuotes = []
 
         for quote in quotes:
-            if len(quote) <= 100:
-                quote = quote[0:1].upper() + quote[1:]
-                if not filteredQuotes.count(quote):
-                    filteredQuotes.append(quote)
+            if len(quote) > 100:
+                continue
+            if not quote.find(' '):
+                continue
+
+            quote = quote[0:1].upper() + quote[1:]
+            if not filteredQuotes.count(quote):
+                filteredQuotes.append(quote)
 
         return filteredQuotes
-
-    def insert_quote(title, year, quote):
-        params = [title, year, str(quote)]
-        c = conn.cursor()
-        c.execute('INSERT INTO moviequote(title, year, quote) VALUES(?, ?, ?)', params)
-        conn.commit()
-
-
-
-d = MovieQuotesDownloader('/tmp')
-print d.downloadQuotes('interview with the vampire', '1994')
-

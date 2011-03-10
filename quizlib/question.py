@@ -5,6 +5,7 @@ import thumb
 import db
 import time
 import re
+import quote
 
 from strings import *
 
@@ -46,6 +47,7 @@ class Question(object):
         self.text = None
         self.videoFile = None
         self.photoFile = None
+        self.quoteText = None
 
         self.display = display
         # Maximum allowed MPAA rating
@@ -79,14 +81,20 @@ class Question(object):
         else:
             self.videoFile = os.path.join(path, filename)
 
-    def setPhotoFile(self, photoFile):
-        self.photoFile = photoFile
-
     def getVideoFile(self):
         return self.videoFile
 
+    def setPhotoFile(self, photoFile):
+        self.photoFile = photoFile
+
     def getPhotoFile(self):
         return self.photoFile
+
+    def setQuoteText(self, quoteText):
+        self.quoteText = quoteText
+
+    def getQuoteText(self):
+        return self.quoteText
 
     def _get_movie_ids(self):
         movieIds = list()
@@ -227,6 +235,7 @@ class ActorNotInMovieQuestion(MovieQuestion):
             ORDER BY random() LIMIT 1
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), actor['idActor'])
         a = Answer(True, row['idMovie'], row['title'])
+        a.setCoverFile(row['strPath'], row['strFilename'])
         self.answers.append(a)
 
         # Movie actor is in
@@ -237,7 +246,9 @@ class ActorNotInMovieQuestion(MovieQuestion):
             ORDER BY random() LIMIT 3
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), actor['idActor'])
         for movie in movies:
-            self.answers.append(Answer(False, movie['idMovie'], movie['title']))
+            a = Answer(False, movie['idMovie'], movie['title'])
+            a.setCoverFile(movie['strPath'], movie['strFilename'])
+            self.answers.append(a)
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_MOVIE_IS_ACTOR_NOT_IN, actor['strActor'])
@@ -437,7 +448,6 @@ class WhoPlayedRoleInMovieQuestion(MovieQuestion):
     """
         WhoPlayedRoleInMovieQuestion
     """
-
     def __init__(self, database, maxRating, onlyWatchedMovies):
         MovieQuestion.__init__(self, database, DISPLAY_VIDEO, maxRating, onlyWatchedMovies)
 
@@ -445,8 +455,9 @@ class WhoPlayedRoleInMovieQuestion(MovieQuestion):
             SELECT alm.idActor, a.strActor, alm.strRole, mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename
             FROM movieview mv, actorlinkmovie alm, actors a
             WHERE mv.idMovie=alm.idMovie AND alm.idActor=a.idActor AND alm.strRole != ''
+            %s %s
             ORDER BY random() LIMIT 1
-            """)
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
         role = row['strRole']
         if re.search('[|/]', role):
             roles = re.split('[|/]', role)
@@ -472,6 +483,59 @@ class WhoPlayedRoleInMovieQuestion(MovieQuestion):
 
         self.text = strings(Q_WHO_PLAYED_ROLE_IN_MOVIE) % (role, row['title'])
         self.setVideoFile(row['strPath'], row['strFilename'])
+
+        
+class WhatMovieIsThisQuoteFrom(MovieQuestion):
+    """
+        WhatQuoteIsThisFrom
+    """
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        MovieQuestion.__init__(self, database, DISPLAY_QUOTE, maxRating, onlyWatchedMovies)
+
+        rows = self.database.fetchall("""
+            SELECT mv.idMovie, mv.c00 AS title, mv.c07 AS year, mv.strPath, mv.strFilename
+            FROM movieview mv
+            WHERE year > 1900
+            %s %s
+            ORDER BY random() LIMIT 10
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
+
+        addon = xbmcaddon.Addon(id = 'script.moviequiz') # TODO
+        qd = quote.MovieQuotesDownloader(addon.getAddonInfo('profile'))
+        quotes = None
+        row = None
+        for r in rows:
+            quotes = qd.downloadQuotes(r['title'], r['year'])
+
+            if quotes is not None:
+                row = r
+                break
+
+        if quotes is None:
+            raise QuestionException('Did not find any question')
+
+        a = Answer(True, row['idMovie'], row['title'])
+        a.setCoverFile(row['strPath'], row['strFilename'])
+        self.answers.append(a)
+
+        theRest = self.database.fetchall("""
+            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename
+            FROM movieview mv WHERE mv.idMovie != ?
+            %s %s
+            ORDER BY random() LIMIT 3
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()),
+                     row['idMovie'])
+        for movie in theRest:
+            a = Answer(False, movie['idMovie'], movie['title'])
+            a.setCoverFile(movie['strPath'], movie['strFilename'])
+            self.answers.append(a)
+
+        quoteText = quotes[random.randint(0, len(quotes)-1)]
+
+        random.shuffle(self.answers)
+        self.setQuoteText(quoteText)
+        self.text = strings(Q_WHAT_MOVIE_IS_THIS_QUOTE_FROM)
+
 
 #
 # TV QUESTIONS
@@ -561,7 +625,7 @@ class WhatSeasonIsThisQuestion(TVQuestion):
             ORDER BY random() LIMIT 1
             """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
         a = Answer(True, row['season'], self._get_season_title(row['season']), row['idFile'])
-        a.setCoverFile(thumb.getCachedTVShowThumb(row['strPath']))
+        a.setCoverFile(thumb.getCachedSeasonThumb(row['strPath'], self._get_season_title(row['season'])))
         self.answers.append(a)
 
         # Fill with random seasons from this show
@@ -573,7 +637,7 @@ class WhatSeasonIsThisQuestion(TVQuestion):
             """, (row['idShow'], row['season']))
         for show in shows:
             a = Answer(False, show['season'], self._get_season_title(show['season']))
-            a.setCoverFile(thumb.getCachedTVShowThumb(row['strPath']))
+            a.setCoverFile(thumb.getCachedSeasonThumb(row['strPath'], self._get_season_title(show['season'])))
             self.answers.append(a)
 
         self.answers = sorted(self.answers, key=lambda answer: int(answer.id))
