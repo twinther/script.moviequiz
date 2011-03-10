@@ -101,20 +101,41 @@
 
         <!-- quote group -->
         <control type="group">
-            <posx>360</posx>
-            <posy>130</posy>
-            <width>640</width>
-            <height>250</height>
+            <posx>246</posx>
+            <posy>24</posy>
+            <width>788</width>
+            <height>452</height>
             <visible>!Control.IsVisible(5004)</visible>
             <animation effect="fade" start="100" end="0" time="1000">Hidden</animation>
             <animation effect="fade" start="0" end="100" time="1000">Visible</animation>
 
-            <control type="textbox" id="4600">
+            <control type="image">
                 <posx>0</posx>
                 <posy>0</posy>
-                <width>640</width>
-                <height>250</height>
-                <textcolor>ff000000</textcolor>
+                <width>788</width>
+                <height>452</height>
+                <texture>quiz-video-background.png</texture>
+            </control>
+            <control type="image">
+                <posx>20</posx>
+                <posy>15</posy>
+                <width>100</width>
+                <height>73</height>
+                <texture>quiz-start-quote.png</texture>
+            </control>
+            <control type="image">
+                <posx>660</posx>
+                <posy>365</posy>
+                <width>100</width>
+                <height>73</height>
+                <texture>quiz-end-quote.png</texture>
+            </control>
+            <control type="textbox" id="4600">
+                <posx>50</posx>
+                <posy>100</posy>
+                <width>690</width>
+                <height>260</height>
+                <textcolor>ffffffff</textcolor>
                 <font>font30</font>
                 <wrapmultiline>true</wrapmultiline>
                 <autoscroll time="3600" delay="6000" repeat="6000">true</autoscroll>
@@ -122,22 +143,40 @@
         </control>
 
         <control type="image">
-            <posx>470</posx>
-            <posy>250</posy>
-            <width>340</width>
+            <posx>0</posx>
+            <posy>245</posy>
+            <width>1280</width>
             <height>64</height>
-            <texture>quiz-loading.png</texture>
+            <texture>quiz-background-glass.png</texture>
             <visible>Control.IsVisible(5005)</visible>
             <animation effect="fade" start="0" end="100" time="500" delay="500">Visible</animation>
             <animation effect="fade" start="100" end="0" time="500">Hidden</animation>
         </control>
+        <control type="label">
+            <posx>470</posx>
+            <posy>250</posy>
+            <width>340</width>
+            <height>40</height>
+            <align>center</align>
+            <font>font30_title</font>
+            <label>$ADDON[script.moviequiz 30008]</label>
+            <visible>Control.IsVisible(5005)</visible>
+            <animation type="Visible">
+                <effect type="fade" start="0" end="100" time="500" delay="500" />
+                <effect type="slide" start="-100,0" end="0,0" time="500" delay="500" />
+            </animation>
+            <animation type="Hidden">
+                <effect type="fade" start="100" end="0" time="500"/>
+                <effect type="slide" start="0,0" end="100,0" time="500" />
+            </animation>
+        </control>
         
         <control type="label" id="4104">
+            <description>Question x of y</description>
             <posx>25</posx>
             <posy>25</posy>
             <width>225</width>
             <height>400</height>
-            <label>Question x of y</label>
             <textcolor>ffffffff</textcolor>
             <font>font13</font>
         </control>
@@ -153,11 +192,11 @@
             <font>font13</font>
         </control>
         <control type="label" id="4101">
+            <description>Correct answer count</description>
             <posx>200</posx>
             <posy>65</posy>
             <width>100</width>
             <height>40</height>
-            <label>n/a</label>
             <textcolor>ffffffff</textcolor>
             <font>font13</font>
             <align>right</align>
@@ -174,11 +213,11 @@
             <font>font13</font>
         </control>
         <control type="label" id="4103">
+            <description>Wrong answer count</description>
             <posx>200</posx>
             <posy>105</posy>
             <width>100</width>
             <height>40</height>
-            <label>n/a</label>
             <textcolor>ffffffff</textcolor>
             <font>font13</font>
             <align>right</align>
@@ -202,26 +241,26 @@
             <texture>quiz-question-background.png</texture>
         </control>
         <control type="label" id="4300">
+            <description>Question ?</description>
             <posx>182</posx>
             <posy>500</posy>
             <width>1075</width>
             <height>40</height>
             <textoffsetx>8</textoffsetx>
             <textoffsety>4</textoffsety>
-            <label>Question ?</label>
             <textcolor>ffffffff</textcolor>
             <font>font13</font>
         </control>
 
         <!-- Answer buttons -->
         <control type="button" id="4000">
+            <description>Answer 1</description>
             <posx>182</posx>
             <posy>540</posy>
             <width>1075</width>
             <height>40</height>
             <textoffsetx>8</textoffsetx>
             <textoffsety>4</textoffsety>
-            <label>Answer 1</label>
             <textcolor>ffffffff</textcolor>
             <font>font13</font>
             <texturefocus>quiz-button-background.png</texturefocus>
@@ -230,13 +269,13 @@
             <ondown>4001</ondown>
         </control>
         <control type="button" id="4001">
+            <description>Answer 2</description>
             <posx>182</posx>
             <posy>580</posy>
             <width>1075</width>
             <height>40</height>
             <textoffsetx>8</textoffsetx>
             <textoffsety>4</textoffsety>
-            <label>Answer 2</label>
             <textcolor>ffffffff</textcolor>
             <font>font13</font>
             <texturefocus>quiz-button-background.png</texturefocus>
@@ -245,13 +284,13 @@
             <ondown>4002</ondown>
         </control>
         <control type="button" id="4002">
+            <description>Answer 3</description>
             <posx>182</posx>
             <posy>620</posy>
             <width>1075</width>
             <height>40</height>
             <textoffsetx>8</textoffsetx>
             <textoffsety>4</textoffsety>
-            <label>Answer 3</label>
             <textcolor>ffffffff</textcolor>
             <font>font13</font>
             <texturefocus>quiz-button-background.png</texturefocus>
@@ -260,13 +299,13 @@
             <ondown>4003</ondown>
         </control>
         <control type="button" id="4003">
+            <description>Answer 4</description>
             <posx>182</posx>
             <posy>660</posy>
             <width>1075</width>
             <height>40</height>
             <textoffsetx>8</textoffsetx>
             <textoffsety>4</textoffsety>
-            <label>Answer 4</label>
             <textcolor>ffffffff</textcolor>
             <font>font13</font>
             <texturefocus>quiz-button-background.png</texturefocus>

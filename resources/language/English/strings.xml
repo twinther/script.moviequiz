@@ -10,7 +10,7 @@
     <string id="30005">Specials</string><!-- same value as id="20381" in main xbmc strings.xml -->
     <string id="30006">Season %i</string><!-- same value as id="20358" in main xbmc strings.xml -->
     <string id="30007">%B %e, %Y</string><!-- episode first aired date format: http://docs.python.org/library/time.html#time.strftime -->
-
+    <string id="30008">[B]Loading[/B]</string>
 
     <!-- Menu -->
     <string id="30100">Play Movie Quiz</string>
