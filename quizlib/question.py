@@ -75,6 +75,9 @@ class Question(object):
                 return answer
         return None
 
+    def getUniqueIdentifier(self):
+        return "%s-%s" % (self.__class__.__name__, str(self.getCorrectAnswer().id))
+
     def setVideoFile(self, path, filename):
         if filename[0:8] == 'stack://':
             self.videoFile = filename
@@ -289,7 +292,7 @@ class WhatYearWasMovieReleasedQuestion(MovieQuestion):
         list.sort(years)
 
         for year in years:
-            a = Answer(year == int(row['year']), year, str(year), row['idFile'])
+            a = Answer(year == int(row['year']), row['idFile'], str(year), row['idFile'])
             a.setCoverFile(row['strPath'], row['strFilename'])
             self.answers.append(a)
 
@@ -624,7 +627,7 @@ class WhatSeasonIsThisQuestion(TVQuestion):
             %s %s
             ORDER BY random() LIMIT 1
             """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
-        a = Answer(True, row['season'], self._get_season_title(row['season']), row['idFile'])
+        a = Answer(True, "%s-%s" % (row['idShow'], row['season']), self._get_season_title(row['season']), row['idFile'])
         a.setCoverFile(thumb.getCachedSeasonThumb(row['strPath'], self._get_season_title(row['season'])))
         self.answers.append(a)
 
@@ -636,7 +639,7 @@ class WhatSeasonIsThisQuestion(TVQuestion):
             ORDER BY random() LIMIT 3
             """, (row['idShow'], row['season']))
         for show in shows:
-            a = Answer(False, show['season'], self._get_season_title(show['season']))
+            a = Answer(False, "%s-%s" % (row['idShow'], show['season']), self._get_season_title(show['season']))
             a.setCoverFile(thumb.getCachedSeasonThumb(row['strPath'], self._get_season_title(show['season'])))
             self.answers.append(a)
 
@@ -662,7 +665,8 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
             ORDER BY random() LIMIT 1
             """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
         answerText = self._get_episode_title(row['season'], row['episode'], row['episodeTitle'])
-        a = Answer(True, row['episode'], answerText, row['idFile'])
+        id = "%s-%s-%s" % (row['idShow'], row['season'], row['episode'])
+        a = Answer(True, id, answerText, row['idFile'])
         a.setCoverFile(thumb.getCachedTVShowThumb(row['strPath']))
         self.answers.append(a)
 
@@ -675,7 +679,8 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
             """, (row['idShow'], row['season'], row['episode']))
         for show in shows:
             answerText = self._get_episode_title(show['season'], show['episode'], show['episodeTitle'])
-            a = Answer(False, show['episode'], answerText)
+            id = "%s-%s-%s" % (row['idShow'], row['season'], show['episode'])
+            a = Answer(False, id, answerText)
             a.setCoverFile(thumb.getCachedTVShowThumb(row['strPath']))
             self.answers.append(a)
 
@@ -763,7 +768,7 @@ class WhenWasTVShowFirstAiredQuestion(TVQuestion):
         list.sort(years)
 
         for year in years:
-            a = Answer(year == int(row['year']), year, str(year), row['idFile'])
+            a = Answer(year == int(row['year']), row['idFile'], str(year), row['idFile'])
             a.setCoverFile(thumb.getCachedTVShowThumb(row['strPath']))
             self.answers.append(a)
 

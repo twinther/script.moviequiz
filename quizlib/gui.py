@@ -122,8 +122,16 @@ class QuizGui(xbmcgui.WindowXML):
 
         self.database = db.Database()
         self.player = player.TenSecondPlayer(database=self.database)
-        self.question = None
+        self.question = question.Question(self.database, None, None, None)
+        self.previousQuestions = []
         self.score = {'correct': 0, 'wrong': 0}
+
+        self.maxRating = None
+        if self.type == question.TYPE_MOVIE and self.addon.getSetting('movie.rating.limit.enabled') == 'true':
+            self.maxRating = self.addon.getSetting('movie.rating.limit')
+        elif self.type == question.TYPE_TV and self.addon.getSetting('tvshow.rating.limit.enabled') == 'true':
+            self.maxRating = self.addon.getSetting('tvshow.rating.limit')
+        self.onlyWatchedMovies = self.addon.getSetting('only.watched.movies') == 'true'
 
     def onInit(self):
         print "onInit"
@@ -209,15 +217,7 @@ class QuizGui(xbmcgui.WindowXML):
             self._game_over()
             return
 
-        maxRating = None
-        if self.type == question.TYPE_MOVIE and self.addon.getSetting('movie.rating.limit.enabled') == 'true':
-            maxRating = self.addon.getSetting('movie.rating.limit')
-        elif self.type == question.TYPE_TV and self.addon.getSetting('tvshow.rating.limit.enabled') == 'true':
-            maxRating = self.addon.getSetting('tvshow.rating.limit')
-        onlyWatchedMovies = self.addon.getSetting('only.watched.movies') == 'true'
-
-        self.question = question.getRandomQuestion(self.type, self.database, maxRating, onlyWatchedMovies)
-
+        self.question = self._getNewQuestion()
         self.getControl(self.C_MAIN_QUESTION_LABEL).setLabel(self.question.getText())
 
         answers = self.question.getAnswers()
@@ -257,6 +257,21 @@ class QuizGui(xbmcgui.WindowXML):
             self.show(self.C_MAIN_QUOTE_VISIBILITY)
 
         self.getControl(self.C_MAIN_LOADING_VISIBILITY).setVisible(False)
+
+    def _getNewQuestion(self):
+        retries = 0
+        q = None
+        while retries < 100:
+            q = question.getRandomQuestion(self.type, self.database, self.maxRating, self.onlyWatchedMovies)
+            try:
+                if self.previousQuestions.index(q.getUniqueIdentifier()):
+                    print "Already had question %s" % q.getUniqueIdentifier()
+                    retries += 1
+            except Exception:
+                self.previousQuestions.append(q.getUniqueIdentifier())
+                break
+        
+        return q
 
     def _update_stats(self):
         self.getControl(self.C_MAIN_CORRECT_SCORE).setLabel(str(self.score['correct']))
