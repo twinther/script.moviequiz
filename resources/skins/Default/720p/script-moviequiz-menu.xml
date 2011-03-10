@@ -141,7 +141,7 @@
             <textcolor>ffffffff</textcolor>
             <wrapmultiline>true</wrapmultiline>
             <label>[B]Warning! There is a known bug in XBMC 10.x that affects this addon
-and is causing XBMC to lockups and crash. It is fixed in XBMC 11.0.
+and is causing XBMC to lockups and crash. It is fixed for XBMC 11.0.
 See http://trac.xbmc.org/ticket/11290 for details.[/B]</label>
 
         </control>
