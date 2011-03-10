@@ -11,9 +11,9 @@ from strings import *
 __author__ = 'twinther'
 
 class MenuGui(xbmcgui.WindowXML):
-    C_MENU_MOVIE_QUIZ = 4000
-    C_MENU_TVSHOW_QUIZ = 4001
-    C_MENU_SETTINGS = 4002
+    C_MENU_MOVIE_QUIZ = 4001
+    C_MENU_TVSHOW_QUIZ = 4002
+    C_MENU_SETTINGS = 4000
     C_MENU_EXIT = 4003
     C_MENU_COLLECTION_TRIVIA = 6000
 
@@ -62,7 +62,7 @@ class MenuGui(xbmcgui.WindowXML):
                 strings(M_EPISODE_COUNT) % episodes['count']
             ]
 
-        del database
+        database.close()
 
         label = '  *  '.join(trivia)
         self.getControl(self.C_MENU_COLLECTION_TRIVIA).setLabel(label)
@@ -106,10 +106,13 @@ class QuizGui(xbmcgui.WindowXML):
     C_MAIN_PHOTO = 4400
     C_MAIN_MOVIE_BACKGROUND = 4500
     C_MAIN_TVSHOW_BACKGROUND = 4501
+    C_MAIN_QUOTE_LABEL = 4600
     C_MAIN_VIDEO_VISIBILITY = 5000
     C_MAIN_PHOTO_VISIBILITY = 5001
+    C_MAIN_QUOTE_VISIBILITY = 5004
     C_MAIN_CORRECT_VISIBILITY = 5002
     C_MAIN_INCORRECT_VISIBILITY = 5003
+    C_MAIN_LOADING_VISIBILITY = 5005
 
 
     def __init__(self, xmlFilename, scriptPath, addon, type):
@@ -134,6 +137,9 @@ class QuizGui(xbmcgui.WindowXML):
 
         self._setup_game()
 
+    def close(self):
+        self.database.close()
+        xbmcgui.WindowXML.close(self)
 
     def onAction(self, action):
         if action.getId() == 9 or action.getId() == 10:
@@ -196,6 +202,8 @@ class QuizGui(xbmcgui.WindowXML):
         self.close()
 
     def _setup_question(self):
+        self.getControl(self.C_MAIN_LOADING_VISIBILITY).setVisible(True)
+
         self.questionLimit['count'] += 1
         if self.questionLimit['max'] > 0 and self.questionLimit['count'] > self.questionLimit['max']:
             self._game_over()
@@ -229,6 +237,7 @@ class QuizGui(xbmcgui.WindowXML):
         if self.question.getDisplay() == question.DISPLAY_VIDEO:
             self.show(self.C_MAIN_VIDEO_VISIBILITY)
             self.hide(self.C_MAIN_PHOTO_VISIBILITY)
+            self.hide(self.C_MAIN_QUOTE_VISIBILITY)
             xbmc.sleep(1500) # give skin animation time to execute
             self.player.playWindowed(self.question.getVideoFile(), correctAnswer.idFile)
 
@@ -237,10 +246,17 @@ class QuizGui(xbmcgui.WindowXML):
 
             self.hide(self.C_MAIN_VIDEO_VISIBILITY)
             self.show(self.C_MAIN_PHOTO_VISIBILITY)
+            self.hide(self.C_MAIN_QUOTE_VISIBILITY)
 
         elif self.question.getDisplay() == question.DISPLAY_QUOTE:
-            pass
+            print self.question.getQuoteText()
+            self.getControl(self.C_MAIN_QUOTE_LABEL).setText(self.question.getQuoteText())
 
+            self.hide(self.C_MAIN_VIDEO_VISIBILITY)
+            self.hide(self.C_MAIN_PHOTO_VISIBILITY)
+            self.show(self.C_MAIN_QUOTE_VISIBILITY)
+
+        self.getControl(self.C_MAIN_LOADING_VISIBILITY).setVisible(False)
 
     def _update_stats(self):
         self.getControl(self.C_MAIN_CORRECT_SCORE).setLabel(str(self.score['correct']))
@@ -292,6 +308,7 @@ class ClapperDialog(xbmcgui.WindowXMLDialog):
         self.line1 = line1
         self.line2 = line2
         self.line3 = line3
+        self.timer = threading.Timer(5, self.delayedClose)
 
         xbmcgui.WindowXMLDialog.__init__(self, xmlFilename, scriptPath)
 
@@ -310,7 +327,7 @@ class ClapperDialog(xbmcgui.WindowXMLDialog):
         self.getControl(self.C_CLAPPER_LINE2).setLabel(self.line2)
         self.getControl(self.C_CLAPPER_LINE3).setLabel(self.line3)
 
-        threading.Timer(5, self.delayedClose).start()
+        self.timer.start()
 
     def delayedClose(self):
         print "ClapperDialog.delayedClose"
@@ -318,6 +335,7 @@ class ClapperDialog(xbmcgui.WindowXMLDialog):
 
     def onAction(self, action):
         print "ClapperDialog.onAction " + str(action)
+        self.timer.cancel()
         self.close()
 
     def onClick(self, controlId):
