@@ -143,6 +143,7 @@
         </control>
 
         <control type="image">
+            <description>loading background</description>
             <posx>0</posx>
             <posy>245</posy>
             <width>1280</width>
@@ -153,12 +154,15 @@
             <animation effect="fade" start="100" end="0" time="500">Hidden</animation>
         </control>
         <control type="label">
+            <description>loading label</description>
             <posx>470</posx>
-            <posy>250</posy>
+            <posy>245</posy>
             <width>340</width>
-            <height>40</height>
+            <height>64</height>
             <align>center</align>
-            <font>font30_title</font>
+            <aligny>center</aligny>
+            <font>font30</font>
+            <textcolor>ffffffff</textcolor>
             <label>$ADDON[script.moviequiz 30008]</label>
             <visible>Control.IsVisible(5005)</visible>
             <animation type="Visible">
