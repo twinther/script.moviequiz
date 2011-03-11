@@ -134,8 +134,6 @@ class QuizGui(xbmcgui.WindowXML):
         self.onlyWatchedMovies = self.addon.getSetting('only.watched.movies') == 'true'
 
     def onInit(self):
-        print "onInit"
-
         try :
             xbmcgui.lock()
             if self.type == question.TYPE_TV:
@@ -146,16 +144,15 @@ class QuizGui(xbmcgui.WindowXML):
         self._setup_game()
 
     def close(self):
-        self.database.close()
+        if hasattr(self, 'player') and self.player.isPlaying():
+            self.player.stop()
+        # TODO self.database.close()
         xbmcgui.WindowXML.close(self)
-
+        
     def onAction(self, action):
         if action.getId() == 9 or action.getId() == 10:
-            if hasattr(self, 'player') and self.player.isPlaying():
-                self.player.stop()
             self._game_over()
             self.close()
-
 
     def onClick(self, controlId):
         if hasattr(self, 'question') and (controlId >= self.C_MAIN_FIRST_ANSWER  or controlId <= self.C_MAIN_LAST_ANSWER):
@@ -264,13 +261,14 @@ class QuizGui(xbmcgui.WindowXML):
         while retries < 100:
             q = question.getRandomQuestion(self.type, self.database, self.maxRating, self.onlyWatchedMovies)
             try:
-                if self.previousQuestions.index(q.getUniqueIdentifier()):
-                    print "Already had question %s" % q.getUniqueIdentifier()
-                    retries += 1
+                self.previousQuestions.index(q.getUniqueIdentifier())
+                print "Already had question %s" % q.getUniqueIdentifier()
+                retries += 1
             except Exception:
+                print "New question %s" % q.getUniqueIdentifier()
                 self.previousQuestions.append(q.getUniqueIdentifier())
                 break
-        
+
         return q
 
     def _update_stats(self):
