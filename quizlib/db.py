@@ -6,7 +6,7 @@ __author__ = 'twinther'
 class Database(object):
     def __init__(self):
         self.db_file = xbmc.translatePath('special://profile/Database/MyVideos34.db')
-        self.conn = sqlite3.connect(self.db_file, isolation_level = None)
+        self.conn = sqlite3.connect(self.db_file)
         self.conn.row_factory = self._sqlite_dict_factory
         xbmc.log("Database opened")
 
@@ -52,12 +52,9 @@ class Database(object):
             parameters = [parameters]
 
         c = self.conn.cursor()
-        print "before execute"
         c.execute(sql, parameters)
-        print "before commit"
         self.conn.commit()
-        print "commit"
-
+        c.close()
 
     def _sqlite_dict_factory(self, cursor, row):
         d = {}
