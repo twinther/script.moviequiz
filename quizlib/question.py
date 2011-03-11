@@ -217,7 +217,7 @@ class ActorNotInMovieQuestion(MovieQuestion):
             %s %s
             GROUP BY alm.idActor HAVING count(mv.idMovie) > 3 ORDER BY random() LIMIT 10
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
-        # try to find an actor with a cached photo (if non are found we baily out)
+        # try to find an actor with a cached photo (if non are found we bail out)
         for row in rows:
             photoFile = thumb.getCachedActorThumb(row['strActor'])
             if os.path.exists(photoFile):
@@ -414,10 +414,12 @@ class WhatActorIsThisQuestion(MovieQuestion):
         actor = None
         photoFile = None
         rows = self.database.fetchall("""
-            SELECT a.idActor, a.strActor
-            FROM actors a, actorlinkmovie alm WHERE a.idActor = alm.idActor
+            SELECT DISTINCT a.idActor, a.strActor
+            FROM actors a, actorlinkmovie alm, movieview mv
+            WHERE a.idActor = alm.idActor AND alm.idMovie=mv.idMovie
+            %s
             ORDER BY random() LIMIT 10
-            """)
+            """ % self._get_watched_movies_clause())
         # try to find an actor with a cached photo (if non are found we simply use the last actor selected)
         for row in rows:
             photoFile = thumb.getCachedActorThumb(row['strActor'])
@@ -784,11 +786,12 @@ class WhoPlayedRoleInTVShowQuestion(TVQuestion):
         TVQuestion.__init__(self, database, DISPLAY_PHOTO, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
-            SELECT alt.idActor, a.strActor, alt.strRole, tv.idShow, tv.c00 AS title, tv.strPath
-            FROM tvshowview tv, actorlinktvshow alt, actors a
-            WHERE tv.idShow = alt.idShow AND alt.idActor=a.idActor AND alt.strRole != ''
+            SELECT DISTINCT alt.idActor, a.strActor, alt.strRole, tv.idShow, tv.c00 AS title, tv.strPath
+            FROM tvshowview tv, actorlinktvshow alt, actors a, episodeview ev
+            WHERE tv.idShow = alt.idShow AND alt.idActor=a.idActor AND tv.idShow=ev.idShow AND alt.strRole != ''
+            %s
             ORDER BY random() LIMIT 1
-            """)
+            """ % self._get_watched_episodes_clause())
         role = row['strRole']
         if re.search('[|/]', role):
             roles = re.split('[|/]', role)
