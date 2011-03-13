@@ -12,6 +12,7 @@ from strings import *
 TYPE_MOVIE = 1
 TYPE_TV = 2
 
+DISPLAY_NONE = 0
 DISPLAY_VIDEO = 1
 DISPLAY_PHOTO = 2
 DISPLAY_QUOTE = 3
@@ -554,6 +555,99 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
         self.setQuoteText(quoteText)
         self.text = strings(Q_WHAT_MOVIE_IS_THIS_QUOTE_FROM)
 
+class WhatMovieIsNewestQuestion(MovieQuestion):
+    """
+        WhatMovieIsNewestQuestion
+    """
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        MovieQuestion.__init__(self, database, DISPLAY_NONE, maxRating, onlyWatchedMovies)
+
+        row = self.database.fetchone("""
+            SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFilename, mv.c07 AS year
+            FROM movieview mv
+            WHERE year > 1900 AND mv.strFilename NOT LIKE '%%.nfo'
+            %s %s
+            ORDER BY random() LIMIT 1
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
+        a = Answer(True, row['idMovie'], row['title'], row['idFile'])
+        a.setCoverFile(row['strPath'], row['strFilename'])
+        self.answers.append(a)
+
+        movies = self.database.fetchall("""
+            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename, mv.c07 AS year
+            FROM movieview mv
+            WHERE year > 1900 AND year < ?
+            %s %s
+            ORDER BY random() LIMIT 3
+        """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), row['year'])
+        for movie in movies:
+            a = Answer(False, movie['idMovie'], movie['title'])
+            a.setCoverFile(movie['strPath'], movie['strFilename'])
+            self.answers.append(a)
+
+        random.shuffle(self.answers)
+        self.text = strings(Q_WHAT_MOVIE_IS_THE_NEWEST)
+
+class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
+    """
+        WhatMovieIsNotDirectedByQuestion
+    """
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        MovieQuestion.__init__(self, database, DISPLAY_PHOTO, maxRating, onlyWatchedMovies)
+
+        director = None
+        photoFile = None
+        rows = self.database.fetchall("""
+            SELECT a.idActor, a.strActor
+            FROM movieview mv, directorlinkmovie dlm, actors a
+            WHERE mv.idMovie = dlm.idMovie AND dlm.idDirector = a.idActor AND mv.strFilename NOT LIKE '%%.nfo'
+            %s %s
+            GROUP BY dlm.idDirector HAVING count(mv.idMovie) >= 3 ORDER BY random() LIMIT 10
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
+        # try to find an actor with a cached photo (if non are found we bail out)
+        for row in rows:
+            print row['strActor']
+            photoFile = thumb.getCachedActorThumb(row['strActor'])
+            if os.path.exists(photoFile):
+                director = row
+                break
+            else:
+                print "Skipping actor: %s" % row['strActor']
+                photoFile = None
+
+        if director is None:
+            raise QuestionException("Didn't find any directors with photoFile")
+
+        # Movies not directed by director
+        row = self.database.fetchone("""
+            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename
+            FROM movieview mv WHERE mv.idMovie NOT IN (
+                SELECT DISTINCT dlm.idMovie FROM directorlinkmovie dlm WHERE dlm.idDirector = ?
+            ) AND mv.strFilename NOT LIKE '%%.nfo'
+            %s %s
+            ORDER BY random() LIMIT 1
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), director['idActor'])
+        a = Answer(True, director['idActor'], row['title'])
+        a.setCoverFile(row['strPath'], row['strFilename'])
+        self.answers.append(a)
+
+        # Movie actor is in
+        movies = self.database.fetchall("""
+            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename
+            FROM movieview mv, directorlinkmovie dlm WHERE mv.idMovie = dlm.idMovie AND dlm.idDirector = ? AND mv.strFilename NOT LIKE '%%.nfo'
+            %s %s
+            ORDER BY random() LIMIT 3
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), director['idActor'])
+        for movie in movies:
+            a = Answer(False, -1, movie['title'])
+            a.setCoverFile(movie['strPath'], movie['strFilename'])
+            self.answers.append(a)
+
+        random.shuffle(self.answers)
+        self.text = strings(Q_WHAT_MOVIE_IS_NOT_DIRECTED_BY, director['strActor'])
+        self.setPhotoFile(photoFile)
+
+
 
 #
 # TV QUESTIONS
@@ -844,7 +938,7 @@ def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
     """
     subclasses = []
     if type == TYPE_MOVIE:
-        subclasses = MovieQuestion.__subclasses__()
+        subclasses = [WhatMovieIsNotDirectedByQuestion] #MovieQuestion.__subclasses__()
     elif type == TYPE_TV:
         subclasses = TVQuestion.__subclasses__()
     random.shuffle(subclasses)
@@ -857,3 +951,4 @@ def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
         except db.DbException, ex:
             print "DbException in %s: %s" % (subclass, ex)
 
+    return None

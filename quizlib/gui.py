@@ -260,6 +260,9 @@ class QuizGui(xbmcgui.WindowXML):
         q = None
         while retries < 100:
             q = question.getRandomQuestion(self.type, self.database, self.maxRating, self.onlyWatchedMovies)
+            if q is None:
+                continue
+                
             try:
                 self.previousQuestions.index(q.getUniqueIdentifier())
                 print "Already had question %s" % q.getUniqueIdentifier()
