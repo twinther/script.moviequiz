@@ -938,7 +938,7 @@ def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
     """
     subclasses = []
     if type == TYPE_MOVIE:
-        subclasses = [WhatMovieIsNotDirectedByQuestion] #MovieQuestion.__subclasses__()
+        subclasses = MovieQuestion.__subclasses__()
     elif type == TYPE_TV:
         subclasses = TVQuestion.__subclasses__()
     random.shuffle(subclasses)
