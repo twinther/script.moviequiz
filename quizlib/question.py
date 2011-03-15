@@ -101,6 +101,9 @@ class Question(object):
     def getQuoteText(self):
         return self.quoteText
 
+    def isOnlineQuestion(self):
+        return False
+
     def _get_movie_ids(self):
         movieIds = list()
         for movie in self.answers:
@@ -511,6 +514,9 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
     def __init__(self, database, maxRating, onlyWatchedMovies):
         MovieQuestion.__init__(self, database, DISPLAY_QUOTE, maxRating, onlyWatchedMovies)
 
+        addon = xbmcaddon.Addon(id = 'script.moviequiz') # TODO
+        qd = quote.MovieQuotesDownloader(addon.getAddonInfo('profile'))
+
         rows = self.database.fetchall("""
             SELECT mv.idMovie, mv.c00 AS title, mv.c07 AS year, mv.strPath, mv.strFilename
             FROM movieview mv
@@ -518,9 +524,6 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
             %s %s
             ORDER BY random() LIMIT 10
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
-
-        addon = xbmcaddon.Addon(id = 'script.moviequiz') # TODO
-        qd = quote.MovieQuotesDownloader(addon.getAddonInfo('profile'))
         quotes = None
         row = None
         for r in rows:
@@ -554,6 +557,10 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
         random.shuffle(self.answers)
         self.setQuoteText(quoteText)
         self.text = strings(Q_WHAT_MOVIE_IS_THIS_QUOTE_FROM)
+
+    def isOnlineQuestion(self):
+        return True
+
 
 class WhatMovieIsNewestQuestion(MovieQuestion):
     """
@@ -932,7 +939,7 @@ class QuestionException(Exception):
     def __init__(self, msg):
         Exception.__init__(self, msg)
 
-def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
+def getRandomQuestion(type, database, maxRating, onlyWatchedMovies, useOnlineQuestions):
     """
         Gets random question from one of the Question subclasses.
     """
@@ -945,7 +952,10 @@ def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
 
     for subclass in subclasses:
         try:
-            return subclass(database, maxRating, onlyWatchedMovies)
+            q = subclass(database, maxRating, onlyWatchedMovies)
+            if not useOnlineQuestions and q.isOnlineQuestion():
+                continue
+            return q
         except QuestionException, ex:
             print "QuestionException in %s: %s" % (subclass, ex)
         except db.DbException, ex:

@@ -68,6 +68,7 @@
     <string id="30515">Only use watched movies in the questions</string>
     <string id="30516">Limit TV show selection based on Content rating</string>
 	<string id="30517">Max. Content rating</string>
+    <string id="30518">Include questions that use data from the internet</string>
 
     <string id="39999">Translated by Tommy Winther</string>
 </strings>

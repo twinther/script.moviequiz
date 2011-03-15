@@ -11,6 +11,7 @@ Movie Question suggestions:
 - Which movie of this 4 is the longest (runtime)?
 - Which movie of this 4 is the shortest (runtime)?
 - Which of this Movie is not a <genre>-Movie? (very easy)
+- What role does <actor> play in <movie>?
 
 TV Question:
 - When was season first aired?

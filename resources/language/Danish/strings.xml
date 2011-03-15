@@ -14,7 +14,7 @@
 
 
     <!-- Menu -->
-    <string id="30100">Spil Movie Quiz</string>
+    <string id="30100">Spil Film Quiz</string>
     <string id="30101">Spil TV Quiz</string>
     <string id="30102">Indstillinger</string>
     <string id="30103">Afslut</string>
@@ -37,7 +37,7 @@
     <string id="30402">Hvilket år blev [B]%s[/B] udgivet?</string><!-- %s is movie title -->
     <string id="30403">Hvilken tagline hører til [B]%s[/B]?</string><!-- %s is movie title -->
     <string id="30404">Hvem var instruktør på [B]%s[/B]?</string><!-- %s is movie title -->
-    <string id="30405">Hvilken studie udgav [B]%s[/B]?</string><!-- %s is movie title -->
+    <string id="30405">Hvilket studie udgav [B]%s[/B]?</string><!-- %s is movie title -->
     <string id="30406">Hvem er denne skuespiller?</string>
     <string id="30407">Hvem spiller [B]%s[/B] i [B]%s[/B]?</string><!-- 1st %s is role, 2nd %s is movie title -->
     <string id="30408">Hvem ligger stemme til [B]%s[/B] i [B]%s[/B]?</string><!-- 1st %s is role, 2nd %s is movie title -->
@@ -68,6 +68,7 @@
     <string id="30515">Brug kun sete film til spørgsmålene</string>
     <string id="30516">Begræns udvalget af TV-serier baseret på Content rating</string>
 	<string id="30517">Højeste Content rating</string>
+    <string id="30518">Brug spørgsmål der bruger data fra internettet</string>
 
     <string id="39999">Oversat af Tommy Winther</string>
 </strings>
