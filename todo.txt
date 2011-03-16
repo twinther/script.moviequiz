@@ -13,5 +13,10 @@ Movie Question suggestions:
 - Which of this Movie is not a <genre>-Movie? (very easy)
 - What role does <actor> play in <movie>?
 
+- In what movie does <actor> play <role>?
+- What actor stars in these three movies?
+- What year was these three movies released?
+- What movie is these three actors starring?
+
 TV Question:
 - When was season first aired?

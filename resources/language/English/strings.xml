@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<strings>
+<strings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="../../strings.xsd">
     <!-- -->
     <string id="30000">Question %d of %d</string>
     <string id="30001">Correct:</string>
@@ -59,6 +60,7 @@
     <string id="30500">General</string>
     <string id="30501">Movies</string>
     <string id="30502">TV Shows</string>
+    <string id="30503">Data</string>
 
     <string id="30510">Limit number of questions</string>
     <string id="30511">Question limit</string>
@@ -69,6 +71,11 @@
     <string id="30516">Limit TV show selection based on Content rating</string>
 	<string id="30517">Max. Content rating</string>
     <string id="30518">Include questions that use data from the internet</string>
+    <string id="30519">Download IMDB data...</string>
+    <string id="30520">Downloading IMDB data...</string>
+    <string id="30521">Retrieved %d of %d mb.</string>
+    <string id="30522">Some questions require additional local data,</string>
+    <string id="30523">which can be downloaded below:</string>
 
     <string id="39999">Translated by Tommy Winther</string>
 </strings>

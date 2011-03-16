@@ -2,56 +2,65 @@ import mmap
 import re
 import random
 import os
-import urllib
 import urllib2
-import sys
-import StringIO
-import gzip
+import zlib
+
+from strings import *
+
+import xbmc
+import xbmcgui
+import xbmcaddon
 
 
 class Imdb(object):
-    QUOTES_DOWNLOAD_URL = 'http://ftp.sunet.se/pub/tv+movies/imdb/quotes.list.gz'
-#    QUOTES_DOWNLOAD_URL = 'http://localhost/~twi/VRMHOEM_DA.iso'
     QUOTES_LIST = 'quotes.list'
+    FILES = [
+        {'name' : QUOTES_LIST, 'url' : 'http://ftp.sunet.se/pub/tv+movies/imdb/quotes.list.gz'}
+    ]
 
     def __init__(self, listsPath):
         self.path = listsPath
 
-    def downloadFiles(self):
-        u = urllib2.urlopen(self.QUOTES_DOWNLOAD_URL)
-        f = open(self.QUOTES_LIST, 'wb')
+    def downloadFiles(self, progressCallback):
+        for file in self.FILES:
+            self._downloadGzipFile(file['url'], file['name'], progressCallback)
+        
 
-        compressedStream = StringIO.StringIO(u)
-        gzipper = gzip.GzipFile(fileobj=compressedStream)
+    def _downloadGzipFile(self, url, destination, progressCallback):
+        """
+        Downloads a gzip compressed file and extracts it on the fly.
 
-	contentReceived = 0
-	contentLength = int(u.info()['Content-Length'])
+        Keyword parameters:
+        url -- The full url of the gzip file
+        destination -- the full path of the destination file
+        progressCallback -- a callback function which is invoked periodically with progress information
+        """
+        response = urllib2.urlopen(url)
+        file = open(os.path.join(self.path, destination), 'wb')
+        decompressor = zlib.decompressobj(16+zlib.MAX_WBITS)
+
+        contentReceived = 0
+        contentLength = int(response.info()['Content-Length'])
         while True:
-            chunk = gzipper.read(8192)
+            chunk = response.read(8192)
             if not chunk:
-		break
+                break
             contentReceived += len(chunk)
-            f.write(chunk)
+            decompressedChunk = decompressor.decompress(chunk)
+            file.write(decompressedChunk)
 
             percentage = int(contentReceived * 100 / contentLength)
-            print 'contentReceived = %d, contentLength = %d, percentage = %d' % (contentReceived, contentLength, percentage)
+            if not progressCallback(contentReceived, contentLength, percentage):
+                break
 
-        f.close()
-        u.close()
-
-        print 'Done.'
-
-    def _downloadProgress(self, count, blockSize, totalSize):
-        percent = int(count * blockSize * 100 / totalSize)
-
-        print "%d cnt, %d blockSize, %d totalSize, percent %d" % (count, blockSize, totalSize, percent) 
-
-#        sys.stdout.write('\rDownloading... %d%%' % percent)
-#	sys.stdout.flush()
-
+        file.close()
+        response.close()
 
     def getRandomQuote(self, movie):
         quotes = self._parseMovieQuotes(movie)
+        if quotes is None:
+            return None
+
         quote = quotes[random.randint(0, len(quotes)-1)]
         return quote
 
@@ -73,20 +82,37 @@ class Imdb(object):
         pattern = '\n# %s [^\n]+\n(.*?)\n\n#' % movie
 
         path = os.path.join(self.path, self.QUOTES_LIST)
-        f = open(path)
-        data = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-        m = re.search(pattern, data, re.DOTALL)
-        quotes = m.group(1).split('\n\n')
-        data.close()
-        f.close()
 
-        return quotes
+        if os.path.exists(path):
+            f = open(path)
+            data = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+            m = re.search(pattern, data, re.DOTALL)
+            quotes = m.group(1).split('\n\n')
+            data.close()
+            f.close()
+
+            return quotes
+        else:
+            xbmc.log("%s does not exists, has it been downloaded yet?" % self.QUOTES_LIST)
+            return None
+
 
 if __name__ == '__main__':
-    i = Imdb('/home/tommy/development/')
-    i.downloadFiles()
+    # this script is invoked from addon settings
 
-#    q = i.getRandomQuote('Back to the Future')
-#    print q
-#    print '---'
-#    print i.obfuscateQuote(q)
+    def progress(received, size, percentage):
+        line1 = strings(S_RETRIEVED_X_OF_Y_MB) % (received / 1048576, size / 1048576)
+        d.update(percentage, line1)
+        return not d.iscanceled()
+
+
+    addon = xbmcaddon.Addon(id = 'script.moviequiz')
+    i = Imdb(addon.getAddonInfo('profile'))
+
+    try:
+        d = xbmcgui.DialogProgress()
+        d.create(strings(S_DOWNLOADING_IMDB_DATA))
+        i.downloadFiles(progress)
+    finally:
+        d.close()
+        del d
