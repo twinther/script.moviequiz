@@ -1,11 +1,10 @@
 [B]Version 0.2.1 - 2011-xx-xx[/B]
-- Add support for online movie quote questions
+- Add support for Imdb movie quotes (Data download required from settings)
 - Avoid the same question multiple times in the same game
 - Avoid video files ending with .nfo
 - New question types
   - What movie is the newest
   - What Movie is not directed by <director>?
-
 
 [B]Version 0.2.0 - 2011-03-06[/B]
 - Attempt to fix crash related to calling xbmc.Player.stop()
