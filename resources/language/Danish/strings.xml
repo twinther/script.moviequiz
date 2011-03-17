@@ -60,7 +60,7 @@
     <string id="30500">Generelt</string>
     <string id="30501">Film</string>
     <string id="30502">TV-serier</string>
-    <string id="30503">Data</string>
+    <string id="30503">Downloads</string>
 
     <string id="30510">Begræns antallet af spørgsmål</string>
     <string id="30511">Spørgsmålsgrænse</string>
@@ -70,7 +70,6 @@
     <string id="30515">Brug kun sete film til spørgsmålene</string>
     <string id="30516">Begræns udvalget af TV-serier baseret på Content rating</string>
 	<string id="30517">Højeste Content rating</string>
-    <string id="30518">Brug spørgsmål der bruger data fra internettet</string>
     <string id="30519">Hent IMDB data...</string>
     <string id="30520">Henter IMDB data...</string>
     <string id="30521">%d af %d mb. modtaget</string>

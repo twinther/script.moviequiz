@@ -132,7 +132,6 @@ class QuizGui(xbmcgui.WindowXML):
         elif self.type == question.TYPE_TV and self.addon.getSetting('tvshow.rating.limit.enabled') == 'true':
             self.maxRating = self.addon.getSetting('tvshow.rating.limit')
         self.onlyWatchedMovies = self.addon.getSetting('only.watched.movies') == 'true'
-        self.useOnlineQuestions = self.addon.getSetting('use.online.questions') == 'true'
 
     def onInit(self):
         try :
@@ -265,7 +264,7 @@ class QuizGui(xbmcgui.WindowXML):
         retries = 0
         q = None
         while retries < 100:
-            q = question.getRandomQuestion(self.type, self.database, self.maxRating, self.onlyWatchedMovies, self.useOnlineQuestions)
+            q = question.getRandomQuestion(self.type, self.database, self.maxRating, self.onlyWatchedMovies)
             if q is None:
                 continue
                 

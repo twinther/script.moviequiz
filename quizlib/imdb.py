@@ -1,4 +1,3 @@
-import mmap
 import re
 import random
 import os
@@ -56,12 +55,16 @@ class Imdb(object):
         file.close()
         response.close()
 
-    def getRandomQuote(self, movie):
+    def getRandomQuote(self, movie, obfuscate = True):
         quotes = self._parseMovieQuotes(movie)
         if quotes is None:
             return None
 
         quote = quotes[random.randint(0, len(quotes)-1)]
+        quote = self._filterAndCleanup(quote)
+        if obfuscate:
+            quote = self.obfuscateQuote(quote)
+
         return quote
 
     def obfuscateQuote(self, quote):
@@ -76,6 +79,12 @@ class Imdb(object):
             repl = '#%d:' % (idx + 1)
             quote = quote.replace(name, repl)
 
+        print "Quote: %s" % quote
+
+        return quote
+
+    def _filterAndCleanup(self, quote):
+        quote = re.sub('\n  ', ' ', quote)
         return quote
 
     def _parseMovieQuotes(self, movie):
@@ -85,12 +94,17 @@ class Imdb(object):
 
         if os.path.exists(path):
             f = open(path)
-            data = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+            
+            #data = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+            data = f.read()
             m = re.search(pattern, data, re.DOTALL)
+            if m is None:
+                return None
+            
             quotes = m.group(1).split('\n\n')
-            data.close()
+            #data.close()
             f.close()
-
+            
             return quotes
         else:
             xbmc.log("%s does not exists, has it been downloaded yet?" % self.QUOTES_LIST)

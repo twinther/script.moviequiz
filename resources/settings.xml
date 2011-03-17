@@ -7,7 +7,6 @@
 
         <setting id="show.correct.answer" label="30514" type="bool" default="false" />
         <setting id="only.watched.movies" label="30515" type="bool" default="true" />
-        <setting id="use.online.questions" label="30518" type="bool" default="true" />
 
 	</category>
 

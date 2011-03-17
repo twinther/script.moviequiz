@@ -5,7 +5,7 @@ import thumb
 import db
 import time
 import re
-import quote
+import imdb
 
 from strings import *
 
@@ -100,9 +100,6 @@ class Question(object):
 
     def getQuoteText(self):
         return self.quoteText
-
-    def isOnlineQuestion(self):
-        return False
 
     def _get_movie_ids(self):
         movieIds = list()
@@ -515,7 +512,7 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
         MovieQuestion.__init__(self, database, DISPLAY_QUOTE, maxRating, onlyWatchedMovies)
 
         addon = xbmcaddon.Addon(id = 'script.moviequiz') # TODO
-        qd = quote.MovieQuotesDownloader(addon.getAddonInfo('profile'))
+        i = imdb.Imdb(addon.getAddonInfo('profile'))
 
         rows = self.database.fetchall("""
             SELECT mv.idMovie, mv.c00 AS title, mv.c07 AS year, mv.strPath, mv.strFilename
@@ -524,17 +521,17 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
             %s %s
             ORDER BY random() LIMIT 10
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
-        quotes = None
+        quoteText = None
         row = None
         for r in rows:
-            quotes = qd.downloadQuotes(r['title'], r['year'])
+            quoteText = i.getRandomQuote(r['title'])
 
-            if quotes is not None:
+            if quoteText is not None:
                 row = r
                 break
 
-        if quotes is None:
-            raise QuestionException('Did not find any question')
+        if quoteText is None:
+            raise QuestionException('Did not find any quotes')
 
         a = Answer(True, row['idMovie'], row['title'])
         a.setCoverFile(row['strPath'], row['strFilename'])
@@ -552,14 +549,9 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
             a.setCoverFile(movie['strPath'], movie['strFilename'])
             self.answers.append(a)
 
-        quoteText = quotes[random.randint(0, len(quotes)-1)]
-
         random.shuffle(self.answers)
         self.setQuoteText(quoteText)
         self.text = strings(Q_WHAT_MOVIE_IS_THIS_QUOTE_FROM)
-
-    def isOnlineQuestion(self):
-        return True
 
 
 class WhatMovieIsNewestQuestion(MovieQuestion):
@@ -939,7 +931,7 @@ class QuestionException(Exception):
     def __init__(self, msg):
         Exception.__init__(self, msg)
 
-def getRandomQuestion(type, database, maxRating, onlyWatchedMovies, useOnlineQuestions):
+def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
     """
         Gets random question from one of the Question subclasses.
     """
@@ -952,10 +944,7 @@ def getRandomQuestion(type, database, maxRating, onlyWatchedMovies, useOnlineQue
 
     for subclass in subclasses:
         try:
-            q = subclass(database, maxRating, onlyWatchedMovies)
-            if not useOnlineQuestions and q.isOnlineQuestion():
-                continue
-            return q
+            return subclass(database, maxRating, onlyWatchedMovies)
         except QuestionException, ex:
             print "QuestionException in %s: %s" % (subclass, ex)
         except db.DbException, ex:
