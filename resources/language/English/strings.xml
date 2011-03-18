@@ -45,6 +45,7 @@
     <string id="30409">What movie is this quote from?</string>
     <string id="30410">What movie is the newest?</string>
     <string id="30411">What movie is not directed by [B]%s[/B]?</string><!-- %s is director name -->
+    <string id="30412">What actor is in these movies?</string>
 
     <!-- TV show Questions -->
     <string id="30450">What TV show is this?</string>

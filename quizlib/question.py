@@ -16,6 +16,7 @@ DISPLAY_NONE = 0
 DISPLAY_VIDEO = 1
 DISPLAY_PHOTO = 2
 DISPLAY_QUOTE = 3
+DISPLAY_THREE_PHOTOS = 4
 
 class Answer(object):
     def __init__(self, correct, id, text, idFile = None, sortWeight = None):
@@ -34,13 +35,7 @@ class Answer(object):
         if filename is None:
             self.coverFile = path
         else:
-            if filename[0:8] == 'stack://':
-                videoFile = filename
-            else:
-                videoFile = os.path.join(path, filename)
-
-            self.coverFile = thumb.getCachedThumb(videoFile)
-
+            self.coverFile = thumb.getCachedVideoThumb(path, filename)
 
 class Question(object):
     def __init__(self, database, display, maxRating, onlyWatchedMovies):
@@ -48,7 +43,7 @@ class Question(object):
         self.answers = list()
         self.text = None
         self.videoFile = None
-        self.photoFile = None
+        self.photos = list()
         self.quoteText = None
 
         self.display = display
@@ -89,11 +84,11 @@ class Question(object):
     def getVideoFile(self):
         return self.videoFile
 
-    def setPhotoFile(self, photoFile):
-        self.photoFile = photoFile
+    def addPhoto(self, photo):
+        self.photos.append(photo)
 
-    def getPhotoFile(self):
-        return self.photoFile
+    def getPhotoFile(self, index = 0):
+        return self.photos[index]
 
     def setQuoteText(self, quoteText):
         self.quoteText = quoteText
@@ -266,7 +261,7 @@ class ActorNotInMovieQuestion(MovieQuestion):
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_MOVIE_IS_ACTOR_NOT_IN, actor['strActor'])
-        self.setPhotoFile(photoFile)
+        self.addPhoto(photoFile)
 
 
 
@@ -458,7 +453,7 @@ class WhatActorIsThisQuestion(MovieQuestion):
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_ACTOR_IS_THIS)
-        self.setPhotoFile(photoFile)
+        self.addPhoto(photoFile)
 
 class WhoPlayedRoleInMovieQuestion(MovieQuestion):
     """
@@ -644,9 +639,48 @@ class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_MOVIE_IS_NOT_DIRECTED_BY, director['strActor'])
-        self.setPhotoFile(photoFile)
+        self.addPhoto(photoFile)
 
 
+class WhatActorIsInTheseMoviesQuestion(MovieQuestion):
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        MovieQuestion.__init__(self, database, DISPLAY_THREE_PHOTOS, maxRating, onlyWatchedMovies)
+
+        actor = self.database.fetchone("""
+            SELECT a.idActor, a.strActor
+            FROM movieview mv, actorlinkmovie alm, actors a
+            WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor AND mv.strFilename NOT LIKE '%%.nfo'
+            %s %s
+            GROUP BY alm.idActor HAVING count(mv.idMovie) >= 3 ORDER BY random() LIMIT 1
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
+        a = Answer(True, actor['idActor'], actor['strActor'])
+        a.setCoverFile(thumb.getCachedActorThumb(actor['strActor']))
+        self.answers.append(a)
+
+        rows = self.database.fetchall("""
+            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename
+            FROM movieview mv, actorlinkmovie alm
+            WHERE mv.idMovie=alm.idMovie AND alm.idActor=? AND mv.strFilename NOT LIKE '%%.nfo'
+            %s %s
+            ORDER BY random() LIMIT 3
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), actor['idActor'])
+        for row in rows:
+            self.addPhoto(thumb.getCachedVideoThumb(row['strPath'], row['strFilename']))
+
+        otherActors = self.database.fetchall("""
+            SELECT a.idActor, a.strActor
+            FROM movieview mv, actorlinkmovie alm, actors a
+            WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor AND mv.strFilename NOT LIKE '%%.nfo'
+            %s %s
+            GROUP BY alm.idActor HAVING count(mv.idMovie) < 3 ORDER BY random() LIMIT 3
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
+        for other in otherActors:
+            a = Answer(False, other['idActor'], other['strActor'])
+            a.setCoverFile(thumb.getCachedActorThumb(other['strActor']))
+            self.answers.append(a)
+
+        random.shuffle(self.answers)
+        self.text = strings(Q_WHAT_ACTOR_IS_IN_THESE_MOVIES)
 
 #
 # TV QUESTIONS
@@ -925,7 +959,7 @@ class WhoPlayedRoleInTVShowQuestion(TVQuestion):
             self.text = strings(Q_WHO_VOICES_ROLE_IN_TVSHOW) % (role, row['title'])
         else:
             self.text = strings(Q_WHO_PLAYS_ROLE_IN_TVSHOW) % (role, row['title'])
-        self.setPhotoFile(thumb.getCachedTVShowThumb(row['strPath']))
+        self.addPhoto(thumb.getCachedTVShowThumb(row['strPath']))
 
 class QuestionException(Exception):
     def __init__(self, msg):

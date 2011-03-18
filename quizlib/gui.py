@@ -107,9 +107,13 @@ class QuizGui(xbmcgui.WindowXML):
     C_MAIN_MOVIE_BACKGROUND = 4500
     C_MAIN_TVSHOW_BACKGROUND = 4501
     C_MAIN_QUOTE_LABEL = 4600
+    C_MAIN_PHOTO_1 = 4701
+    C_MAIN_PHOTO_2 = 4702
+    C_MAIN_PHOTO_3 = 4703
     C_MAIN_VIDEO_VISIBILITY = 5000
     C_MAIN_PHOTO_VISIBILITY = 5001
     C_MAIN_QUOTE_VISIBILITY = 5004
+    C_MAIN_THREE_PHOTOS_VISIBILITY = 5006
     C_MAIN_CORRECT_VISIBILITY = 5002
     C_MAIN_INCORRECT_VISIBILITY = 5003
     C_MAIN_LOADING_VISIBILITY = 5005
@@ -235,6 +239,7 @@ class QuizGui(xbmcgui.WindowXML):
             self.show(self.C_MAIN_VIDEO_VISIBILITY)
             self.hide(self.C_MAIN_PHOTO_VISIBILITY)
             self.hide(self.C_MAIN_QUOTE_VISIBILITY)
+            self.hide(self.C_MAIN_THREE_PHOTOS_VISIBILITY)
             xbmc.sleep(1500) # give skin animation time to execute
             self.player.playWindowed(self.question.getVideoFile(), correctAnswer.idFile)
 
@@ -244,19 +249,31 @@ class QuizGui(xbmcgui.WindowXML):
             self.hide(self.C_MAIN_VIDEO_VISIBILITY)
             self.show(self.C_MAIN_PHOTO_VISIBILITY)
             self.hide(self.C_MAIN_QUOTE_VISIBILITY)
+            self.hide(self.C_MAIN_THREE_PHOTOS_VISIBILITY)
 
         elif self.question.getDisplay() == question.DISPLAY_QUOTE:
-            print self.question.getQuoteText()
             self.getControl(self.C_MAIN_QUOTE_LABEL).setText(self.question.getQuoteText())
 
             self.hide(self.C_MAIN_VIDEO_VISIBILITY)
             self.hide(self.C_MAIN_PHOTO_VISIBILITY)
             self.show(self.C_MAIN_QUOTE_VISIBILITY)
+            self.hide(self.C_MAIN_THREE_PHOTOS_VISIBILITY)
 
         elif self.question.getDisplay() == question.DISPLAY_NONE:
             self.hide(self.C_MAIN_VIDEO_VISIBILITY)
             self.hide(self.C_MAIN_PHOTO_VISIBILITY)
             self.hide(self.C_MAIN_QUOTE_VISIBILITY)
+            self.hide(self.C_MAIN_THREE_PHOTOS_VISIBILITY)
+
+        elif self.question.getDisplay() == question.DISPLAY_THREE_PHOTOS:
+            self.getControl(self.C_MAIN_PHOTO_1).setImage(self.question.getPhotoFile(0))
+            self.getControl(self.C_MAIN_PHOTO_2).setImage(self.question.getPhotoFile(1))
+            self.getControl(self.C_MAIN_PHOTO_3).setImage(self.question.getPhotoFile(2))
+
+            self.hide(self.C_MAIN_VIDEO_VISIBILITY)
+            self.hide(self.C_MAIN_PHOTO_VISIBILITY)
+            self.hide(self.C_MAIN_QUOTE_VISIBILITY)
+            self.show(self.C_MAIN_THREE_PHOTOS_VISIBILITY)
 
         self.getControl(self.C_MAIN_LOADING_VISIBILITY).setVisible(False)
 

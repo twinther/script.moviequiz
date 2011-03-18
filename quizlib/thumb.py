@@ -1,4 +1,5 @@
 import xbmc
+import os
 
 __author__ = 'tommy'
 
@@ -9,6 +10,15 @@ def getCachedThumb(file):
 
     crc = xbmc.getCacheThumbName(file.lower())
     return xbmc.translatePath('special://profile/Thumbnails/Video/%s/%s' % (crc[0], crc))
+
+def getCachedVideoThumb(path, filename):
+    if filename[0:8] == 'stack://':
+        videoFile = filename
+    else:
+        videoFile = os.path.join(path, filename)
+        
+    return getCachedThumb(videoFile)
+
 
 def getCachedActorThumb(name):
     return getCachedThumb('actor' + name)

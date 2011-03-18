@@ -45,6 +45,7 @@
     <string id="30409">Hvilken film er dette citat fra?</string>
     <string id="30410">Hvilken film er nyest?</string>
     <string id="30411">Hvilken film er ikke instrueret af [B]%s[/B]?</string><!-- %s is director name -->
+    <string id="30412">Hvilken skuespiller medvirker i disse film?</string>
 
     <!-- TV show Questions -->
     <string id="30450">Hvilken TV-serie er det?</string>
