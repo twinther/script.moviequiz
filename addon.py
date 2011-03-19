@@ -1,51 +1,40 @@
 import xbmc
 import xbmcaddon
-import sys
 
 from quizlib.gui import MenuGui, QuizGui
-import quizlib.question as question
 
-def runStandalone(addon, path):
+ADDON_ID = 'script.moviequiz'
+
+def runStandalone():
     xbmc.log("Starting Movie Quiz in standalone mode")
 
+    addon = xbmcaddon.Addon(id = ADDON_ID)
+    path = addon.getAddonInfo('path')
     w = MenuGui('script-moviequiz-menu.xml', path, addon = addon)
     w.doModal()
     del w
 
-def runCinemaExperience(addon, path, type, automatic, maxRating, genre, questionLimit):
+def runCinemaExperience(type, automatic, maxRating, genre, questionLimit):
+    """
+    Used by Cinema Experience integration. This method will block until the Movie Quiz is exited.
+
+    Keyword arguments:
+    type -- the type of quiz to run, either Movie or TV Quiz. Either use constants in question.py or 1 for Movie and 2 for TV Quiz.
+    automatic -- pass True if the quiz should run non-interactively, ie. progressing automatically.
+    maxRating -- the maximum allow MPAA rating to use.
+    genre -- Unused at the moment.
+    questionLimit -- the number of questions to go through before the quiz ends.
+    """
     xbmc.log("Starting Movie Quiz in Cinema Experience mode with params: type=%s, automatic=%s, maxRating=%s, genre=%s, questionLimit=%d"
         % (type, automatic, maxRating, genre, questionLimit))
 
+    addon = xbmcaddon.Addon(id = ADDON_ID)
+    path = addon.getAddonInfo('path')
     w = QuizGui('script-moviequiz-main.xml', path, addon=addon, interactive=not automatic, type=type, questionLimit=questionLimit, maxRating=maxRating)
     w.doModal()
     del w
 
+    return True
 
 if __name__ == '__main__':
-    addon = xbmcaddon.Addon(id = 'script.moviequiz')
-    path = addon.getAddonInfo('path')
-
-    #sys.argv = ['movies;automatic;;comedy;5']
-
-    if len(sys.argv) > 0 and sys.argv[0].strip() != '':
-        args = sys.argv[0].split(';')
-
-        if args[0] == 'movies':
-            type = question.TYPE_MOVIE
-        else:
-            type = question.TYPE_TV
-        if args[1] == 'automatic':
-            automatic = True
-        else:
-            automatic = False
-        maxRating = args[2]
-        if not maxRating.strip():
-            maxRating = None
-        genre = args[3]
-        questionLimit = int(args[4])
-
-        runCinemaExperience(addon, path, type, automatic, maxRating, genre, questionLimit)
-    
-    else:
-        runStandalone(addon, path)
-
+    runStandalone()
