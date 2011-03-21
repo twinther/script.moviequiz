@@ -2,6 +2,8 @@ import random
 import threading
 import db
 import xbmc
+import os
+import re
 
 class TenSecondPlayer(xbmc.Player):
     """TenSecondPlayer is a subclass of xbmc.Player that stops playback after about ten seconds."""
@@ -29,11 +31,11 @@ class TenSecondPlayer(xbmc.Player):
         """
         xbmc.log(">> TenSecondPlayer.stop()")
         # call xbmc.Player.stop() in a seperate thread to attempt to avoid xbmc lockups/crashes
-        threading.Timer(0.5, self.delayedStop).start()
+        threading.Timer(0.5, self._delayedStop).start()
         if self.tenSecondTimer is not None:
             self.tenSecondTimer.cancel()
     
-    def delayedStop(self):
+    def _delayedStop(self):
         """
         Stops playback by calling xbmc.Player.stop()
 
@@ -58,6 +60,12 @@ class TenSecondPlayer(xbmc.Player):
             #self.stop()
             self.tenSecondTimer.cancel()
 
+        if file[-4:].lower() == '.ifo':
+            file = self._getRandomDvdVob(file)
+        elif file[-4:].lower() == '.iso':
+            pass
+            #todo file = self._getRandomDvdVob(file)
+
         # Get bookmark details, so we can restore after playback
         try:
             self.bookmark = self.database.fetchone("""
@@ -66,7 +74,7 @@ class TenSecondPlayer(xbmc.Player):
         except db.DbException:
             self.bookmark = {'idFile' : idFile}
 
-        self.play(item = file, windowed = True)
+        self.play(item = file)#, windowed = True)
 
         retries = 0
         while not self.isPlaying() and retries < 20:
@@ -74,6 +82,19 @@ class TenSecondPlayer(xbmc.Player):
             retries += 1
         xbmc.log(">> TenSecondPlayer.playWindowed() - end")
 
+    def _getRandomDvdVob(self, ifoFile):
+        xbmc.log(">> TenSecondPlayer._getRandomDvdVob() - ifoFile = %s" % ifoFile)
+
+        files = []
+        path = os.path.dirname(ifoFile)
+        for item in os.listdir(path):
+            if re.search('vts_[0-9]{2}_[1-9].vob', item.lower()):
+                files.append(item)
+
+        random.shuffle(files)
+        file = os.path.join(path, files[0])
+        xbmc.log(">> TenSecondPlayer._getRandomDvdVob() - file = %s" % file)
+        return file
 
     def onTenSecondsPassed(self):
         """
