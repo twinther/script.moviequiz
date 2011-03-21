@@ -72,15 +72,26 @@ class MenuGui(xbmcgui.WindowXML):
             self.close()
 
     def onClick(self, controlId):
+        maxQuestions = -1
+        if self.addon.getSetting('question.limit.enabled') == 'true':
+            maxQuestions = int(self.addon.getSetting('question.limit'))
+
+        maxRating = None
+
         if controlId == self.C_MENU_MOVIE_QUIZ:
+            if self.addon.getSetting('movie.rating.limit.enabled') == 'true':
+                maxRating = self.addon.getSetting('movie.rating.limit')
+
             path = self.addon.getAddonInfo('path')
-            w = QuizGui('script-moviequiz-main.xml', path, addon=self.addon, type=question.TYPE_MOVIE)
+            w = QuizGui('script-moviequiz-main.xml', path, addon=self.addon, type=question.TYPE_MOVIE, questionLimit=maxQuestions, maxRating=maxRating)
             w.doModal()
             del w
 
         elif controlId == self.C_MENU_TVSHOW_QUIZ:
+            if self.addon.getSetting('tvshow.rating.limit.enabled') == 'true':
+                maxRating = self.addon.getSetting('tvshow.rating.limit')
             path = self.addon.getAddonInfo('path')
-            w = QuizGui('script-moviequiz-main.xml', path, addon=self.addon, type=question.TYPE_TV)
+            w = QuizGui('script-moviequiz-main.xml', path, addon=self.addon, type=question.TYPE_TV, questionLimit=maxQuestions, maxRating=maxRating)
             w.doModal()
             del w
 
@@ -119,10 +130,14 @@ class QuizGui(xbmcgui.WindowXML):
     C_MAIN_LOADING_VISIBILITY = 5005
 
 
-    def __init__(self, xmlFilename, scriptPath, addon, type):
+    def __init__(self, xmlFilename, scriptPath, addon, type, questionLimit = -1, maxRating = None, interactive = True):
         xbmcgui.WindowXML.__init__(self, xmlFilename, scriptPath)
         self.addon = addon
         self.type = type
+        self.questionLimit = questionLimit
+        self.questionCount = 0
+        self.maxRating = maxRating
+        self.interactive = interactive
 
         self.database = db.Database()
         self.player = player.TenSecondPlayer(database=self.database)
@@ -145,7 +160,7 @@ class QuizGui(xbmcgui.WindowXML):
         finally:
             xbmcgui.unlock()
 
-        self._setup_game()
+        self._setup_question()
 
     def close(self):
         if hasattr(self, 'player') and self.player.isPlaying():
@@ -159,62 +174,36 @@ class QuizGui(xbmcgui.WindowXML):
             self.close()
 
     def onClick(self, controlId):
+        if not self.interactive:
+            return # ignore
+
         if hasattr(self, 'question') and (controlId >= self.C_MAIN_FIRST_ANSWER  or controlId <= self.C_MAIN_LAST_ANSWER):
             answer = self.question.getAnswer(controlId - self.C_MAIN_FIRST_ANSWER)
-            if answer is not None and answer.correct:
-                self.score['correct'] += 1
-                self.show(self.C_MAIN_CORRECT_VISIBILITY)
-            else:
-                self.score['wrong'] += 1
-                self.show(self.C_MAIN_INCORRECT_VISIBILITY)
-
-            if self.player.isPlaying():
-                self.player.stop()
-
-            threading.Timer(3.0, self._hide_icons).start()
-            if self.addon.getSetting('show.correct.answer') == 'true' and not answer.correct:
-                for idx, answer in enumerate(self.question.getAnswers()):
-                    if answer.correct:
-                        self.getControl(self.C_MAIN_FIRST_ANSWER + idx).setLabel('[B]%s[/B]' % answer.text)
-                        self.setFocusId(self.C_MAIN_FIRST_ANSWER + idx)
-                    else:
-                        self.getControl(self.C_MAIN_FIRST_ANSWER + idx).setLabel(textColor='0x88888888')
-
-                xbmc.sleep(3000)
-
+            self._handle_answer(answer)
             self._setup_question()
 
     #noinspection PyUnusedLocal
     def onFocus(self, controlId):
         self._update_thumb()
 
-    def _setup_game(self):
-        maxQuestions = -1
-        if self.addon.getSetting('question.limit.enabled') == 'true':
-            maxQuestions = int(self.addon.getSetting('question.limit'))
-
-        self.questionLimit = {'count': 0, 'max': maxQuestions}
-
-        self._setup_question()
-
     def _game_over(self):
-        total = self.score['correct'] + self.score['wrong']
+        if self.interactive:
+            total = self.score['correct'] + self.score['wrong']
+            line1 = strings(G_GAME_OVER)
+            line2 = strings(G_YOU_SCORED) % (self.score['correct'], total)
 
-        line1 = strings(G_GAME_OVER)
-        line2 = strings(G_YOU_SCORED) % (self.score['correct'], total)
-
-        path = self.addon.getAddonInfo('path')
-        w = ClapperDialog('script-moviequiz-clapper.xml', path, line1=line1, line2=line2)
-        w.doModal()
-        del w
+            path = self.addon.getAddonInfo('path')
+            w = ClapperDialog('script-moviequiz-clapper.xml', path, line1=line1, line2=line2)
+            w.doModal()
+            del w
 
         self.close()
 
     def _setup_question(self):
         self.getControl(self.C_MAIN_LOADING_VISIBILITY).setVisible(True)
 
-        self.questionLimit['count'] += 1
-        if self.questionLimit['max'] > 0 and self.questionLimit['count'] > self.questionLimit['max']:
+        self.questionCount += 1
+        if self.questionLimit > 0 and self.questionCount > self.questionLimit:
             self._game_over()
             return
 
@@ -230,6 +219,10 @@ class QuizGui(xbmcgui.WindowXML):
             else:
                 button.setLabel(answers[idx].text, textColor='0xFFFFFFFF')
                 button.setEnabled(True)
+
+            if not self.interactive and answers[idx].correct:
+                # highlight correct answer
+                self.setFocusId(self.C_MAIN_FIRST_ANSWER + idx)
 
         self._update_thumb()
         self._update_stats()
@@ -275,6 +268,10 @@ class QuizGui(xbmcgui.WindowXML):
             self.hide(self.C_MAIN_QUOTE_VISIBILITY)
             self.show(self.C_MAIN_THREE_PHOTOS_VISIBILITY)
 
+        if not self.interactive:
+            # answers correctly in ten seconds
+            threading.Timer(3.0, self._answer_correctly).start()
+
         self.getControl(self.C_MAIN_LOADING_VISIBILITY).setVisible(False)
 
     def _getNewQuestion(self):
@@ -296,14 +293,40 @@ class QuizGui(xbmcgui.WindowXML):
 
         return q
 
+    def _answer_correctly(self):
+        answer = self.question.getCorrectAnswer()
+        self._handle_answer(answer)
+        self._setup_question()
+
+    def _handle_answer(self, answer):
+        if answer is not None and answer.correct:
+            self.score['correct'] += 1
+            self.show(self.C_MAIN_CORRECT_VISIBILITY)
+        else:
+            self.score['wrong'] += 1
+            self.show(self.C_MAIN_INCORRECT_VISIBILITY)
+
+        if self.player.isPlaying():
+            self.player.stop()
+
+        threading.Timer(3.0, self._hide_icons).start()
+        if self.addon.getSetting('show.correct.answer') == 'true' and not answer.correct:
+            for idx, answer in enumerate(self.question.getAnswers()):
+                if answer.correct:
+                    self.getControl(self.C_MAIN_FIRST_ANSWER + idx).setLabel('[B]%s[/B]' % answer.text)
+                    self.setFocusId(self.C_MAIN_FIRST_ANSWER + idx)
+                else:
+                    self.getControl(self.C_MAIN_FIRST_ANSWER + idx).setLabel(textColor='0x88888888')
+
+            xbmc.sleep(3000)
+
     def _update_stats(self):
         self.getControl(self.C_MAIN_CORRECT_SCORE).setLabel(str(self.score['correct']))
         self.getControl(self.C_MAIN_INCORRECT_SCORE).setLabel(str(self.score['wrong']))
 
         label = self.getControl(self.C_MAIN_QUESTION_COUNT)
-        if self.addon.getSetting('question.limit.enabled') == 'true':
-            questionCount = strings(G_QUESTION_X_OF_Y, (self.questionLimit['count'], self.questionLimit['max']))
-            label.setLabel(questionCount)
+        if self.questionLimit > 0:
+            label.setLabel(strings(G_QUESTION_X_OF_Y, (self.questionCount, self.questionLimit)))
         else:
             label.setLabel('')
 
