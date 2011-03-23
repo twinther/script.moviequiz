@@ -141,44 +141,44 @@ class WhatMovieIsThisQuestion(MovieQuestion):
         MovieQuestion.__init__(self, database, DISPLAY_VIDEO, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
-            SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.c14 AS genre, mv.strPath, mv.strFilename, slm.idSet
+            SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.c14 AS genre, mv.strPath, mv.strFileName, slm.idSet
             FROM movieview mv LEFT JOIN setlinkmovie slm ON mv.idMovie = slm.idMovie
-            WHERE mv.strFilename NOT LIKE '%%.nfo'
+            WHERE mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 1
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
         a = Answer(True, row['idMovie'], row['title'], row['idFile'])
-        a.setCoverFile(row['strPath'], row['strFilename'])
+        a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
         # Find other movies in set
         if row['idSet'] is not None:
             otherMoviesInSet = self.database.fetchall("""
-                SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFilename
+                SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFileName
                 FROM movieview mv, setlinkmovie slm
-                WHERE mv.idMovie = slm.idMovie AND slm.idSet = ? AND mv.idMovie != ? AND title != ? AND mv.strFilename NOT LIKE '%%.nfo'
+                WHERE mv.idMovie = slm.idMovie AND slm.idSet = ? AND mv.idMovie != ? AND title != ? AND mv.strFileName NOT LIKE '%%.nfo'
                 %s %s
                 ORDER BY random() LIMIT 3
                 """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), (row['idSet'], row['idMovie'], row['title']))
             for movie in otherMoviesInSet:
                 a = Answer(False, movie['idMovie'], movie['title'], movie['idFile'])
-                a.setCoverFile(movie['strPath'], movie['strFilename'])
+                a.setCoverFile(movie['strPath'], movie['strFileName'])
                 self.answers.append(a)
 
         # Find other movies in genre
         if len(self.answers) < 4:
             try:
                 otherMoviesInGenre = self.database.fetchall("""
-                    SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.c14 AS genre, mv.strPath, mv.strFilename
+                    SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.c14 AS genre, mv.strPath, mv.strFileName
                     FROM movieview mv
-                    WHERE genre = ? AND mv.idMovie NOT IN (%s) AND title != ? AND mv.strFilename NOT LIKE '%%.nfo'
+                    WHERE mv.c14 = ? AND mv.idMovie NOT IN (%s) AND mv.c00 != ? AND mv.strFileName NOT LIKE '%%.nfo'
                     %s %s
-                    ORDER BY random() LIMIT ?
-                    """ % (self._get_movie_ids(), self._get_max_rating_clause(), self._get_watched_movies_clause()),
-                        (row['genre'], row['title'], 4 - len(self.answers)))
+                    ORDER BY random() LIMIT %d
+                    """ % (self._get_movie_ids(), self._get_max_rating_clause(), self._get_watched_movies_clause(), 4 - len(self.answers)),
+                        (row['genre'], row['title'], ))
                 for movie in otherMoviesInGenre:
                     a = Answer(False, movie['idMovie'], movie['title'], movie['idFile'])
-                    a.setCoverFile(movie['strPath'], movie['strFilename'])
+                    a.setCoverFile(movie['strPath'], movie['strFileName'])
                     self.answers.append(a)
             except db.DbException:
                 pass # ignore in case user has no other movies in genre
@@ -186,22 +186,22 @@ class WhatMovieIsThisQuestion(MovieQuestion):
         # Fill with random movies
         if len(self.answers) < 4:
             theRest = self.database.fetchall("""
-                SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFilename
+                SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFileName
                 FROM movieview mv
-                WHERE mv.idMovie NOT IN (%s) AND title != ? AND mv.strFilename NOT LIKE '%%.nfo'
+                WHERE mv.idMovie NOT IN (%s) AND mv.c00 != ? AND mv.strFileName NOT LIKE '%%.nfo'
                 %s %s
-                ORDER BY random() LIMIT ?
-                """ % (self._get_movie_ids(), self._get_max_rating_clause(), self._get_watched_movies_clause()),
-                         (row['title'], 4 - len(self.answers)))
+                ORDER BY random() LIMIT %d
+                """ % (self._get_movie_ids(), self._get_max_rating_clause(), self._get_watched_movies_clause(), 4 - len(self.answers)),
+                         row['title'])
             for movie in theRest:
                 a = Answer(False, movie['idMovie'], movie['title'], movie['idFile'])
-                a.setCoverFile(movie['strPath'], movie['strFilename'])
+                a.setCoverFile(movie['strPath'], movie['strFileName'])
                 self.answers.append(a)
             print self._get_movie_ids()
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_MOVIE_IS_THIS)
-        self.setVideoFile(row['strPath'], row['strFilename'])
+        self.setVideoFile(row['strPath'], row['strFileName'])
 
 
 class ActorNotInMovieQuestion(MovieQuestion):
@@ -216,7 +216,7 @@ class ActorNotInMovieQuestion(MovieQuestion):
         rows = self.database.fetchall("""
             SELECT a.idActor, a.strActor
             FROM movieview mv, actorlinkmovie alm, actors a
-            WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor AND mv.strFilename NOT LIKE '%%.nfo'
+            WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             GROUP BY alm.idActor HAVING count(mv.idMovie) >= 3 ORDER BY random() LIMIT 10
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
@@ -236,27 +236,27 @@ class ActorNotInMovieQuestion(MovieQuestion):
 
         # Movies actor is not in
         row = self.database.fetchone("""
-            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename
+            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFileName
             FROM movieview mv WHERE mv.idMovie NOT IN (
                 SELECT DISTINCT alm.idMovie FROM actorlinkmovie alm WHERE alm.idActor = ?
-            ) AND mv.strFilename NOT LIKE '%%.nfo'
+            ) AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 1
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), actor['idActor'])
         a = Answer(True, actor['idActor'], row['title'])
-        a.setCoverFile(row['strPath'], row['strFilename'])
+        a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
         # Movie actor is in
         movies = self.database.fetchall("""
-            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename
-            FROM movieview mv, actorlinkmovie alm WHERE mv.idMovie = alm.idMovie AND alm.idActor = ? AND mv.strFilename NOT LIKE '%%.nfo'
+            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFileName
+            FROM movieview mv, actorlinkmovie alm WHERE mv.idMovie = alm.idMovie AND alm.idActor = ? AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 3
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), actor['idActor'])
         for movie in movies:
             a = Answer(False, -1, movie['title'])
-            a.setCoverFile(movie['strPath'], movie['strFilename'])
+            a.setCoverFile(movie['strPath'], movie['strFileName'])
             self.answers.append(a)
 
         random.shuffle(self.answers)
@@ -273,8 +273,8 @@ class WhatYearWasMovieReleasedQuestion(MovieQuestion):
         MovieQuestion.__init__(self, database, DISPLAY_VIDEO, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
-            SELECT mv.idFile, mv.c00 AS title, mv.c07 AS year, mv.strPath, mv.strFilename
-            FROM movieview mv WHERE year > 1900 AND mv.strFilename NOT LIKE '%%.nfo'
+            SELECT mv.idFile, mv.c00 AS title, mv.c07 AS year, mv.strPath, mv.strFileName
+            FROM movieview mv WHERE mv.c07 > 1900 AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 1
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
@@ -299,11 +299,11 @@ class WhatYearWasMovieReleasedQuestion(MovieQuestion):
 
         for year in years:
             a = Answer(year == int(row['year']), row['idFile'], str(year), row['idFile'])
-            a.setCoverFile(row['strPath'], row['strFilename'])
+            a.setCoverFile(row['strPath'], row['strFileName'])
             self.answers.append(a)
 
         self.text = strings(Q_WHAT_YEAR_WAS_MOVIE_RELEASED, row['title'])
-        self.setVideoFile(row['strPath'], row['strFilename'])
+        self.setVideoFile(row['strPath'], row['strFileName'])
 
 
 class WhatTagLineBelongsToMovieQuestion(MovieQuestion):
@@ -314,24 +314,24 @@ class WhatTagLineBelongsToMovieQuestion(MovieQuestion):
         MovieQuestion.__init__(self, database, DISPLAY_VIDEO, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
-            SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.c03 AS tagline, mv.strPath, mv.strFilename
-            FROM movieview mv WHERE TRIM(tagline) != \'\' AND mv.strFilename NOT LIKE '%%.nfo'
+            SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.c03 AS tagline, mv.strPath, mv.strFileName
+            FROM movieview mv WHERE TRIM(mv.c03) != \'\' AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 1
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
         a = Answer(True, row['idMovie'], row['tagline'], row['idFile'])
-        a.setCoverFile(row['strPath'], row['strFilename'])
+        a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
         otherAnswers = self.database.fetchall("""
-            SELECT mv.idMovie, mv.idFile, mv.c03 AS tagline, mv.strPath, mv.strFilename
-            FROM movieview mv WHERE TRIM(tagline) != \'\' AND mv.idMovie != ? AND c00 != ? AND mv.strFilename NOT LIKE '%%.nfo'
+            SELECT mv.idMovie, mv.idFile, mv.c03 AS tagline, mv.strPath, mv.strFileName
+            FROM movieview mv WHERE TRIM(mv.c03) != \'\' AND mv.idMovie != ? AND c00 != ? AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 3
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), (row['idMovie'], row['title']))
         for movie in otherAnswers:
             a = Answer(False, movie['idMovie'], movie['tagline'], row['idFile'])
-            a.setCoverFile(row['strPath'], row['strFilename'])
+            a.setCoverFile(row['strPath'], row['strFileName'])
             self.answers.append(a)
 
         if len(self.answers) < 3:
@@ -339,7 +339,7 @@ class WhatTagLineBelongsToMovieQuestion(MovieQuestion):
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_TAGLINE_BELONGS_TO_MOVIE, row['title'])
-        self.setVideoFile(row['strPath'], row['strFilename'])
+        self.setVideoFile(row['strPath'], row['strFileName'])
 
 
 class WhoDirectedThisMovieQuestion(MovieQuestion):
@@ -350,14 +350,14 @@ class WhoDirectedThisMovieQuestion(MovieQuestion):
         MovieQuestion.__init__(self, database, DISPLAY_VIDEO, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
-            SELECT idActor, a.strActor, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFilename
+            SELECT idActor, a.strActor, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFileName
             FROM movieview mv, directorlinkmovie dlm, actors a
-            WHERE mv.idMovie = dlm.idMovie AND dlm.idDirector = a.idActor AND mv.strFilename NOT LIKE '%%.nfo'
+            WHERE mv.idMovie = dlm.idMovie AND dlm.idDirector = a.idActor AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 1
         """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
         a = Answer(True, row['idActor'], row['strActor'], row['idFile'])
-        a.setCoverFile(row['strPath'], row['strFilename'])
+        a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
         otherAnswers = self.database.fetchall("""
@@ -368,12 +368,12 @@ class WhoDirectedThisMovieQuestion(MovieQuestion):
         """, row['idActor'])
         for movie in otherAnswers:
             a = Answer(False, movie['idActor'], movie['strActor'], row['idFile'])
-            a.setCoverFile(row['strPath'], row['strFilename'])
+            a.setCoverFile(row['strPath'], row['strFileName'])
             self.answers.append(a)
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHO_DIRECTED_THIS_MOVIE, row['title'])
-        self.setVideoFile(row['strPath'], row['strFilename'])
+        self.setVideoFile(row['strPath'], row['strFileName'])
 
 
 class WhatStudioReleasedMovieQuestion(MovieQuestion):
@@ -384,14 +384,14 @@ class WhatStudioReleasedMovieQuestion(MovieQuestion):
         MovieQuestion.__init__(self, database, DISPLAY_VIDEO, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
-            SELECT s.idStudio, s.strStudio, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFilename
+            SELECT s.idStudio, s.strStudio, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFileName
             FROM movieview mv, studiolinkmovie slm, studio s
-            WHERE mv.idMovie = slm.idMovie AND slm.idStudio = s.idStudio AND mv.strFilename NOT LIKE '%%.nfo'
+            WHERE mv.idMovie = slm.idMovie AND slm.idStudio = s.idStudio AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 1
         """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
         a = Answer(True, row['idStudio'], row['strStudio'], row['idFile'])
-        a.setCoverFile(row['strPath'], row['strFilename'])
+        a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
         otherAnswers = self.database.fetchall("""
@@ -402,12 +402,12 @@ class WhatStudioReleasedMovieQuestion(MovieQuestion):
         """, row['idStudio'])
         for movie in otherAnswers:
             a = Answer(False, movie['idStudio'], movie['strStudio'], row['idFile'])
-            a.setCoverFile(row['strPath'], row['strFilename'])
+            a.setCoverFile(row['strPath'], row['strFileName'])
             self.answers.append(a)
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_STUDIO_RELEASED_MOVIE, row['title'])
-        self.setVideoFile(row['strPath'], row['strFilename'])
+        self.setVideoFile(row['strPath'], row['strFileName'])
 
 
 class WhatActorIsThisQuestion(MovieQuestion):
@@ -422,7 +422,7 @@ class WhatActorIsThisQuestion(MovieQuestion):
         rows = self.database.fetchall("""
             SELECT DISTINCT a.idActor, a.strActor
             FROM actors a, actorlinkmovie alm, movieview mv
-            WHERE a.idActor = alm.idActor AND alm.idMovie=mv.idMovie AND mv.strFilename NOT LIKE '%%.nfo'
+            WHERE a.idActor = alm.idActor AND alm.idMovie=mv.idMovie AND mv.strFileName NOT LIKE '%%.nfo'
             %s
             ORDER BY random() LIMIT 10
             """ % self._get_watched_movies_clause())
@@ -463,9 +463,9 @@ class WhoPlayedRoleInMovieQuestion(MovieQuestion):
         MovieQuestion.__init__(self, database, DISPLAY_VIDEO, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
-            SELECT alm.idActor, a.strActor, alm.strRole, mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename, mv.c14 AS genre
+            SELECT alm.idActor, a.strActor, alm.strRole, mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFileName, mv.c14 AS genre
             FROM movieview mv, actorlinkmovie alm, actors a
-            WHERE mv.idMovie=alm.idMovie AND alm.idActor=a.idActor AND alm.strRole != '' AND mv.strFilename NOT LIKE '%%.nfo'
+            WHERE mv.idMovie=alm.idMovie AND alm.idActor=a.idActor AND alm.strRole != '' AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 1
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
@@ -496,7 +496,7 @@ class WhoPlayedRoleInMovieQuestion(MovieQuestion):
             self.text = strings(Q_WHO_VOICES_ROLE_IN_MOVIE) % (role, row['title'])
         else:
             self.text = strings(Q_WHO_PLAYS_ROLE_IN_MOVIE) % (role, row['title'])
-        self.setVideoFile(row['strPath'], row['strFilename'])
+        self.setVideoFile(row['strPath'], row['strFileName'])
 
         
 class WhatMovieIsThisQuoteFrom(MovieQuestion):
@@ -510,9 +510,9 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
         i = imdb.Imdb(addon.getAddonInfo('profile'))
 
         rows = self.database.fetchall("""
-            SELECT mv.idMovie, mv.c00 AS title, mv.c07 AS year, mv.strPath, mv.strFilename
+            SELECT mv.idMovie, mv.c00 AS title, mv.c07 AS year, mv.strPath, mv.strFileName
             FROM movieview mv
-            WHERE year > 1900 AND mv.strFilename NOT LIKE '%%.nfo'
+            WHERE mv.c07 > 1900 AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 10
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
@@ -529,19 +529,19 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
             raise QuestionException('Did not find any quotes')
 
         a = Answer(True, row['idMovie'], row['title'])
-        a.setCoverFile(row['strPath'], row['strFilename'])
+        a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
         theRest = self.database.fetchall("""
-            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename
-            FROM movieview mv WHERE mv.idMovie != ? AND title != ? AND mv.strFilename NOT LIKE '%%.nfo'
+            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFileName
+            FROM movieview mv WHERE mv.idMovie != ? AND mv.c00 != ? AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 3
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()),
                      (row['idMovie'], row['title']))
         for movie in theRest:
             a = Answer(False, movie['idMovie'], movie['title'])
-            a.setCoverFile(movie['strPath'], movie['strFilename'])
+            a.setCoverFile(movie['strPath'], movie['strFileName'])
             self.answers.append(a)
 
         random.shuffle(self.answers)
@@ -557,26 +557,26 @@ class WhatMovieIsNewestQuestion(MovieQuestion):
         MovieQuestion.__init__(self, database, DISPLAY_NONE, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
-            SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFilename, mv.c07 AS year
+            SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFileName, mv.c07 AS year
             FROM movieview mv
-            WHERE year > 1900 AND mv.strFilename NOT LIKE '%%.nfo'
+            WHERE mv.c07 > 1900 AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 1
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
         a = Answer(True, row['idMovie'], row['title'], row['idFile'])
-        a.setCoverFile(row['strPath'], row['strFilename'])
+        a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
         movies = self.database.fetchall("""
-            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename, mv.c07 AS year
+            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFileName, mv.c07 AS year
             FROM movieview mv
-            WHERE year > 1900 AND year < ?
+            WHERE mv.c07 > 1900 AND mv.c07 < ?
             %s %s
             ORDER BY random() LIMIT 3
         """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), row['year'])
         for movie in movies:
             a = Answer(False, movie['idMovie'], movie['title'])
-            a.setCoverFile(movie['strPath'], movie['strFilename'])
+            a.setCoverFile(movie['strPath'], movie['strFileName'])
             self.answers.append(a)
 
         random.shuffle(self.answers)
@@ -594,7 +594,7 @@ class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
         rows = self.database.fetchall("""
             SELECT a.idActor, a.strActor
             FROM movieview mv, directorlinkmovie dlm, actors a
-            WHERE mv.idMovie = dlm.idMovie AND dlm.idDirector = a.idActor AND mv.strFilename NOT LIKE '%%.nfo'
+            WHERE mv.idMovie = dlm.idMovie AND dlm.idDirector = a.idActor AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             GROUP BY dlm.idDirector HAVING count(mv.idMovie) >= 3 ORDER BY random() LIMIT 10
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
@@ -614,27 +614,27 @@ class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
 
         # Movies not directed by director
         row = self.database.fetchone("""
-            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename
+            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFileName
             FROM movieview mv WHERE mv.idMovie NOT IN (
                 SELECT DISTINCT dlm.idMovie FROM directorlinkmovie dlm WHERE dlm.idDirector = ?
-            ) AND mv.strFilename NOT LIKE '%%.nfo'
+            ) AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 1
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), director['idActor'])
         a = Answer(True, director['idActor'], row['title'])
-        a.setCoverFile(row['strPath'], row['strFilename'])
+        a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
         # Movie actor is in
         movies = self.database.fetchall("""
-            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename
-            FROM movieview mv, directorlinkmovie dlm WHERE mv.idMovie = dlm.idMovie AND dlm.idDirector = ? AND mv.strFilename NOT LIKE '%%.nfo'
+            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFileName
+            FROM movieview mv, directorlinkmovie dlm WHERE mv.idMovie = dlm.idMovie AND dlm.idDirector = ? AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 3
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), director['idActor'])
         for movie in movies:
             a = Answer(False, -1, movie['title'])
-            a.setCoverFile(movie['strPath'], movie['strFilename'])
+            a.setCoverFile(movie['strPath'], movie['strFileName'])
             self.answers.append(a)
 
         random.shuffle(self.answers)
@@ -649,7 +649,7 @@ class WhatActorIsInTheseMoviesQuestion(MovieQuestion):
         actor = self.database.fetchone("""
             SELECT a.idActor, a.strActor
             FROM movieview mv, actorlinkmovie alm, actors a
-            WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor AND mv.strFilename NOT LIKE '%%.nfo'
+            WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             GROUP BY alm.idActor HAVING count(mv.idMovie) >= 3 ORDER BY random() LIMIT 1
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
@@ -658,19 +658,19 @@ class WhatActorIsInTheseMoviesQuestion(MovieQuestion):
         self.answers.append(a)
 
         rows = self.database.fetchall("""
-            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFilename
+            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFileName
             FROM movieview mv, actorlinkmovie alm
-            WHERE mv.idMovie=alm.idMovie AND alm.idActor=? AND mv.strFilename NOT LIKE '%%.nfo'
+            WHERE mv.idMovie=alm.idMovie AND alm.idActor=? AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 3
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), actor['idActor'])
         for row in rows:
-            self.addPhoto(thumb.getCachedVideoThumb(row['strPath'], row['strFilename']))
+            self.addPhoto(thumb.getCachedVideoThumb(row['strPath'], row['strFileName']))
 
         otherActors = self.database.fetchall("""
             SELECT a.idActor, a.strActor
             FROM movieview mv, actorlinkmovie alm, actors a
-            WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor AND mv.strFilename NOT LIKE '%%.nfo'
+            WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             GROUP BY alm.idActor HAVING count(mv.idMovie) < 3 ORDER BY random() LIMIT 3
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
@@ -726,9 +726,9 @@ class WhatTVShowIsThisQuestion(TVQuestion):
         TVQuestion.__init__(self, database, DISPLAY_VIDEO, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
-            SELECT ev.idFile, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFilename, tv.strPath AS showPath
+            SELECT ev.idFile, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName, tv.strPath AS showPath
             FROM episodeview ev, tvshowview tv
-            WHERE ev.idShow=tv.idShow AND ev.strFilename NOT LIKE '%%.nfo'
+            WHERE ev.idShow=tv.idShow AND ev.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 1
             """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
@@ -750,7 +750,7 @@ class WhatTVShowIsThisQuestion(TVQuestion):
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_TVSHOW_IS_THIS)
-        self.setVideoFile(row['strPath'], row['strFilename'])
+        self.setVideoFile(row['strPath'], row['strFileName'])
 
 
 class WhatSeasonIsThisQuestion(TVQuestion):
@@ -762,10 +762,10 @@ class WhatSeasonIsThisQuestion(TVQuestion):
         TVQuestion.__init__(self, database, DISPLAY_VIDEO, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
-            SELECT ev.idFile, ev.c12 AS season, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFilename, tv.strPath AS showPath,
+            SELECT ev.idFile, ev.c12 AS season, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName, tv.strPath AS showPath,
                 (SELECT COUNT(DISTINCT c12) FROM episodeview WHERE idShow=ev.idShow) AS seasons
             FROM episodeview ev, tvshowview tv
-            WHERE ev.idShow=tv.idShow AND seasons > 2 AND ev.strFilename NOT LIKE '%%.nfo'
+            WHERE ev.idShow=tv.idShow AND seasons > 2 AND ev.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 1
             """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
@@ -777,7 +777,7 @@ class WhatSeasonIsThisQuestion(TVQuestion):
         shows = self.database.fetchall("""
             SELECT DISTINCT ev.c12 AS season
             FROM episodeview ev
-            WHERE ev.idShow = ? AND season != ? AND ev.strFilename NOT LIKE '%%.nfo'
+            WHERE ev.idShow = ? AND ev.c12 != ? AND ev.strFileName NOT LIKE '%%.nfo'
             ORDER BY random() LIMIT 3
             """, (row['idShow'], row['season']))
         for show in shows:
@@ -788,7 +788,7 @@ class WhatSeasonIsThisQuestion(TVQuestion):
         self.answers = sorted(self.answers, key=lambda answer: int(answer.sortWeight))
 
         self.text = strings(Q_WHAT_SEASON_IS_THIS) % row['title']
-        self.setVideoFile(row['strPath'], row['strFilename'])
+        self.setVideoFile(row['strPath'], row['strFileName'])
 
 class WhatEpisodeIsThisQuestion(TVQuestion):
     """
@@ -799,10 +799,10 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
         TVQuestion.__init__(self, database, DISPLAY_VIDEO, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
-            SELECT ev.idFile, ev.c00 AS episodeTitle, ev.c12 AS season, ev.c13 AS episode, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFilename,
+            SELECT ev.idFile, ev.c00 AS episodeTitle, ev.c12 AS season, ev.c13 AS episode, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName,
                 (SELECT COUNT(DISTINCT c13) FROM episodeview WHERE idShow=ev.idShow) AS episodes
             FROM episodeview ev, tvshowview tv
-            WHERE ev.idShow=tv.idShow AND episodes > 2 AND ev.strFilename NOT LIKE '%%.nfo'
+            WHERE ev.idShow=tv.idShow AND episodes > 2 AND ev.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 1
             """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
@@ -816,7 +816,7 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
         shows = self.database.fetchall("""
             SELECT ev.c00 AS episodeTitle, ev.c12 AS season, ev.c13 AS episode
             FROM episodeview ev
-            WHERE ev.idShow = ? AND season = ? AND episode != ? AND ev.strFilename NOT LIKE '%%.nfo'
+            WHERE ev.idShow = ? AND ev.c12 = ? AND ev.c13 != ? AND ev.strFileName NOT LIKE '%%.nfo'
             ORDER BY random() LIMIT 3
             """, (row['idShow'], row['season'], row['episode']))
         for show in shows:
@@ -829,7 +829,7 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
         self.answers = sorted(self.answers, key=lambda answer: int(answer.sortWeight))
 
         self.text = strings(Q_WHAT_EPISODE_IS_THIS) % row['title']
-        self.setVideoFile(row['strPath'], row['strFilename'])
+        self.setVideoFile(row['strPath'], row['strFileName'])
 
 
 class WhenWasEpisodeFirstAiredQuestion(TVQuestion):
@@ -841,33 +841,33 @@ class WhenWasEpisodeFirstAiredQuestion(TVQuestion):
         TVQuestion.__init__(self, database, DISPLAY_VIDEO, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
-            SELECT ev.idFile, ev.c00 AS episodeTitle, ev.c12 AS season, ev.c13 AS episode, ev.c05 AS firstAired, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFilename,
+            SELECT ev.idFile, ev.c00 AS episodeTitle, ev.c12 AS season, ev.c13 AS episode, ev.c05 AS firstAired, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName,
                 (SELECT COUNT(DISTINCT c13) FROM episodeview WHERE idShow=ev.idShow) AS episodes
             FROM episodeview ev, tvshowview tv
-            WHERE ev.idShow=tv.idShow AND episodes > 2 AND firstAired != '' AND ev.strFilename NOT LIKE '%%.nfo'
+            WHERE ev.idShow=tv.idShow AND episodes > 2 AND ev.c05 != '' AND ev.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 1
             """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
         a = Answer(True, row['episode'], self._format_date(row['firstAired']), row['idFile'])
-        a.setCoverFile(row['strPath'], row['strFilename'])
+        a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
         # Fill with random episodes from this show
         shows = self.database.fetchall("""
             SELECT ev.c00 AS episodeTitle, ev.c12 AS season, ev.c13 AS episode, ev.c05 AS firstAired
             FROM episodeview ev
-            WHERE ev.idShow = ? AND season = ? AND episode != ? AND firstAired != '' AND ev.strFilename NOT LIKE '%%.nfo'
+            WHERE ev.idShow = ? AND ev.c12 = ? AND ev.c13 != ? AND ev.c05 != '' AND ev.strFileName NOT LIKE '%%.nfo'
             ORDER BY random() LIMIT 3
             """, (row['idShow'], row['season'], row['episode']))
         for show in shows:
             a = Answer(False, show['episode'], self._format_date(show['firstAired']))
-            a.setCoverFile(row['strPath'], row['strFilename'])
+            a.setCoverFile(row['strPath'], row['strFileName'])
             self.answers.append(a)
 
         self.answers = sorted(self.answers, key=lambda answer: int(answer.id))
 
         self.text = strings(Q_WHEN_WAS_EPISODE_FIRST_AIRED) % (self._get_episode_title(row['season'], row['episode'], row['episodeTitle']), row['title'])
-        self.setVideoFile(row['strPath'], row['strFilename'])
+        self.setVideoFile(row['strPath'], row['strFileName'])
 
     def _format_date(self, dateString):
         d = time.strptime(dateString, '%Y-%m-%d')
@@ -882,9 +882,9 @@ class WhenWasTVShowFirstAiredQuestion(TVQuestion):
         TVQuestion.__init__(self, database, DISPLAY_VIDEO, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
-            SELECT ev.idFile, ev.c12 AS season, ev.c13 AS episode, ev.c05 AS firstAired, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFilename
+            SELECT ev.idFile, ev.c12 AS season, ev.c13 AS episode, ev.c05 AS firstAired, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName
             FROM episodeview ev, tvshowview tv
-            WHERE ev.idShow=tv.idShow AND episode = 1 AND episode != 0 AND firstAired != '' AND ev.strFilename NOT LIKE '%%.nfo'
+            WHERE ev.idShow=tv.idShow AND ev.c12 = 1 AND ev.c13 != 0 AND ev.c05 != '' AND ev.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 1
             """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
@@ -915,7 +915,7 @@ class WhenWasTVShowFirstAiredQuestion(TVQuestion):
             self.answers.append(a)
 
         self.text = strings(Q_WHEN_WAS_TVSHOW_FIRST_AIRED) % (row['title'] + ' - ' + self._get_season_title(row['season']))
-        self.setVideoFile(row['strPath'], row['strFilename'])
+        self.setVideoFile(row['strPath'], row['strFileName'])
 
 class WhoPlayedRoleInTVShowQuestion(TVQuestion):
     """
@@ -928,7 +928,7 @@ class WhoPlayedRoleInTVShowQuestion(TVQuestion):
         row = self.database.fetchone("""
             SELECT DISTINCT alt.idActor, a.strActor, alt.strRole, tv.idShow, tv.c00 AS title, tv.strPath, tv.c08 AS genre
             FROM tvshowview tv, actorlinktvshow alt, actors a, episodeview ev
-            WHERE tv.idShow = alt.idShow AND alt.idActor=a.idActor AND tv.idShow=ev.idShow AND alt.strRole != '' AND ev.strFilename NOT LIKE '%%.nfo'
+            WHERE tv.idShow = alt.idShow AND alt.idActor=a.idActor AND tv.idShow=ev.idShow AND alt.strRole != '' AND ev.strFileName NOT LIKE '%%.nfo'
             %s
             ORDER BY random() LIMIT 1
             """ % self._get_watched_episodes_clause())

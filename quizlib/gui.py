@@ -26,10 +26,9 @@ class MenuGui(xbmcgui.WindowXML):
 
         trivia = [strings(M_TRANSLATED_BY)]
 
-        database = db.Database()
+        database = db.connect()
 
-        row = database.fetchone("SELECT COUNT(*) AS cnt FROM sqlite_master WHERE name='movieview'")
-        if not int(row['cnt']):
+        if not database.hasMovies():
             self.getControl(self.C_MENU_MOVIE_QUIZ).setEnabled(False)
         else:
             movies = database.fetchone('SELECT COUNT(*) AS count, (SUM(c11) / 60) AS total_hours FROM movie')
@@ -43,16 +42,15 @@ class MenuGui(xbmcgui.WindowXML):
                     strings(M_ACTOR_COUNT) % actors['count'],
                     strings(M_DIRECTOR_COUNT) % directors['count'],
                     strings(M_STUDIO_COUNT) % studios['count'],
-                    strings(M_HOURS_OF_ENTERTAINMENT) % movies['total_hours']
+                    strings(M_HOURS_OF_ENTERTAINMENT) % int(movies['total_hours'])
             ]
 
 
-        row = database.fetchone("SELECT COUNT(*) AS cnt FROM sqlite_master WHERE name='tvshowview'")
-        if not int(row['cnt']):
+        if not database.hasTVShows():
             self.getControl(self.C_MENU_TVSHOW_QUIZ).setEnabled(False)
         else:
             shows = database.fetchone('SELECT COUNT(*) AS count FROM tvshow')
-            seasons = database.fetchone('SELECT SUM(season_count) AS count FROM (SELECT idShow, COUNT(DISTINCT c12) AS season_count from episodeview GROUP BY idShow)')
+            seasons = database.fetchone('SELECT SUM(season_count) AS count FROM (SELECT idShow, COUNT(DISTINCT c12) AS season_count from episodeview GROUP BY idShow) AS tbl')
             episodes = database.fetchone('SELECT COUNT(*) AS count FROM episode')
 
             trivia += [
@@ -139,7 +137,7 @@ class QuizGui(xbmcgui.WindowXML):
         self.maxRating = maxRating
         self.interactive = interactive
 
-        self.database = db.Database()
+        self.database = db.connect()
         self.player = player.TenSecondPlayer(database=self.database)
         self.question = question.Question(self.database, None, None, None)
         self.previousQuestions = []
