@@ -74,7 +74,7 @@ class TenSecondPlayer(xbmc.Player):
         except db.DbException:
             self.bookmark = {'idFile' : idFile}
 
-        self.play(item = file)#, windowed = True)
+        self.play(item = file, windowed = True)
 
         retries = 0
         while not self.isPlaying() and retries < 20:
