@@ -1,4 +1,4 @@
-[B]Version 0.3.0 - 2011-xx-xx[/B]
+[B]Version 0.3.0 - 2011-03-23[/B]
 - Add support for Imdb movie quotes (Data download required from settings)
 - Avoid the same question multiple times in the same game
 - Avoid video files ending with .nfo
