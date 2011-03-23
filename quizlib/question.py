@@ -394,6 +394,7 @@ class WhatStudioReleasedMovieQuestion(MovieQuestion):
         a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
+        # todo only select movie studios
         otherAnswers = self.database.fetchall("""
             SELECT s.idStudio, s.strStudio
             FROM studio s
@@ -505,7 +506,7 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
     """
     def __init__(self, database, maxRating, onlyWatchedMovies):
         MovieQuestion.__init__(self, database, DISPLAY_QUOTE, maxRating, onlyWatchedMovies)
-
+        # todo limit length of quotes
         addon = xbmcaddon.Addon(id = 'script.moviequiz') # TODO
         i = imdb.Imdb(addon.getAddonInfo('profile'))
 
@@ -555,7 +556,7 @@ class WhatMovieIsNewestQuestion(MovieQuestion):
     """
     def __init__(self, database, maxRating, onlyWatchedMovies):
         MovieQuestion.__init__(self, database, DISPLAY_NONE, maxRating, onlyWatchedMovies)
-
+        # todo make sure not to select one of the 3 oldest movies
         row = self.database.fetchone("""
             SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFileName, mv.c07 AS year
             FROM movieview mv
