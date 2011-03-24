@@ -153,7 +153,7 @@ class SQLiteDatabase(Database):
         Database.__init__(self)
 
         db_file = os.path.join(settings['host'], settings['name'] + '.db')
-        print "db_file = %s" % db_file
+        xbmc.log("Connecting to SQLite database file: %s" % db_file)
         self.conn = sqlite3.connect(db_file)
         self.conn.row_factory = self._sqlite_dict_factory
         xbmc.log("SQLiteDatabase opened")
@@ -189,6 +189,7 @@ class DbException(Exception):
 
 def connect():
     settings = _loadSettings()
+    xbmc.log("Loaded DB settings: %s" % settings)
 
     if settings['type'].lower() == 'mysql':
         return MySQLDatabase(settings)
