@@ -60,6 +60,18 @@ class MenuGui(xbmcgui.WindowXML):
                 strings(M_EPISODE_COUNT) % episodes['count']
             ]
 
+        if not database.hasMovies() and not database.hasTVShows():
+            line1 = 'Missing requirements!'
+            line2 = 'To play the Movie Quiz you must[CR]have some movies or TV shows'
+            line3 = 'in your Video library. See the[CR]XBMC wiki for information.'
+            path = self.addon.getAddonInfo('path')
+            w = ClapperDialog('script-moviequiz-clapper.xml', path, line1=line1, line2=line2, line3=line3, autoClose = False)
+            w.doModal()
+            del w
+
+            self.close()
+
+
         database.close()
 
         label = '  *  '.join(trivia)
@@ -363,10 +375,11 @@ class ClapperDialog(xbmcgui.WindowXMLDialog):
     C_CLAPPER_LINE2 = 4001
     C_CLAPPER_LINE3 = 4002
 
-    def __init__(self, xmlFilename, scriptPath, line1=None, line2=None, line3=None):
+    def __init__(self, xmlFilename, scriptPath, line1=None, line2=None, line3=None, autoClose = True):
         self.line1 = line1
         self.line2 = line2
         self.line3 = line3
+        self.autoClose = autoClose
         self.timer = threading.Timer(5, self.delayedClose)
 
         xbmcgui.WindowXMLDialog.__init__(self, xmlFilename, scriptPath)
@@ -386,7 +399,8 @@ class ClapperDialog(xbmcgui.WindowXMLDialog):
         self.getControl(self.C_CLAPPER_LINE2).setLabel(self.line2)
         self.getControl(self.C_CLAPPER_LINE3).setLabel(self.line3)
 
-        self.timer.start()
+        if self.autoClose:
+            self.timer.start()
 
     def delayedClose(self):
         print "ClapperDialog.delayedClose"
