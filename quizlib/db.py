@@ -151,8 +151,25 @@ class MySQLCursorDict(mysql.connector.cursor.MySQLCursor):
 class SQLiteDatabase(Database):
     def __init__(self, settings):
         Database.__init__(self)
+        found = True
+        db_file = None
 
-        db_file = os.path.join(settings['host'], settings['name'] + '.db')
+        candidates = []
+        if settings.has_key('name'):
+            candidates.append(settings['name'] + '.db') # defined in settings
+        candidates.append('MyVideos48.db') # Eden
+        candidates.append('MyVideos34.db')  # Dharma
+
+        for candidate in candidates:
+            db_file = os.path.join(settings['host'], candidate)
+            if os.path.exists(db_file):
+                found = True
+                break
+
+        if not found:
+            xbmc.log("Unable to find any known SQLiteDatabase files!")
+            return
+
         xbmc.log("Connecting to SQLite database file: %s" % db_file)
         self.conn = sqlite3.connect(db_file)
         self.conn.row_factory = self._sqlite_dict_factory
@@ -200,8 +217,7 @@ def connect():
 def _loadSettings():
     settings = {
         'type' : 'sqlite3',
-        'host' : xbmc.translatePath('special://database/'),
-        'name' : 'MyVideos34'
+        'host' : xbmc.translatePath('special://database/')
     }
 
     advancedSettings = xbmc.translatePath('special://userdata/advancedsettings.xml')
@@ -210,22 +226,11 @@ def _loadSettings():
         doc = ElementTree.fromstring(f.read())
         f.close()
 
-        typeNode = doc.find('videodatabase/type')
-        hostNode = doc.find('videodatabase/host')
-        databaseNameNode = doc.find('videodatabase/name')
-        usernameNode = doc.find('videodatabase/user')
-        passwordNode = doc.find('videodatabase/pass')
-
-        if typeNode is not None:
-            settings['type'] = typeNode.text
-        if hostNode is not None:
-            settings['host'] = hostNode.text
-        if databaseNameNode is not None:
-            settings['name'] = databaseNameNode.text
-        if usernameNode is not None:
-            settings['user'] = usernameNode.text
-        if passwordNode is not None:
-            settings['pass'] = passwordNode.text
+        settings['type'] = doc.findtext('videodatabase/type')
+        settings['host'] = doc.findtext('videodatabase/host')
+        settings['name'] = doc.findtext('videodatabase/name')
+        settings['user'] = doc.findtext('videodatabase/user')
+        settings['pass'] = doc.findtext('videodatabase/pass')
 
     return settings
     
