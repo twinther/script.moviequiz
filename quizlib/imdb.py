@@ -121,7 +121,10 @@ if __name__ == '__main__':
 
 
     addon = xbmcaddon.Addon(id = 'script.moviequiz')
-    i = Imdb(addon.getAddonInfo('profile'))
+    path = xbmc.translatePath(addon.getAddonInfo('profile'))
+    if not os.path.exists(path):
+        os.mkdir(path)
+    i = Imdb(path)
 
     try:
         d = xbmcgui.DialogProgress()
