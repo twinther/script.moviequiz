@@ -76,10 +76,12 @@ class Database(object):
         return self.conn.cursor()
 
     def hasMovies(self):
-        return False
+        row = self.fetchone("SELECT COUNT(*) AS cnt FROM movieview")
+        return int(row['cnt']) > 0
 
     def hasTVShows(self):
-        return False
+        row = self.fetchone("SELECT COUNT(*) AS cnt FROM tvshowview")
+        return int(row['cnt']) > 0
 
 #
 # MySQL
@@ -100,11 +102,17 @@ class MySQLDatabase(Database):
 
     def hasMovies(self):
         row = self.fetchone("SELECT COUNT(table_name) AS cnt FROM information_schema.tables WHERE table_name='movieview'")
-        return int(row['cnt']) > 0
+        if int(row['cnt']) > 0:
+            return Database.hasMovies(self)
+        else:
+            return False
 
     def hasTVShows(self):
         row = self.fetchone("SELECT COUNT(table_name) AS cnt FROM information_schema.tables WHERE table_name='tvshowview'")
-        return int(row['cnt']) > 0
+        if int(row['cnt']) > 0:
+            return Database.hasTVShows(self)
+        else:
+            return False
 
     def _createCursor(self):
         return self.conn.cursor(cursor_class = MySQLCursorDict)
@@ -145,17 +153,24 @@ class SQLiteDatabase(Database):
         Database.__init__(self)
 
         db_file = os.path.join(settings['host'], settings['name'] + '.db')
+        print "db_file = %s" % db_file
         self.conn = sqlite3.connect(db_file)
         self.conn.row_factory = self._sqlite_dict_factory
         xbmc.log("SQLiteDatabase opened")
 
     def hasMovies(self):
         row = self.fetchone("SELECT COUNT(*) AS cnt FROM sqlite_master WHERE name='movieview'")
-        return int(row['cnt']) > 0
+        if int(row['cnt']) > 0:
+            return Database.hasMovies(self)
+        else:
+            return False
 
     def hasTVShows(self):
         row = self.fetchone("SELECT COUNT(*) AS cnt FROM sqlite_master WHERE name='tvshowview'")
-        return int(row['cnt']) > 0
+        if int(row['cnt']) > 0:
+            return Database.hasTVShows(self)
+        else:
+            return False
 
     def _sqlite_dict_factory(self, cursor, row):
         d = {}
