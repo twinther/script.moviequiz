@@ -154,11 +154,12 @@ class SQLiteDatabase(Database):
         found = True
         db_file = None
 
-        candidates = []
-        if settings.has_key('name'):
-            candidates.append(settings['name'] + '.db') # defined in settings
-        candidates.append('MyVideos48.db') # Eden
-        candidates.append('MyVideos34.db')  # Dharma
+        candidates = [
+            'MyVideos48.db', # Eden
+            'MyVideos34.db'  # Dharma
+        ]
+        if settings.has_key('name') and settings['name'] is not None:
+            candidates.insert(0, settings['name'] + '.db') # defined in settings
 
         for candidate in candidates:
             db_file = os.path.join(settings['host'], candidate)
@@ -208,7 +209,7 @@ def connect():
     settings = _loadSettings()
     xbmc.log("Loaded DB settings: %s" % settings)
 
-    if settings['type'].lower() == 'mysql':
+    if settings.has_key('type') and settings['type'] is not None and settings['type'].lower() == 'mysql':
         return MySQLDatabase(settings)
     else:
         return SQLiteDatabase(settings)
@@ -226,11 +227,16 @@ def _loadSettings():
         doc = ElementTree.fromstring(f.read())
         f.close()
 
-        settings['type'] = doc.findtext('videodatabase/type')
-        settings['host'] = doc.findtext('videodatabase/host')
-        settings['name'] = doc.findtext('videodatabase/name')
-        settings['user'] = doc.findtext('videodatabase/user')
-        settings['pass'] = doc.findtext('videodatabase/pass')
+        if doc.findtext('videodatabase/type') is not None:
+            settings['type'] = doc.findtext('videodatabase/type')
+        if doc.findtext('videodatabase/host') is not None:
+            settings['host'] = doc.findtext('videodatabase/host')
+        if doc.findtext('videodatabase/name') is not None:
+            settings['name'] = doc.findtext('videodatabase/name')
+        if doc.findtext('videodatabase/user') is not None:
+            settings['user'] = doc.findtext('videodatabase/user')
+        if doc.findtext('videodatabase/pass') is not None:
+            settings['pass'] = doc.findtext('videodatabase/pass')
 
     return settings
     
