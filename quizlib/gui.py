@@ -6,6 +6,7 @@ import xbmcgui
 import question
 import player
 import db
+import imdb
 from strings import *
 
 __author__ = 'twinther'
@@ -272,7 +273,9 @@ class QuizGui(xbmcgui.WindowXML):
             self._changeVisibility(photo = True)
 
         elif self.question.getDisplay() == question.DISPLAY_QUOTE:
-            self.getControl(self.C_MAIN_QUOTE_LABEL).setText(self.question.getQuoteText())
+            quoteText = self.question.getQuoteText()
+            quoteText = imdb.obfuscateQuote(quoteText)
+            self.getControl(self.C_MAIN_QUOTE_LABEL).setText(quoteText)
             self._changeVisibility(quote = True)
 
         elif self.question.getDisplay() == question.DISPLAY_NONE:
@@ -333,6 +336,10 @@ class QuizGui(xbmcgui.WindowXML):
                     self.setFocusId(self.C_MAIN_FIRST_ANSWER + idx)
                 else:
                     self.getControl(self.C_MAIN_FIRST_ANSWER + idx).setLabel(textColor='0x88888888')
+
+            if self.question.getDisplay() == question.DISPLAY_QUOTE:
+                # Display non-obfuscated quote text
+                self.getControl(self.C_MAIN_QUOTE_LABEL).setText(self.question.getQuoteText())
 
             xbmc.sleep(3000)
 
