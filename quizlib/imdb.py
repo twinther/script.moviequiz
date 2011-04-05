@@ -55,31 +55,19 @@ class Imdb(object):
         file.close()
         response.close()
 
-    def getRandomQuote(self, movie, obfuscate = True):
+    def getRandomQuote(self, movie, maxLength = None):
         quotes = self._parseMovieQuotes(movie)
         if quotes is None:
             return None
 
-        quote = quotes[random.randint(0, len(quotes)-1)]
+        retries = 0
+        while retries < 10:
+            retries += 1
+            quote = quotes[random.randint(0, len(quotes)-1)]
+            if maxLength is None or len(quote) < maxLength:
+                break
+
         quote = self._filterAndCleanup(quote)
-        if obfuscate:
-            quote = self.obfuscateQuote(quote)
-
-        return quote
-
-    def obfuscateQuote(self, quote):
-        names = list()
-        for m in re.finditer('(.*?\:)', quote):
-            name = m.group(1)
-            if not name in names:
-                names.append(name)
-
-        print names
-        for idx, name in enumerate(names):
-            repl = '#%d:' % (idx + 1)
-            quote = quote.replace(name, repl)
-
-        print "Quote: %s" % quote
 
         return quote
 
@@ -109,6 +97,19 @@ class Imdb(object):
         else:
             xbmc.log("%s does not exists, has it been downloaded yet?" % self.QUOTES_LIST)
             return None
+
+def obfuscateQuote(quote):
+    names = list()
+    for m in re.finditer('(.*?\:)', quote):
+        name = m.group(1)
+        if not name in names:
+            names.append(name)
+
+    for idx, name in enumerate(names):
+        repl = '#%d:' % (idx + 1)
+        quote = quote.replace(name, repl)
+
+    return quote
 
 
 if __name__ == '__main__':
