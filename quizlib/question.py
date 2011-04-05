@@ -38,6 +38,9 @@ class Answer(object):
             self.coverFile = thumb.getCachedVideoThumb(path, filename)
 
 class Question(object):
+    ADDON = xbmcaddon.Addon(id = 'script.moviequiz')
+    IMDB = imdb.Imdb(ADDON.getAddonInfo('profile'))
+    
     def __init__(self, database, display, maxRating, onlyWatchedMovies):
         self.database = database
         self.answers = list()
@@ -62,9 +65,9 @@ class Question(object):
         return self.answers
 
     def getAnswer(self, idx):
-        if idx < len(self.answers):
+        try:
             return self.answers[idx]
-        else:
+        except IndexError:
             return None
 
     def getCorrectAnswer(self):
@@ -403,11 +406,11 @@ class WhatStudioReleasedMovieQuestion(MovieQuestion):
         a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
-        # todo only select movie studios
         otherAnswers = self.database.fetchall("""
             SELECT s.idStudio, s.strStudio
             FROM studio s
             WHERE s.idStudio != ?
+            AND s.idStudio IN (SELECT idStudio FROM studiolinkmovie)
             ORDER BY random() LIMIT 3
         """, row['idStudio'])
         for movie in otherAnswers:
@@ -517,10 +520,6 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
     """
     def __init__(self, database, maxRating, onlyWatchedMovies):
         MovieQuestion.__init__(self, database, DISPLAY_QUOTE, maxRating, onlyWatchedMovies)
-        # todo limit length of quotes
-        addon = xbmcaddon.Addon(id = 'script.moviequiz') # TODO
-        i = imdb.Imdb(addon.getAddonInfo('profile'))
-
         rows = self.database.fetchall("""
             SELECT mv.idMovie, mv.c00 AS title, mv.c07 AS year, mv.strPath, mv.strFileName
             FROM movieview mv
@@ -531,7 +530,7 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
         quoteText = None
         row = None
         for r in rows:
-            quoteText = i.getRandomQuote(r['title'])
+            quoteText = Question.IMDB.getRandomQuote(r['title'], maxLength = 256)
 
             if quoteText is not None:
                 row = r
@@ -567,7 +566,6 @@ class WhatMovieIsNewestQuestion(MovieQuestion):
     """
     def __init__(self, database, maxRating, onlyWatchedMovies):
         MovieQuestion.__init__(self, database, DISPLAY_NONE, maxRating, onlyWatchedMovies)
-        # todo make sure not to select one of the 3 oldest movies
         row = self.database.fetchone("""
             SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFileName, mv.c07 AS year
             FROM movieview mv
@@ -586,6 +584,9 @@ class WhatMovieIsNewestQuestion(MovieQuestion):
             %s %s
             ORDER BY random() LIMIT 3
         """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), row['year'])
+        if len(movies) < 3:
+            raise QuestionException("Less than 3 movies found; bailing out")
+
         for movie in movies:
             a = Answer(False, movie['idMovie'], movie['title'])
             a.setCoverFile(movie['strPath'], movie['strFileName'])
@@ -901,7 +902,7 @@ class WhenWasTVShowFirstAiredQuestion(TVQuestion):
         row = self.database.fetchone("""
             SELECT ev.idFile, ev.c12 AS season, ev.c13 AS episode, ev.c05 AS firstAired, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName
             FROM episodeview ev, tvshowview tv
-            WHERE ev.idShow=tv.idShow AND ev.c12 = 1 AND ev.c13 != 0 AND ev.c05 != '' AND ev.strFileName NOT LIKE '%%.nfo'
+            WHERE ev.idShow=tv.idShow AND ev.c12 != 0 AND ev.c13 = 1 AND ev.c05 != '' AND ev.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 1
             """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
@@ -990,8 +991,10 @@ def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
     """
     subclasses = []
     if type == TYPE_MOVIE:
+        #noinspection PyUnresolvedReferences
         subclasses = MovieQuestion.__subclasses__()
     elif type == TYPE_TV:
+        #noinspection PyUnresolvedReferences
         subclasses = TVQuestion.__subclasses__()
     random.shuffle(subclasses)
 
