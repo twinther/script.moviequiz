@@ -1,6 +1,7 @@
 [B]Version 0.3.2 - 2011-04-xx[/B]
 - Use fanart instead of movie clips where relevant
 - Improved data selection for some questions
+- Added icons for replaying movie clip and exiting the game
 
 [B]Version 0.3.1 - 2011-03-27[/B]
 - Added support for XBMC Eden nightly builds

@@ -460,10 +460,17 @@ class WhatActorIsThisQuestion(MovieQuestion):
         actors = self.database.fetchall("""
             SELECT a.idActor, a.strActor
             FROM actors a, actorlinkmovie alm WHERE a.idActor = alm.idActor AND a.idActor != ?
-            ORDER BY random() LIMIT 3
+            ORDER BY random() LIMIT 50
             """, actor['idActor'])
+
+        # Check gender
+        actorGender = self.IMDB.isActor(actor['strActor'])
+
         for actor in actors:
-            self.answers.append(Answer(False, actor['idActor'], actor['strActor']))
+            if self.IMDB.isActor(actor['strActor']) == actorGender:
+                self.answers.append(Answer(False, actor['idActor'], actor['strActor']))
+                if len(self.answers) == 4:
+                    break
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_ACTOR_IS_THIS)
@@ -992,7 +999,7 @@ def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
     subclasses = []
     if type == TYPE_MOVIE:
         #noinspection PyUnresolvedReferences
-        subclasses = MovieQuestion.__subclasses__()
+        subclasses = [WhatActorIsThisQuestion]#MovieQuestion.__subclasses__()
     elif type == TYPE_TV:
         #noinspection PyUnresolvedReferences
         subclasses = TVQuestion.__subclasses__()

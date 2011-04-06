@@ -1,12 +1,13 @@
 import threading
 import os
+import re
+
 import xbmc
 import xbmcgui
 
 import question
 import player
 import db
-import imdb
 from strings import *
 
 __author__ = 'twinther'
@@ -274,7 +275,7 @@ class QuizGui(xbmcgui.WindowXML):
 
         elif self.question.getDisplay() == question.DISPLAY_QUOTE:
             quoteText = self.question.getQuoteText()
-            quoteText = imdb.obfuscateQuote(quoteText)
+            quoteText = self._obfuscateQuote(quoteText)
             self.getControl(self.C_MAIN_QUOTE_LABEL).setText(quoteText)
             self._changeVisibility(quote = True)
 
@@ -387,6 +388,20 @@ class QuizGui(xbmcgui.WindowXML):
         self.getControl(self.C_MAIN_THREE_PHOTOS_VISIBILITY).setVisible(not threePhotos)
         
         self.getControl(self.C_MAIN_REPLAY_BUTTON_VISIBILITY).setVisible(video)
+
+    def _obfuscateQuote(self, quote):
+        names = list()
+        for m in re.finditer('(.*?\:)', quote):
+            name = m.group(1)
+            if not name in names:
+                names.append(name)
+
+        for idx, name in enumerate(names):
+            repl = '#%d:' % (idx + 1)
+            quote = quote.replace(name, repl)
+
+        return quote
+
 
 
 class ClapperDialog(xbmcgui.WindowXMLDialog):
