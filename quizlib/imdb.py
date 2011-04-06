@@ -146,20 +146,23 @@ class Imdb(object):
             xbmc.log("%s does not exists, has it been downloaded yet?" % self.QUOTES_LIST)
             return None
 
-    def isActor(self, name):
+    def isActor(self, names):
         path = os.path.join(self.path, self.ACTORS_LIST)
         if os.path.exists(path):
             f = open(path)
             data = f.read()
             f.close()
 
-            m = re.search('^%s$' % name, data, re.MULTILINE)
-            return m is not None
+            result = dict()
+            for name in names:
+                m = re.search('^%s$' % name, data, re.MULTILINE)
+                result[name] = m is not None
+
+            return result
         else:
             xbmc.log("%s does not exists, has it been downloaded yet?" % self.ACTORS_LIST)
             return None
         
-
 if __name__ == '__main__':
     # this script is invoked from addon settings
 
