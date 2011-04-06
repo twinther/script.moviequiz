@@ -12,20 +12,34 @@ import xbmcaddon
 
 
 class Imdb(object):
+    ACTOR_PATTERN = re.compile('^([^\t\(]+)( \([^\)]+\))?\t.*?$')
+
     QUOTES_LIST = 'quotes.list'
-    FILES = [
-        {'name' : QUOTES_LIST, 'url' : 'http://ftp.sunet.se/pub/tv+movies/imdb/quotes.list.gz'}
-    ]
+    QUOTES_URL = 'http://ftp.sunet.se/pub/tv+movies/imdb/quotes.list.gz' 
+    ACTORS_LIST = 'actors.list'
+    ACTORS_URL = 'http://ftp.sunet.se/pub/tv+movies/imdb/actors.list.gz' 
 
     def __init__(self, listsPath):
         self.path = listsPath
 
-    def downloadFiles(self, progressCallback):
-        for file in self.FILES:
-            self._downloadGzipFile(file['url'], file['name'], progressCallback)
-        
+    def downloadFiles(self, progressCallback = None):
+        self._downloadGzipFile(self.QUOTES_URL, self.QUOTES_LIST, progressCallback)
+        self._downloadGzipFile(self.ACTORS_URL, self.ACTORS_LIST, progressCallback, self._postprocessActorNames)
 
-    def _downloadGzipFile(self, url, destination, progressCallback):
+
+    def _postprocessActorNames(self, line):
+        m = self.ACTOR_PATTERN.search(line)
+        if m is not None:
+            lastnameFirstname = m.group(1).strip()
+            parts = lastnameFirstname.split(', ', 2)
+            if len(parts) == 2:
+                firstnameLastname = "%s %s\n" % (parts[1], parts[0])
+                return firstnameLastname
+
+        return ''
+ 
+
+    def _downloadGzipFile(self, url, destination, progressCallback = None, postprocessLineCallback = None):
         """
         Downloads a gzip compressed file and extracts it on the fly.
 
@@ -38,6 +52,8 @@ class Imdb(object):
         file = open(os.path.join(self.path, destination), 'wb')
         decompressor = zlib.decompressobj(16+zlib.MAX_WBITS)
 
+        partialLine = None
+        previousLine = None
         contentReceived = 0
         contentLength = int(response.info()['Content-Length'])
         while True:
@@ -46,11 +62,32 @@ class Imdb(object):
                 break
             contentReceived += len(chunk)
             decompressedChunk = decompressor.decompress(chunk)
-            file.write(decompressedChunk)
 
-            percentage = int(contentReceived * 100 / contentLength)
-            if not progressCallback(contentReceived, contentLength, percentage):
-                break
+            if postprocessLineCallback is not None:
+                if partialLine is not None:
+                    decompressedChunk = partialLine + decompressedChunk
+                    partialLine = None
+
+                lines = decompressedChunk.splitlines(True)
+                processedChunk = ''
+                
+                for line in lines:
+                    if line[-1:] == '\n': # We have a complete line
+                        processedLine = postprocessLineCallback(line)
+                        if processedLine != previousLine and processedLine != '':
+                            previousLine = processedLine
+                            processedChunk += processedLine
+                    else: # partial line
+                        partialLine = line
+                file.write(processedChunk)
+            
+            else:
+                file.write(decompressedChunk)
+
+            if progressCallback is not None:
+                percentage = int(contentReceived * 100 / contentLength)
+                if not progressCallback(contentReceived, contentLength, percentage):
+                    break
 
         file.close()
         response.close()
@@ -91,7 +128,6 @@ class Imdb(object):
         pattern = '\n# %s [^\n]+\n(.*?)\n\n#' % movie
 
         path = os.path.join(self.path, self.QUOTES_LIST)
-
         if os.path.exists(path):
             f = open(path)
             
@@ -110,6 +146,19 @@ class Imdb(object):
             xbmc.log("%s does not exists, has it been downloaded yet?" % self.QUOTES_LIST)
             return None
 
+    def isActor(self, name):
+        path = os.path.join(self.path, self.ACTORS_LIST)
+        if os.path.exists(path):
+            f = open(path)
+            data = f.read()
+            f.close()
+
+            m = re.search('^%s$' % name, data, re.MULTILINE)
+            return m is not None
+        else:
+            xbmc.log("%s does not exists, has it been downloaded yet?" % self.ACTORS_LIST)
+            return None
+        
 
 if __name__ == '__main__':
     # this script is invoked from addon settings
