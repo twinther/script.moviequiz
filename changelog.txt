@@ -1,4 +1,5 @@
 [B]Version 0.3.2 - 2011-04-xx[/B]
+- Added support for Cinema Experience integration
 - Use fanart instead of movie clips where relevant
 - Improved data selection for some questions
 - Added icons for replaying movie clip and exiting the game
