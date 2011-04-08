@@ -999,7 +999,7 @@ def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
     subclasses = []
     if type == TYPE_MOVIE:
         #noinspection PyUnresolvedReferences
-        subclasses = [WhatActorIsThisQuestion]#MovieQuestion.__subclasses__()
+        subclasses = MovieQuestion.__subclasses__()
     elif type == TYPE_TV:
         #noinspection PyUnresolvedReferences
         subclasses = TVQuestion.__subclasses__()

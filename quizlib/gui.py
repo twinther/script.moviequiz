@@ -171,7 +171,9 @@ class QuizGui(xbmcgui.WindowXML):
         self.score = {'correct': 0, 'wrong': 0}
 
         self.maxRating = None
-        if self.type == question.TYPE_MOVIE and self.addon.getSetting('movie.rating.limit.enabled') == 'true':
+        if maxRating is not None:
+            self.maxRating = maxRating
+        elif self.type == question.TYPE_MOVIE and self.addon.getSetting('movie.rating.limit.enabled') == 'true':
             self.maxRating = self.addon.getSetting('movie.rating.limit')
         elif self.type == question.TYPE_TV and self.addon.getSetting('tvshow.rating.limit.enabled') == 'true':
             self.maxRating = self.addon.getSetting('tvshow.rating.limit')
@@ -214,7 +216,7 @@ class QuizGui(xbmcgui.WindowXML):
 
     #noinspection PyUnusedLocal
     def onFocus(self, controlId):
-        self._update_thumb()
+        self._update_thumb(controlId)
 
     def _game_over(self):
         if self.interactive:
@@ -355,11 +357,12 @@ class QuizGui(xbmcgui.WindowXML):
             label.setLabel('')
 
 
-    def _update_thumb(self):
+    def _update_thumb(self, controlId = None):
         if self.question is None:
             return # not initialized yet
 
-        controlId = self.getFocusId()
+        if controlId is None:
+            controlId = self.getFocusId()
         if controlId >= self.C_MAIN_FIRST_ANSWER or controlId <= self.C_MAIN_LAST_ANSWER:
             answer = self.question.getAnswer(controlId - self.C_MAIN_FIRST_ANSWER)
             coverImage = self.getControl(self.C_MAIN_COVER_IMAGE)
