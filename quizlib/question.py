@@ -855,49 +855,6 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
         self.setVideoFile(row['strPath'], row['strFileName'])
 #        self.setFanartFile(row['strPath'], row['strFileName'])
 
-
-class WhenWasEpisodeFirstAiredQuestion(TVQuestion):
-    """
-        WhenWasEpisodeFirstAiredQuestion
-    """
-
-    def __init__(self, database, maxRating, onlyWatchedMovies):
-        TVQuestion.__init__(self, database, DISPLAY_NONE, maxRating, onlyWatchedMovies)
-
-        row = self.database.fetchone("""
-            SELECT ev.idFile, ev.c00 AS episodeTitle, ev.c12 AS season, ev.c13 AS episode, ev.c05 AS firstAired, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName,
-                (SELECT COUNT(DISTINCT c13) FROM episodeview WHERE idShow=ev.idShow) AS episodes
-            FROM episodeview ev, tvshowview tv
-            WHERE ev.idShow=tv.idShow AND episodes > 2 AND ev.c05 != '' AND ev.strFileName NOT LIKE '%%.nfo'
-            %s %s
-            ORDER BY random() LIMIT 1
-            """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
-        a = Answer(True, row['episode'], self._format_date(row['firstAired']), row['idFile'])
-        a.setCoverFile(row['strPath'], row['strFileName'])
-        self.answers.append(a)
-
-        # Fill with random episodes from this show
-        shows = self.database.fetchall("""
-            SELECT ev.c00 AS episodeTitle, ev.c12 AS season, ev.c13 AS episode, ev.c05 AS firstAired
-            FROM episodeview ev
-            WHERE ev.idShow = ? AND ev.c12 = ? AND ev.c13 != ? AND ev.c05 != '' AND ev.strFileName NOT LIKE '%%.nfo'
-            ORDER BY random() LIMIT 3
-            """, (row['idShow'], row['season'], row['episode']))
-        for show in shows:
-            a = Answer(False, show['episode'], self._format_date(show['firstAired']))
-            a.setCoverFile(row['strPath'], row['strFileName'])
-            self.answers.append(a)
-
-        self.answers = sorted(self.answers, key=lambda answer: int(answer.id))
-
-        self.text = strings(Q_WHEN_WAS_EPISODE_FIRST_AIRED) % (self._get_episode_title(row['season'], row['episode'], row['episodeTitle']), row['title'])
-#        self.setVideoFile(row['strPath'], row['strFileName'])
-        self.setFanartFile(row['strPath'])
-
-    def _format_date(self, dateString):
-        d = time.strptime(dateString, '%Y-%m-%d')
-        return time.strftime(strings(Q_FIRST_AIRED_DATEFORMAT), d)
-
 class WhenWasTVShowFirstAiredQuestion(TVQuestion):
     """
         WhenWasEpisodeFirstAiredQuestion
