@@ -292,7 +292,7 @@ class QuizGui(xbmcgui.WindowXML):
 
         if not self.interactive:
             # answers correctly in ten seconds
-            threading.Timer(3.0, self._answer_correctly).start()
+            threading.Timer(10.0, self._answer_correctly).start()
 
         self.getControl(self.C_MAIN_LOADING_VISIBILITY).setVisible(False)
 
@@ -331,7 +331,7 @@ class QuizGui(xbmcgui.WindowXML):
         if self.player.isPlaying():
             self.player.stop()
 
-        threading.Timer(10.0, self._hide_icons).start()
+        threading.Timer(3.0, self._hide_icons).start()
         if self.addon.getSetting('show.correct.answer') == 'true' and not answer.correct:
             for idx, answer in enumerate(self.question.getAnswers()):
                 if answer.correct:
