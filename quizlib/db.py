@@ -1,10 +1,17 @@
 from elementtree import ElementTree
 from xml.parsers.expat import ExpatError
 
-from pysqlite2 import dbapi2 as sqlite3
 import os
 import xbmc
 import mysql.connector
+import glob
+
+try:
+    # Used by Eden/external python
+    from sqlite3 import dbapi2 as sqlite3
+except:
+    # Used by Dharma/internal python
+    from pysqlite2 import dbapi2 as sqlite3
 
 __author__ = 'twinther'
 
@@ -156,10 +163,9 @@ class SQLiteDatabase(Database):
         found = True
         db_file = None
 
-        candidates = [
-            'MyVideos48.db', # Eden
-            'MyVideos34.db'  # Dharma
-        ]
+        # Find newest MyVideos.db and use that
+        candidates = glob.glob('special://database/MyVideos*.db')
+        list.sort(candidates, reverse=True)
         if settings.has_key('name') and settings['name'] is not None:
             candidates.insert(0, settings['name'] + '.db') # defined in settings
 
