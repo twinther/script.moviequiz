@@ -164,7 +164,7 @@ class SQLiteDatabase(Database):
         db_file = None
 
         # Find newest MyVideos.db and use that
-        candidates = glob.glob('special://database/MyVideos*.db')
+        candidates = glob.glob(settings['host'] + '/MyVideos*.db')
         list.sort(candidates, reverse=True)
         if settings.has_key('name') and settings['name'] is not None:
             candidates.insert(0, settings['name'] + '.db') # defined in settings
