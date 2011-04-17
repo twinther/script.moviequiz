@@ -1,4 +1,4 @@
-[B]Version 0.3.2 - 2011-04-xx[/B]
+[B]Version 0.3.2 - 2011-04-17[/B]
 - Improved support for XBMC Eden nightly builds
 - Added support for Cinema Experience integration
 - Use fanart instead of movie clips where relevant
