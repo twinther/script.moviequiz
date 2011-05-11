@@ -16,17 +16,22 @@ __author__ = 'twinther'
 ACTION_PARENT_DIR = 9
 ACTION_PREVIOUS_MENU = 10
 
+ADDON = xbmcaddon.Addon()
+
 class MenuGui(xbmcgui.WindowXML):
+
     C_MENU_MOVIE_QUIZ = 4001
     C_MENU_TVSHOW_QUIZ = 4002
     C_MENU_SETTINGS = 4000
     C_MENU_EXIT = 4003
     C_MENU_COLLECTION_TRIVIA = 6000
 
-    def __init__(self, xmlFilename, scriptPath, addon):
-        xbmcgui.WindowXML.__init__(self, xmlFilename, scriptPath)
-        self.addon = addon
+    def __new__(cls):
+        return super(MenuGui, cls).__new__(cls, 'script-moviequiz-menu.xml', ADDON.getAddonInfo('path'))
 
+    def __init__(self):
+        super(MenuGui, self).__init__()
+    
     def onInit(self):
         print "MenuGui.onInit"
 
@@ -70,8 +75,7 @@ class MenuGui(xbmcgui.WindowXML):
             line1 = 'Missing requirements!'
             line2 = 'To play the Movie Quiz you must[CR]have some movies or TV shows'
             line3 = 'in your Video library. See the[CR]XBMC wiki for information.'
-            path = self.addon.getAddonInfo('path')
-            w = ClapperDialog('script-moviequiz-clapper.xml', path, line1=line1, line2=line2, line3=line3, autoClose = False)
+            w = ClapperDialog(line1, line2, line3, autoClose = False)
             w.doModal()
             del w
 
@@ -89,30 +93,27 @@ class MenuGui(xbmcgui.WindowXML):
 
     def onClick(self, controlId):
         maxQuestions = -1
-        if self.addon.getSetting('question.limit.enabled') == 'true':
-            maxQuestions = int(self.addon.getSetting('question.limit'))
+        if ADDON.getSetting('question.limit.enabled') == 'true':
+            maxQuestions = int(ADDON.getSetting('question.limit'))
 
         maxRating = None
 
         if controlId == self.C_MENU_MOVIE_QUIZ:
-            if self.addon.getSetting('movie.rating.limit.enabled') == 'true':
-                maxRating = self.addon.getSetting('movie.rating.limit')
-
-            path = self.addon.getAddonInfo('path')
-            w = QuizGui('script-moviequiz-main.xml', path, addon=self.addon, type=question.TYPE_MOVIE, questionLimit=maxQuestions, maxRating=maxRating)
+            if ADDON.getSetting('movie.rating.limit.enabled') == 'true':
+                maxRating = ADDON.getSetting('movie.rating.limit')
+            w = QuizGui(type=question.TYPE_MOVIE, questionLimit=maxQuestions, maxRating=maxRating)
             w.doModal()
             del w
 
         elif controlId == self.C_MENU_TVSHOW_QUIZ:
-            if self.addon.getSetting('tvshow.rating.limit.enabled') == 'true':
-                maxRating = self.addon.getSetting('tvshow.rating.limit')
-            path = self.addon.getAddonInfo('path')
-            w = QuizGui('script-moviequiz-main.xml', path, addon=self.addon, type=question.TYPE_TV, questionLimit=maxQuestions, maxRating=maxRating)
+            if ADDON.getSetting('tvshow.rating.limit.enabled') == 'true':
+                maxRating = ADDON.getSetting('tvshow.rating.limit')
+            w = QuizGui(type=question.TYPE_TV, questionLimit=maxQuestions, maxRating=maxRating)
             w.doModal()
             del w
 
         elif controlId == self.C_MENU_SETTINGS:
-            self.addon.openSettings()
+            ADDON.openSettings()
 
         elif controlId == self.C_MENU_EXIT:
             self.close()
@@ -148,17 +149,19 @@ class QuizGui(xbmcgui.WindowXML):
     C_MAIN_LOADING_VISIBILITY = 5005
     C_MAIN_REPLAY_BUTTON_VISIBILITY = 5007
 
+    def __new__(cls, type, questionLimit = -1, maxRating = None, interactive = True):
+        return super(QuizGui, cls).__new__(cls, 'script-moviequiz-main.xml', ADDON.getAddonInfo('path'))
 
-    def __init__(self, xmlFilename, scriptPath, addon, type, questionLimit = -1, maxRating = None, interactive = True):
-        xbmcgui.WindowXML.__init__(self, xmlFilename, scriptPath)
-        self.addon = addon
+    def __init__(self, type, questionLimit = -1, maxRating = None, interactive = True):
+        super(QuizGui, self).__init__()
+
         self.type = type
         self.questionLimit = questionLimit
         self.questionCount = 0
         self.maxRating = maxRating
         self.interactive = interactive
 
-        path = self.addon.getAddonInfo('path')
+        path = ADDON.getAddonInfo('path')
         if self.type == question.TYPE_TV:
             self.defaultBackground = os.path.join(path, 'resources', 'skins', 'Default', 'media', 'quiz-background-tvshows.png')
         else:
@@ -168,16 +171,18 @@ class QuizGui(xbmcgui.WindowXML):
         self.player = player.TenSecondPlayer(database=self.database)
         self.question = question.Question(self.database, None, None, None)
         self.previousQuestions = []
-        self.score = {'correct': 0, 'wrong': 0}
+
+        self.correctAnswerCount = 0
+        self.wrongAnswerCount = 0
 
         self.maxRating = None
         if maxRating is not None:
             self.maxRating = maxRating
-        elif self.type == question.TYPE_MOVIE and self.addon.getSetting('movie.rating.limit.enabled') == 'true':
-            self.maxRating = self.addon.getSetting('movie.rating.limit')
-        elif self.type == question.TYPE_TV and self.addon.getSetting('tvshow.rating.limit.enabled') == 'true':
-            self.maxRating = self.addon.getSetting('tvshow.rating.limit')
-        self.onlyWatchedMovies = self.addon.getSetting('only.watched.movies') == 'true'
+        elif self.type == question.TYPE_MOVIE and ADDON.getSetting('movie.rating.limit.enabled') == 'true':
+            self.maxRating = ADDON.getSetting('movie.rating.limit')
+        elif self.type == question.TYPE_TV and ADDON.getSetting('tvshow.rating.limit.enabled') == 'true':
+            self.maxRating = ADDON.getSetting('tvshow.rating.limit')
+        self.onlyWatchedMovies = ADDON.getSetting('only.watched.movies') == 'true'
 
     def onInit(self):
         try :
@@ -214,18 +219,16 @@ class QuizGui(xbmcgui.WindowXML):
         elif controlId == self.C_MAIN_REPLAY:
             self.player.replay()
 
-    #noinspection PyUnusedLocal
     def onFocus(self, controlId):
         self._update_thumb(controlId)
 
     def _game_over(self):
         if self.interactive:
-            total = self.score['correct'] + self.score['wrong']
+            total = self.correctAnswerCount = self.wrongAnswerCount
             line1 = strings(G_GAME_OVER)
-            line2 = strings(G_YOU_SCORED) % (self.score['correct'], total)
+            line2 = strings(G_YOU_SCORED) % (self.correctAnswerCount, total)
 
-            path = self.addon.getAddonInfo('path')
-            w = ClapperDialog('script-moviequiz-clapper.xml', path, line1=line1, line2=line2)
+            w = ClapperDialog(line1, line2)
             w.doModal()
             del w
 
@@ -259,7 +262,6 @@ class QuizGui(xbmcgui.WindowXML):
         self._update_thumb()
         self._update_stats()
 
-        print self.question.getFanartFile()
         if self.question.getFanartFile() is not None and os.path.exists(self.question.getFanartFile()):
             self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(self.question.getFanartFile())
         else:
@@ -306,10 +308,8 @@ class QuizGui(xbmcgui.WindowXML):
                 
             try:
                 self.previousQuestions.index(q.getUniqueIdentifier())
-                print "Already had question %s" % q.getUniqueIdentifier()
                 retries += 1
             except Exception:
-                print "New question %s" % q.getUniqueIdentifier()
                 self.previousQuestions.append(q.getUniqueIdentifier())
                 break
 
@@ -322,17 +322,17 @@ class QuizGui(xbmcgui.WindowXML):
 
     def _handle_answer(self, answer):
         if answer is not None and answer.correct:
-            self.score['correct'] += 1
+            self.correctAnswerCount += 1
             self.getControl(self.C_MAIN_CORRECT_VISIBILITY).setVisible(False)
         else:
-            self.score['wrong'] += 1
+            self.wrongAnswerCount += 1
             self.getControl(self.C_MAIN_INCORRECT_VISIBILITY).setVisible(False)
 
         if self.player.isPlaying():
             self.player.stop()
 
         threading.Timer(3.0, self._hide_icons).start()
-        if self.addon.getSetting('show.correct.answer') == 'true' and not answer.correct:
+        if ADDON.getSetting('show.correct.answer') == 'true' and not answer.correct:
             for idx, answer in enumerate(self.question.getAnswers()):
                 if answer.correct:
                     self.getControl(self.C_MAIN_FIRST_ANSWER + idx).setLabel('[B]%s[/B]' % answer.text)
@@ -347,8 +347,8 @@ class QuizGui(xbmcgui.WindowXML):
             xbmc.sleep(3000)
 
     def _update_stats(self):
-        self.getControl(self.C_MAIN_CORRECT_SCORE).setLabel(str(self.score['correct']))
-        self.getControl(self.C_MAIN_INCORRECT_SCORE).setLabel(str(self.score['wrong']))
+        self.getControl(self.C_MAIN_CORRECT_SCORE).setLabel(str(self.correctAnswerCount))
+        self.getControl(self.C_MAIN_INCORRECT_SCORE).setLabel(str(self.wrongAnswerCount))
 
         label = self.getControl(self.C_MAIN_QUESTION_COUNT)
         if self.questionLimit > 0:
@@ -370,7 +370,7 @@ class QuizGui(xbmcgui.WindowXML):
                 coverImage.setVisible(True)
                 coverImage.setImage(answer.coverFile)
             elif answer is not None and answer.coverFile is not None :
-                path = self.addon.getAddonInfo('path')
+                path = ADDON.getAddonInfo('path')
                 coverImage.setVisible(True)
                 coverImage.setImage(os.path.join(path, 'resources', 'skins', 'Default', 'media', 'quiz-no-photo.png'))
             else:
@@ -394,7 +394,7 @@ class QuizGui(xbmcgui.WindowXML):
 
     def _obfuscateQuote(self, quote):
         names = list()
-        for m in re.finditer('(.*?\:)', quote):
+        for m in re.finditer('(.*?:)', quote):
             name = m.group(1)
             if not name in names:
                 names.append(name)
@@ -412,15 +412,17 @@ class ClapperDialog(xbmcgui.WindowXMLDialog):
     C_CLAPPER_LINE2 = 4001
     C_CLAPPER_LINE3 = 4002
 
-    def __init__(self, xmlFilename, scriptPath, line1=None, line2=None, line3=None, autoClose = True):
+    def __new__(cls, line1 = None, line2 = None, line3 = None, autoClose = True):
+        return super(ClapperDialog, cls).__new__(cls, 'script-moviequiz-clapper.xml', ADDON.getAddonInfo('path'))
+
+    def __init__(self, line1 = None, line2 = None, line3 = None, autoClose = True):
+        super(ClapperDialog, self).__init__()
+
         self.line1 = line1
         self.line2 = line2
         self.line3 = line3
         self.autoClose = autoClose
         self.timer = threading.Timer(5, self.delayedClose)
-
-        xbmcgui.WindowXMLDialog.__init__(self, xmlFilename, scriptPath)
-
 
     def onInit(self):
         print "ClapperDialog.onInit"
