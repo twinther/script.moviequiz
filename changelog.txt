@@ -1,3 +1,6 @@
+[B]Version 1.0.0 - 2011-xx-xx[/B]
+- Dropped support for XBMC Dharma
+
 [B]Version 0.3.2 - 2011-04-17[/B]
 - Improved support for XBMC Eden nightly builds
 - Added support for Cinema Experience integration
