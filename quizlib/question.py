@@ -12,12 +12,6 @@ from strings import *
 TYPE_MOVIE = 1
 TYPE_TV = 2
 
-DISPLAY_NONE = 0
-DISPLAY_VIDEO = 1
-DISPLAY_PHOTO = 2
-DISPLAY_QUOTE = 3
-DISPLAY_THREE_PHOTOS = 4
-
 class Answer(object):
     def __init__(self, correct, id, text, idFile = None, sortWeight = None):
         self.correct = correct
@@ -38,25 +32,31 @@ class Answer(object):
             self.coverFile = thumb.getCachedVideoThumb(path, filename)
 
 class Question(object):
-    ADDON = xbmcaddon.Addon(id = 'script.moviequiz')
+    ADDON = xbmcaddon.Addon()
     IMDB = imdb.Imdb(ADDON.getAddonInfo('profile'))
     
-    def __init__(self, database, display, maxRating, onlyWatchedMovies):
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        """
+        Base class for Questions
+
+        @param self: Question instance
+        @param database: Database connection instance to use
+        @type database: db.Database
+        @param maxRating: the maximum allowed MPAA/Content rating
+        @type maxRating: str
+        @param onlyWatchedMovies: whether to limit to questions about watched movies or not
+        @type onlyWatchedMovies: bool
+        @return:
+        """
+        print "Question.__init__()"
         self.database = database
         self.answers = list()
         self.text = None
-        self.videoFile = None
         self.fanartFile = None
-        self.photos = list()
-        self.quoteText = None
 
-        self.display = display
         # Maximum allowed MPAA rating
         self.maxRating = maxRating
         self.onlyWatchedMovies = onlyWatchedMovies
-
-    def getDisplay(self):
-        return self.display
 
     def getText(self):
         return self.text
@@ -79,27 +79,6 @@ class Question(object):
     def getUniqueIdentifier(self):
         return "%s-%s" % (self.__class__.__name__, str(self.getCorrectAnswer().id))
 
-    def setVideoFile(self, path, filename):
-        if filename[0:8] == 'stack://':
-            self.videoFile = filename
-        else:
-            self.videoFile = os.path.join(path, filename)
-
-    def getVideoFile(self):
-        return self.videoFile
-
-    def addPhoto(self, photo):
-        self.photos.append(photo)
-
-    def getPhotoFile(self, index = 0):
-        return self.photos[index]
-
-    def setQuoteText(self, quoteText):
-        self.quoteText = quoteText
-
-    def getQuoteText(self):
-        return self.quoteText
-
     def setFanartFile(self, path, filename = None):
         self.fanartFile = thumb.getCachedVideoFanart(path, filename)
 
@@ -112,8 +91,46 @@ class Question(object):
             movieIds.append(movie.id)
         return ','.join(map(str, movieIds))
 
-    def _isAnimated(self, genre):
+    def _isAnimationGenre(self, genre):
         return genre.lower().find("animation") != -1
+
+#
+# DISPLAY TYPES
+#
+
+class VideoDisplayType(object):
+    def setVideoFile(self, path, filename):
+        if filename[0:8] == 'stack://':
+            self.videoFile = filename
+        else:
+            self.videoFile = os.path.join(path, filename)
+
+    def getVideoFile(self):
+        return self.videoFile
+
+class PhotoDisplayType(object):
+    def setPhotoFile(self, photoFile):
+        self.photoFile = photoFile
+
+    def getPhotoFile(self):
+        return self.photoFile
+
+class ThreePhotoDisplayType(object):
+    def addPhoto(self, photo):
+        if not hasattr(self, 'photos'):
+            self.photos = list()
+
+        self.photos.append(photo)
+
+    def getPhotoFile(self, index = 0):
+        return self.photos[index]
+
+class QuoteDisplayType(object):
+    def setQuoteText(self, quoteText):
+        self.quoteText = quoteText
+
+    def getQuoteText(self):
+        return self.quoteText
 
 #
 # MOVIE QUESTIONS
@@ -122,8 +139,9 @@ class Question(object):
 class MovieQuestion(Question):
     MPAA_RATINGS = ['R', 'Rated R', 'PG-13', 'Rated PG-13', 'PG', 'Rated PG', 'G', 'Rated G']
 
-    def __init__(self, database, display, maxRating, onlyWatchedMovies):
-        Question.__init__(self, database, display, maxRating, onlyWatchedMovies)
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        print "MovieQuestion.__init_()"
+        super(MovieQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
     def _get_max_rating_clause(self):
         if self.maxRating is None:
@@ -142,34 +160,34 @@ class MovieQuestion(Question):
 
 
 
-class WhatMovieIsThisQuestion(MovieQuestion):
+class WhatMovieIsThisQuestion(MovieQuestion, VideoDisplayType):
     """
         WhatMovieIsThisQuestion
     """
 
     def __init__(self, database, maxRating, onlyWatchedMovies):
-        MovieQuestion.__init__(self, database, DISPLAY_VIDEO, maxRating, onlyWatchedMovies)
+        super(WhatMovieIsThisQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
-        row = self.database.fetchone("""
+        correctAnswer = self.database.fetchone("""
             SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.c14 AS genre, mv.strPath, mv.strFileName, slm.idSet
             FROM movieview mv LEFT JOIN setlinkmovie slm ON mv.idMovie = slm.idMovie
             WHERE mv.strFileName NOT LIKE '%%.nfo'
             %s %s
             ORDER BY random() LIMIT 1
             """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
-        a = Answer(True, row['idMovie'], row['title'], row['idFile'])
-        a.setCoverFile(row['strPath'], row['strFileName'])
+        a = Answer(True, correctAnswer['idMovie'], correctAnswer['title'], correctAnswer['idFile'])
+        a.setCoverFile(correctAnswer['strPath'], correctAnswer['strFileName'])
         self.answers.append(a)
 
         # Find other movies in set
-        if row['idSet'] is not None:
+        if correctAnswer['idSet'] is not None:
             otherMoviesInSet = self.database.fetchall("""
                 SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFileName
                 FROM movieview mv, setlinkmovie slm
                 WHERE mv.idMovie = slm.idMovie AND slm.idSet = ? AND mv.idMovie != ? AND title != ? AND mv.strFileName NOT LIKE '%%.nfo'
                 %s %s
                 ORDER BY random() LIMIT 3
-                """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), (row['idSet'], row['idMovie'], row['title']))
+                """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), (correctAnswer['idSet'], correctAnswer['idMovie'], correctAnswer['title']))
             for movie in otherMoviesInSet:
                 a = Answer(False, movie['idMovie'], movie['title'], movie['idFile'])
                 a.setCoverFile(movie['strPath'], movie['strFileName'])
@@ -185,7 +203,7 @@ class WhatMovieIsThisQuestion(MovieQuestion):
                     %s %s
                     ORDER BY random() LIMIT %d
                     """ % (self._get_movie_ids(), self._get_max_rating_clause(), self._get_watched_movies_clause(), 4 - len(self.answers)),
-                        (row['genre'], row['title'], ))
+                        (correctAnswer['genre'], correctAnswer['title'], ))
                 for movie in otherMoviesInGenre:
                     a = Answer(False, movie['idMovie'], movie['title'], movie['idFile'])
                     a.setCoverFile(movie['strPath'], movie['strFileName'])
@@ -202,7 +220,7 @@ class WhatMovieIsThisQuestion(MovieQuestion):
                 %s %s
                 ORDER BY random() LIMIT %d
                 """ % (self._get_movie_ids(), self._get_max_rating_clause(), self._get_watched_movies_clause(), 4 - len(self.answers)),
-                         row['title'])
+                         correctAnswer['title'])
             for movie in theRest:
                 a = Answer(False, movie['idMovie'], movie['title'], movie['idFile'])
                 a.setCoverFile(movie['strPath'], movie['strFileName'])
@@ -211,15 +229,14 @@ class WhatMovieIsThisQuestion(MovieQuestion):
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_MOVIE_IS_THIS)
-        self.setVideoFile(row['strPath'], row['strFileName'])
+        self.setVideoFile(correctAnswer['strPath'], correctAnswer['strFileName'])
 
-
-class ActorNotInMovieQuestion(MovieQuestion):
+class ActorNotInMovieQuestion(MovieQuestion, PhotoDisplayType):
     """
         ActorNotInMovieQuestion
     """
     def __init__(self, database, maxRating, onlyWatchedMovies):
-        MovieQuestion.__init__(self, database, DISPLAY_PHOTO, maxRating, onlyWatchedMovies)
+        super(ActorNotInMovieQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
         actor = None
         photoFile = None
@@ -270,7 +287,7 @@ class ActorNotInMovieQuestion(MovieQuestion):
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_MOVIE_IS_ACTOR_NOT_IN, actor['strActor'])
-        self.addPhoto(photoFile)
+        self.setPhotoFile(photoFile)
 
 
 
@@ -279,7 +296,7 @@ class WhatYearWasMovieReleasedQuestion(MovieQuestion):
         WhatYearWasMovieReleasedQuestion
     """
     def __init__(self, database, maxRating, onlyWatchedMovies):
-        MovieQuestion.__init__(self, database, DISPLAY_NONE, maxRating, onlyWatchedMovies)
+        super(WhatYearWasMovieReleasedQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
             SELECT mv.idFile, mv.c00 AS title, mv.c07 AS year, mv.strPath, mv.strFileName
@@ -312,7 +329,6 @@ class WhatYearWasMovieReleasedQuestion(MovieQuestion):
             self.answers.append(a)
 
         self.text = strings(Q_WHAT_YEAR_WAS_MOVIE_RELEASED, row['title'])
-#        self.setVideoFile(row['strPath'], row['strFileName'])
         self.setFanartFile(row['strPath'], row['strFileName'])
 
 
@@ -321,7 +337,7 @@ class WhatTagLineBelongsToMovieQuestion(MovieQuestion):
         WhatTagLineBelongsToMovieQuestion
     """
     def __init__(self, database, maxRating, onlyWatchedMovies):
-        MovieQuestion.__init__(self, database, DISPLAY_NONE, maxRating, onlyWatchedMovies)
+        super(WhatTagLineBelongsToMovieQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
             SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.c03 AS tagline, mv.strPath, mv.strFileName
@@ -349,7 +365,6 @@ class WhatTagLineBelongsToMovieQuestion(MovieQuestion):
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_TAGLINE_BELONGS_TO_MOVIE, row['title'])
-#        self.setVideoFile(row['strPath'], row['strFileName'])
         self.setFanartFile(row['strPath'], row['strFileName'])
 
 
@@ -358,7 +373,7 @@ class WhoDirectedThisMovieQuestion(MovieQuestion):
         WhoDirectedThisMovieQuestion
     """
     def __init__(self, database, maxRating, onlyWatchedMovies):
-        MovieQuestion.__init__(self, database, DISPLAY_NONE, maxRating, onlyWatchedMovies)
+        super(WhoDirectedThisMovieQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
             SELECT idActor, a.strActor, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFileName
@@ -384,7 +399,6 @@ class WhoDirectedThisMovieQuestion(MovieQuestion):
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHO_DIRECTED_THIS_MOVIE, row['title'])
-#        self.setVideoFile(row['strPath'], row['strFileName'])
         self.setFanartFile(row['strPath'], row['strFileName'])
 
 
@@ -393,7 +407,7 @@ class WhatStudioReleasedMovieQuestion(MovieQuestion):
         WhatStudioReleasedMovieQuestion
     """
     def __init__(self, database, maxRating, onlyWatchedMovies):
-        MovieQuestion.__init__(self, database, DISPLAY_NONE, maxRating, onlyWatchedMovies)
+        super(WhatStudioReleasedMovieQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
             SELECT s.idStudio, s.strStudio, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFileName
@@ -420,16 +434,16 @@ class WhatStudioReleasedMovieQuestion(MovieQuestion):
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_STUDIO_RELEASED_MOVIE, row['title'])
-#        self.setVideoFile(row['strPath'], row['strFileName'])
         self.setFanartFile(row['strPath'], row['strFileName'])
 
 
-class WhatActorIsThisQuestion(MovieQuestion):
+class WhatActorIsThisQuestion(MovieQuestion, PhotoDisplayType):
     """
         WhatActorIsThisQuestion
     """
     def __init__(self, database, maxRating, onlyWatchedMovies):
-        MovieQuestion.__init__(self, database, DISPLAY_PHOTO, maxRating, onlyWatchedMovies)
+        print "WhatActorIsthisQuestion.__init__()"
+        super(WhatActorIsThisQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
         actor = None
         photoFile = None
@@ -474,14 +488,14 @@ class WhatActorIsThisQuestion(MovieQuestion):
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_ACTOR_IS_THIS)
-        self.addPhoto(photoFile)
+        self.setPhotoFile(photoFile)
 
 class WhoPlayedRoleInMovieQuestion(MovieQuestion):
     """
         WhoPlayedRoleInMovieQuestion
     """
     def __init__(self, database, maxRating, onlyWatchedMovies):
-        MovieQuestion.__init__(self, database, DISPLAY_NONE, maxRating, onlyWatchedMovies)
+        super(WhoPlayedRoleInMovieQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
             SELECT alm.idActor, a.strActor, alm.strRole, mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFileName, mv.c14 AS genre
@@ -513,20 +527,19 @@ class WhoPlayedRoleInMovieQuestion(MovieQuestion):
 
         random.shuffle(self.answers)
 
-        if self._isAnimated(row['genre']):
+        if self._isAnimationGenre(row['genre']):
             self.text = strings(Q_WHO_VOICES_ROLE_IN_MOVIE) % (role, row['title'])
         else:
             self.text = strings(Q_WHO_PLAYS_ROLE_IN_MOVIE) % (role, row['title'])
-#        self.setVideoFile(row['strPath'], row['strFileName'])
         self.setFanartFile(row['strPath'], row['strFileName'])
 
         
-class WhatMovieIsThisQuoteFrom(MovieQuestion):
+class WhatMovieIsThisQuoteFrom(MovieQuestion, QuoteDisplayType):
     """
         WhatQuoteIsThisFrom
     """
     def __init__(self, database, maxRating, onlyWatchedMovies):
-        MovieQuestion.__init__(self, database, DISPLAY_QUOTE, maxRating, onlyWatchedMovies)
+        super(WhatMovieIsThisQuoteFrom, self).__init__(database, maxRating, onlyWatchedMovies)
         rows = self.database.fetchall("""
             SELECT mv.idMovie, mv.c00 AS title, mv.c07 AS year, mv.strPath, mv.strFileName
             FROM movieview mv
@@ -537,7 +550,7 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
         quoteText = None
         row = None
         for r in rows:
-            quoteText = Question.IMDB.getRandomQuote(r['title'], maxLength = 256)
+            quoteText = Question.IMDB.getRandomQuote(r['title'], maxLength = 128)
 
             if quoteText is not None:
                 row = r
@@ -572,7 +585,7 @@ class WhatMovieIsNewestQuestion(MovieQuestion):
         WhatMovieIsNewestQuestion
     """
     def __init__(self, database, maxRating, onlyWatchedMovies):
-        MovieQuestion.__init__(self, database, DISPLAY_NONE, maxRating, onlyWatchedMovies)
+        super(WhatMovieIsNewestQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
         row = self.database.fetchone("""
             SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFileName, mv.c07 AS year
             FROM movieview mv
@@ -602,12 +615,12 @@ class WhatMovieIsNewestQuestion(MovieQuestion):
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_MOVIE_IS_THE_NEWEST)
 
-class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
+class WhatMovieIsNotDirectedByQuestion(MovieQuestion, PhotoDisplayType):
     """
         WhatMovieIsNotDirectedByQuestion
     """
     def __init__(self, database, maxRating, onlyWatchedMovies):
-        MovieQuestion.__init__(self, database, DISPLAY_PHOTO, maxRating, onlyWatchedMovies)
+        super(WhatMovieIsNotDirectedByQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
         director = None
         photoFile = None
@@ -659,12 +672,12 @@ class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_MOVIE_IS_NOT_DIRECTED_BY, director['strActor'])
-        self.addPhoto(photoFile)
+        self.setPhotoFile(photoFile)
 
 
-class WhatActorIsInTheseMoviesQuestion(MovieQuestion):
+class WhatActorIsInTheseMoviesQuestion(MovieQuestion, ThreePhotoDisplayType):
     def __init__(self, database, maxRating, onlyWatchedMovies):
-        MovieQuestion.__init__(self, database, DISPLAY_THREE_PHOTOS, maxRating, onlyWatchedMovies)
+        super(WhatActorIsInTheseMoviesQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
         actor = self.database.fetchone("""
             SELECT a.idActor, a.strActor
@@ -709,8 +722,8 @@ class WhatActorIsInTheseMoviesQuestion(MovieQuestion):
 class TVQuestion(Question):
     CONTENT_RATINGS = ['TV-MA', 'TV-14', 'TV-PG', 'TV-G', 'TV-Y7-FV', 'TV-Y7', 'TV-Y']
     
-    def __init__(self, database, display, maxRating, onlyWatchedMovies):
-        Question.__init__(self, database, display, maxRating, onlyWatchedMovies)
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        super(TVQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
     def _get_watched_episodes_clause(self):
         if self.onlyWatchedMovies:
@@ -737,13 +750,13 @@ class TVQuestion(Question):
         return "%dx%02d - %s" % (int(season), int(episode), title)
 
 
-class WhatTVShowIsThisQuestion(TVQuestion):
+class WhatTVShowIsThisQuestion(TVQuestion, VideoDisplayType):
     """
         WhatTVShowIsThisQuestion
     """
 
     def __init__(self, database, maxRating, onlyWatchedMovies):
-        TVQuestion.__init__(self, database, DISPLAY_VIDEO, maxRating, onlyWatchedMovies)
+        super(WhatTVShowIsThisQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
             SELECT ev.idFile, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName, tv.strPath AS showPath
@@ -771,16 +784,15 @@ class WhatTVShowIsThisQuestion(TVQuestion):
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_TVSHOW_IS_THIS)
         self.setVideoFile(row['strPath'], row['strFileName'])
-#        self.setFanartFile(row['strPath'], row['strFileName'])
 
 
-class WhatSeasonIsThisQuestion(TVQuestion):
+class WhatSeasonIsThisQuestion(TVQuestion, VideoDisplayType):
     """
         WhatSeasonIsThisQuestion
     """
 
     def __init__(self, database, maxRating, onlyWatchedMovies):
-        TVQuestion.__init__(self, database, DISPLAY_VIDEO, maxRating, onlyWatchedMovies)
+        super(WhatSeasonIsThisQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
             SELECT ev.idFile, ev.c12 AS season, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName, tv.strPath AS showPath,
@@ -810,16 +822,15 @@ class WhatSeasonIsThisQuestion(TVQuestion):
 
         self.text = strings(Q_WHAT_SEASON_IS_THIS) % row['title']
         self.setVideoFile(row['strPath'], row['strFileName'])
-#        self.setFanartFile(row['strPath'], row['strFileName'])
 
 
-class WhatEpisodeIsThisQuestion(TVQuestion):
+class WhatEpisodeIsThisQuestion(TVQuestion, VideoDisplayType):
     """
         WhatEpisodeIsThisQuestion
     """
 
     def __init__(self, database, maxRating, onlyWatchedMovies):
-        TVQuestion.__init__(self, database, DISPLAY_VIDEO, maxRating, onlyWatchedMovies)
+        super(WhatEpisodeIsThisQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
             SELECT ev.idFile, ev.c00 AS episodeTitle, ev.c12 AS season, ev.c13 AS episode, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName,
@@ -853,7 +864,6 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
 
         self.text = strings(Q_WHAT_EPISODE_IS_THIS) % row['title']
         self.setVideoFile(row['strPath'], row['strFileName'])
-#        self.setFanartFile(row['strPath'], row['strFileName'])
 
 class WhenWasTVShowFirstAiredQuestion(TVQuestion):
     """
@@ -861,7 +871,7 @@ class WhenWasTVShowFirstAiredQuestion(TVQuestion):
     """
 
     def __init__(self, database, maxRating, onlyWatchedMovies):
-        TVQuestion.__init__(self, database, DISPLAY_NONE, maxRating, onlyWatchedMovies)
+        super(WhenWasTVShowFirstAiredQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
             SELECT ev.idFile, ev.c12 AS season, ev.c13 AS episode, ev.c05 AS firstAired, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName
@@ -897,17 +907,16 @@ class WhenWasTVShowFirstAiredQuestion(TVQuestion):
             self.answers.append(a)
 
         self.text = strings(Q_WHEN_WAS_TVSHOW_FIRST_AIRED) % (row['title'] + ' - ' + self._get_season_title(row['season']))
-#        self.setVideoFile(row['strPath'], row['strFileName'])
         self.setFanartFile(row['strPath'])
 
 
-class WhoPlayedRoleInTVShowQuestion(TVQuestion):
+class WhoPlayedRoleInTVShowQuestion(TVQuestion, PhotoDisplayType):
     """
         WhoPlayedRoleInTVShowQuestion
     """
 
     def __init__(self, database, maxRating, onlyWatchedMovies):
-        TVQuestion.__init__(self, database, DISPLAY_PHOTO, maxRating, onlyWatchedMovies)
+        super(WhoPlayedRoleInTVShowQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
         row = self.database.fetchone("""
             SELECT DISTINCT alt.idActor, a.strActor, alt.strRole, tv.idShow, tv.c00 AS title, tv.strPath, tv.c08 AS genre
@@ -939,15 +948,15 @@ class WhoPlayedRoleInTVShowQuestion(TVQuestion):
 
         random.shuffle(self.answers)
 
-        if self._isAnimated(row['genre']):
+        if self._isAnimationGenre(row['genre']):
             self.text = strings(Q_WHO_VOICES_ROLE_IN_TVSHOW) % (role, row['title'])
         else:
             self.text = strings(Q_WHO_PLAYS_ROLE_IN_TVSHOW) % (role, row['title'])
-        self.addPhoto(thumb.getCachedTVShowThumb(row['strPath']))
+        self.setPhotoFile(thumb.getCachedTVShowThumb(row['strPath']))
 
 class QuestionException(Exception):
     def __init__(self, msg):
-        Exception.__init__(self, msg)
+        super(QuestionException, self).__init__(msg)
 
 def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
     """
@@ -956,7 +965,7 @@ def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
     subclasses = []
     if type == TYPE_MOVIE:
         #noinspection PyUnresolvedReferences
-        subclasses = MovieQuestion.__subclasses__()
+        subclasses = [WhatActorIsThisQuestion]#MovieQuestion.__subclasses__()
     elif type == TYPE_TV:
         #noinspection PyUnresolvedReferences
         subclasses = TVQuestion.__subclasses__()

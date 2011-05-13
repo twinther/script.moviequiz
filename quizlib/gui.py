@@ -169,7 +169,7 @@ class QuizGui(xbmcgui.WindowXML):
 
         self.database = db.connect()
         self.player = player.TenSecondPlayer(database=self.database)
-        self.question = question.Question(self.database, None, None, None)
+        self.question = question.Question(self.database, None, None)
         self.previousQuestions = []
 
         self.correctAnswerCount = 0
@@ -268,29 +268,29 @@ class QuizGui(xbmcgui.WindowXML):
             self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(self.defaultBackground)
 
         correctAnswer = self.question.getCorrectAnswer()
-        if self.question.getDisplay() == question.DISPLAY_VIDEO:
+        if isinstance(self.question, question.VideoDisplayType):
             self._changeVisibility(video = True)
             xbmc.sleep(1500) # give skin animation time to execute
             self.player.playWindowed(self.question.getVideoFile(), correctAnswer.idFile)
 
-        elif self.question.getDisplay() == question.DISPLAY_PHOTO:
+        elif isinstance(self.question, question.PhotoDisplayType):
             self.getControl(self.C_MAIN_PHOTO).setImage(self.question.getPhotoFile())
             self._changeVisibility(photo = True)
 
-        elif self.question.getDisplay() == question.DISPLAY_QUOTE:
+        elif isinstance(self.question, question.ThreePhotoDisplayType):
+            self.getControl(self.C_MAIN_PHOTO_1).setImage(self.question.getPhotoFile(0))
+            self.getControl(self.C_MAIN_PHOTO_2).setImage(self.question.getPhotoFile(1))
+            self.getControl(self.C_MAIN_PHOTO_3).setImage(self.question.getPhotoFile(2))
+            self._changeVisibility(threePhotos = True)
+
+        elif isinstance(self.question, question.QuoteDisplayType):
             quoteText = self.question.getQuoteText()
             quoteText = self._obfuscateQuote(quoteText)
             self.getControl(self.C_MAIN_QUOTE_LABEL).setText(quoteText)
             self._changeVisibility(quote = True)
 
-        elif self.question.getDisplay() == question.DISPLAY_NONE:
+        else:
             self._changeVisibility()
-
-        elif self.question.getDisplay() == question.DISPLAY_THREE_PHOTOS:
-            self.getControl(self.C_MAIN_PHOTO_1).setImage(self.question.getPhotoFile(0))
-            self.getControl(self.C_MAIN_PHOTO_2).setImage(self.question.getPhotoFile(1))
-            self.getControl(self.C_MAIN_PHOTO_3).setImage(self.question.getPhotoFile(2))
-            self._changeVisibility(threePhotos = True)
 
         if not self.interactive:
             # answers correctly in ten seconds
@@ -340,7 +340,7 @@ class QuizGui(xbmcgui.WindowXML):
                 else:
                     self.getControl(self.C_MAIN_FIRST_ANSWER + idx).setLabel(textColor='0x88888888')
 
-            if self.question.getDisplay() == question.DISPLAY_QUOTE:
+            if isinstance(self.question, question.QuoteDisplayType):
                 # Display non-obfuscated quote text
                 self.getControl(self.C_MAIN_QUOTE_LABEL).setText(self.question.getQuoteText())
 
