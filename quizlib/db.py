@@ -5,13 +5,7 @@ import os
 import xbmc
 import mysql.connector
 import glob
-
-try:
-    # Used by Eden/external python
-    from sqlite3 import dbapi2 as sqlite3
-except:
-    # Used by Dharma/internal python
-    from pysqlite2 import dbapi2 as sqlite3
+import sqlite3
 
 __author__ = 'twinther'
 
