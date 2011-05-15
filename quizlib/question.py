@@ -680,7 +680,12 @@ class WhatActorIsInTheseMoviesQuestion(MovieQuestion, ThreePhotoDisplayType):
         super(WhatActorIsInTheseMoviesQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
         actor = self.database.fetchone("""
-            SELECT a.idActor, a.strActor
+            SELECT a.idActor, a.strActorSELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFileName
+            FROM movieview mv
+            WHERE  (SELECT COUNT(DISTINCT alm.idActor) FROM actorlinkmovie alm WHERE alm.idMovie=mv.idMovie) > 2
+	        AND mv.strFileName NOT LIKE '%%.nfo'
+
+            
             FROM movieview mv, actorlinkmovie alm, actors a
             WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
@@ -714,6 +719,95 @@ class WhatActorIsInTheseMoviesQuestion(MovieQuestion, ThreePhotoDisplayType):
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_ACTOR_IS_IN_THESE_MOVIES)
+
+
+class WhatActorIsInMovieBesidesOtherActorQuestion(MovieQuestion):
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        super(WhatActorIsInMovieBesidesOtherActorQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
+        movie = self._selectMovieWithAtLeastTwoActors()
+        actors = self._selectTwoRandomActorsFromMovie(movie['idMovie'])
+
+        a = Answer(True, actors[0]['idActor'], actors[0]['strActor'])
+        a.setCoverFile(thumb.getCachedActorThumb(actors[0]['strActor']))
+        self.answers.append(a)
+
+        otherActors = self._selectThreeRandomActorsNotInMovie(movie['idMovie'], actors[0]['idActor'])
+        for actor in otherActors:
+            a = Answer(False, actor['idActor'], actor['strActor'])
+            a.setCoverFile(thumb.getCachedActorThumb(actor['strActor']))
+            self.answers.append(a)
+
+        random.shuffle(self.answers)
+        self.text = strings(Q_WHAT_ACTOR_IS_IN_MOVIE_BESIDES_OTHER_ACTOR, (movie['title'], actors[1]['strActor']))
+        self.setFanartFile(movie['strPath'], movie['strFileName'])
+
+    def _selectMovieWithAtLeastTwoActors(self):
+        return self.database.fetchone("""
+            SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFileName
+            FROM movieview mv
+            WHERE (SELECT COUNT(DISTINCT alm.idActor) FROM actorlinkmovie alm WHERE alm.idMovie=mv.idMovie) > 2
+            AND mv.strFileName NOT LIKE '%%.nfo'
+            %s %s
+            ORDER BY random() LIMIT 1
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
+
+    def _selectTwoRandomActorsFromMovie(self, idMovie):
+        return self.database.fetchall("""
+            SELECT a.idActor, a.strActor
+            FROM actorlinkmovie alm, actors a
+            WHERE alm.idMovie = ?
+            ORDER BY random() LIMIT 2
+            """, idMovie)
+
+    def _selectThreeRandomActorsNotInMovie(self, idMovie, idActor):
+        return self.database.fetchall("""
+            SELECT a.idActor, a.strActor
+            FROM actorlinkmovie alm, actors a
+            WHERE a.idActor = alm.idActor AND alm.idMovie != ? AND alm.idActor != ?
+            ORDER BY random() LIMIT 3
+            """, (idMovie, idActor))
+
+
+class WhatMovieHasTheLongestRuntimeQuestion(MovieQuestion):
+    def __init__(self, database, maxRating, onlyWatchedMovies):
+        super(WhatMovieHasTheLongestRuntimeQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
+
+        correctAnswer = self._selectRandomMovie()
+        a = Answer(True, correctAnswer['idMovie'], correctAnswer['title'] + ' ' + correctAnswer['runtime'], correctAnswer['idFile'])
+        a.setCoverFile(correctAnswer['strPath'], correctAnswer['strFileName'])
+        self.answers.append(a)
+
+        movies = self._selectThreeRandomMoviesWithShorterRuntime(correctAnswer['runtime'])
+        if len(movies) < 3:
+            raise QuestionException("Less than 3 movies found; bailing out")
+
+        for movie in movies:
+            a = Answer(False, movie['idMovie'], movie['title'] + ' ' + movie['runtime'])
+            a.setCoverFile(movie['strPath'], movie['strFileName'])
+            self.answers.append(a)
+
+        random.shuffle(self.answers)
+        self.text = strings(Q_WHAT_MOVIE_HAS_THE_LONGEST_RUNTIME)
+
+
+    def _selectRandomMovie(self):
+        return self.database.fetchone("""
+            SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.c11 AS runtime, mv.strPath, mv.strFileName
+            FROM movieview mv
+            WHERE mv.c11 != '' AND mv.strFileName NOT LIKE '%%.nfo'
+            %s %s
+            ORDER BY random() LIMIT 1
+            """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()))
+
+
+    def _selectThreeRandomMoviesWithShorterRuntime(self, runtime):
+        return self.database.fetchall("""
+            SELECT mv.idMovie, mv.c00 AS title, mv.strPath, mv.strFileName, mv.c11 AS runtime
+            FROM movieview mv
+            WHERE mv.c11 != '' AND CAST(mv.c11 AS INTEGER) < ?
+            %s %s
+            ORDER BY random() LIMIT 3
+        """ % (self._get_max_rating_clause(), self._get_watched_movies_clause()), runtime)
 
 #
 # TV QUESTIONS
@@ -965,7 +1059,7 @@ def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
     subclasses = []
     if type == TYPE_MOVIE:
         #noinspection PyUnresolvedReferences
-        subclasses = [WhatActorIsThisQuestion]#MovieQuestion.__subclasses__()
+        subclasses = [WhatMovieHasTheLongestRuntimeQuestion]#MovieQuestion.__subclasses__()
     elif type == TYPE_TV:
         #noinspection PyUnresolvedReferences
         subclasses = TVQuestion.__subclasses__()

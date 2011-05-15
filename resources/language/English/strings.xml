@@ -45,6 +45,8 @@
     <string id="30410">What movie is the newest?</string>
     <string id="30411">What movie is not directed by [B]%s[/B]?</string><!-- %s is director name -->
     <string id="30412">What actor is in these movies?</string>
+    <string id="30413">What actor is in [B]%s[/B] besides [B]%s[/B]?</string><!-- 1st %s is movie title, 2nd %s is actor name -->
+    <string id="30414">What movie has the longest runtime?</string>
 
     <!-- TV show Questions -->
     <string id="30450">What TV show is this?</string>
