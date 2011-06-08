@@ -1,8 +1,11 @@
 [B]Version 1.0.0 - 2011-xx-xx[/B]
 - Dropped support for XBMC Dharma
+- Redesign main game screen
 - New question types
   - What movie has the longest runtime?
   - What actor is in movie besides other actor?
+  - Added sound effects
+
 
 [B]Version 0.3.2 - 2011-04-17[/B]
 - Improved support for XBMC Eden nightly builds

@@ -48,7 +48,6 @@ class Question(object):
         @type onlyWatchedMovies: bool
         @return:
         """
-        print "Question.__init__()"
         self.database = database
         self.answers = list()
         self.text = None
@@ -680,12 +679,7 @@ class WhatActorIsInTheseMoviesQuestion(MovieQuestion, ThreePhotoDisplayType):
         super(WhatActorIsInTheseMoviesQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
         actor = self.database.fetchone("""
-            SELECT a.idActor, a.strActorSELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.strPath, mv.strFileName
-            FROM movieview mv
-            WHERE  (SELECT COUNT(DISTINCT alm.idActor) FROM actorlinkmovie alm WHERE alm.idMovie=mv.idMovie) > 2
-	        AND mv.strFileName NOT LIKE '%%.nfo'
-
-            
+            SELECT a.idActor, a.strActor
             FROM movieview mv, actorlinkmovie alm, actors a
             WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor AND mv.strFileName NOT LIKE '%%.nfo'
             %s %s
@@ -755,7 +749,7 @@ class WhatActorIsInMovieBesidesOtherActorQuestion(MovieQuestion):
         return self.database.fetchall("""
             SELECT a.idActor, a.strActor
             FROM actorlinkmovie alm, actors a
-            WHERE alm.idMovie = ?
+            WHERE a.idActor = alm.idActor AND alm.idMovie = ?
             ORDER BY random() LIMIT 2
             """, idMovie)
 
@@ -773,7 +767,7 @@ class WhatMovieHasTheLongestRuntimeQuestion(MovieQuestion):
         super(WhatMovieHasTheLongestRuntimeQuestion, self).__init__(database, maxRating, onlyWatchedMovies)
 
         correctAnswer = self._selectRandomMovie()
-        a = Answer(True, correctAnswer['idMovie'], correctAnswer['title'] + ' ' + correctAnswer['runtime'], correctAnswer['idFile'])
+        a = Answer(True, correctAnswer['idMovie'], correctAnswer['title'], correctAnswer['idFile'])
         a.setCoverFile(correctAnswer['strPath'], correctAnswer['strFileName'])
         self.answers.append(a)
 
@@ -782,7 +776,7 @@ class WhatMovieHasTheLongestRuntimeQuestion(MovieQuestion):
             raise QuestionException("Less than 3 movies found; bailing out")
 
         for movie in movies:
-            a = Answer(False, movie['idMovie'], movie['title'] + ' ' + movie['runtime'])
+            a = Answer(False, movie['idMovie'], movie['title'])
             a.setCoverFile(movie['strPath'], movie['strFileName'])
             self.answers.append(a)
 
@@ -1059,7 +1053,7 @@ def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
     subclasses = []
     if type == TYPE_MOVIE:
         #noinspection PyUnresolvedReferences
-        subclasses = [WhatMovieHasTheLongestRuntimeQuestion]#MovieQuestion.__subclasses__()
+        subclasses = MovieQuestion.__subclasses__()
     elif type == TYPE_TV:
         #noinspection PyUnresolvedReferences
         subclasses = TVQuestion.__subclasses__()
