@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<window id="5100" type="dialog">
+    <allowoverlay>no</allowoverlay>
+    <visible>true</visible>
+    <defaultcontrol always="true">4000</defaultcontrol>
+    <coordinates>
+        <system>1</system>
+        <posx>0</posx>
+        <posy>0</posy>
+    </coordinates>
+    <animation effect="fade" start="100" end="0" time="200">WindowClose</animation> 
+    <controls>
+
+        <control type="image">
+            <description>Glasspane</description>
+            <posx>0</posx>
+            <posy>0</posy>
+            <width>1280</width>
+            <height>720</height>
+            <texture>quiz-background-glass.png</texture>
+            <animation effect="fade" start="0" end="100" time="200">WindowOpen</animation>
+            <animation effect="fade" start="100" end="0" time="200">WindowClose</animation>
+        </control>
+
+        <control type="group">
+            <posx>230</posx>
+            <posy>0</posy>
+            <width>400</width>
+            <height>720</height>
+            <control type="image">
+                <posx>0</posx>
+                <posy>0</posy>
+                <width>400</width>
+                <height>720</height>
+                <texture>quiz-gameover-background.png</texture>
+                <animation effect="fade" start="0" end="100" time="200">WindowOpen</animation>
+                <animation effect="fade" start="100" end="0" time="200">WindowClose</animation>
+            </control>
+
+            <control type="label">
+                <posx>20</posx>
+                <posy>160</posy>
+                <width>360</width>
+                <height>40</height>
+                <font>font13</font>
+                <aligny>center</aligny>
+                <align>center</align>
+                <label>[B]GAME OVER[/B]</label>
+            </control>
+
+            <control type="label" id="4100">
+                <posx>20</posx>
+                <posy>200</posy>
+                <width>360</width>
+                <height>40</height>
+                <font>font13</font>
+                <aligny>center</aligny>
+                <label>You got x of y correct!</label>
+            </control>
+
+            <control type="label">
+                <posx>20</posx>
+                <posy>240</posy>
+                <width>360</width>
+                <height>40</height>
+                <font>font13</font>
+                <aligny>center</aligny>
+                <label>Your score:</label>
+            </control>
+            <control type="label" id="4101">
+                <posx>380</posx>
+                <posy>240</posy>
+                <width>360</width>
+                <height>40</height>
+                <font>font13</font>
+                <aligny>center</aligny>
+                <align>right</align>
+                <label>10.000</label>
+            </control>
+
+
+            <control type="button" id="4000">
+                <posx>20</posx>
+                <posy>300</posy>
+                <width>360</width>
+                <height>40</height>
+                <font>font13</font>
+                <aligny>center</aligny>
+                <label>Retry</label>
+                <onup>4003</onup>
+                <ondown>4001</ondown>
+            </control>
+            <control type="button" id="4001">
+                <posx>20</posx>
+                <posy>340</posy>
+                <width>360</width>
+                <height>40</height>
+                <font>font13</font>
+                <aligny>center</aligny>
+                <label>Highscore</label>
+                <onup>4000</onup>
+                <ondown>4002</ondown>
+            </control>
+            <control type="button" id="4002">
+                <posx>20</posx>
+                <posy>380</posy>
+                <width>360</width>
+                <height>40</height>
+                <font>font13</font>
+                <aligny>center</aligny>
+                <label>Local highscore</label>
+                <onup>4001</onup>
+                <ondown>4003</ondown>
+            </control>
+            <control type="button" id="4003">
+                <posx>20</posx>
+                <posy>420</posy>
+                <width>360</width>
+                <height>40</height>
+                <font>font13</font>
+                <aligny>center</aligny>
+                <label>Main menu</label>
+                <onup>4002</onup>
+                <ondown>4000</ondown>
+            </control>
+
+        </control>
+
+        <control type="group" id="8000">
+            <description>Global highscore</description>
+            <posx>650</posx>
+            <posy>0</posy>
+            <width>400</width>
+            <height>720</height>
+            <animation effect="fade" start="0" end="100" time="200" condition="Control.HasFocus(4001)">Conditional</animation>
+            <visible>Control.HasFocus(4001)</visible>
+
+            <control type="image">
+                <posx>0</posx>
+                <posy>0</posy>
+                <width>400</width>
+                <height>720</height>
+                <texture>quiz-gameover-background.png</texture>
+            </control>
+
+            <control type="label">
+                <posx>0</posx>
+                <posy>200</posy>
+                <width>400</width>
+                <height>40</height>
+                <font>font13</font>
+                <aligny>center</aligny>
+                <align>center</align>
+                <label>Not implemented yet</label>
+            </control>
+        </control>
+
+        <control type="group" id="9000">
+            <description>Local highscore</description>
+            <posx>650</posx>
+            <posy>0</posy>
+            <width>400</width>
+            <height>720</height>
+            <animation effect="fade" start="0" end="100" time="200" condition="Control.HasFocus(4002)">Conditional</animation>
+            <visible>Control.HasFocus(4002)</visible>
+
+            <control type="image">
+                <posx>0</posx>
+                <posy>0</posy>
+                <width>400</width>
+                <height>720</height>
+                <texture>quiz-gameover-background.png</texture>
+            </control>
+
+            <control type="label">
+                <posx>0</posx>
+                <posy>400</posy>
+                <width>400</width>
+                <height>40</height>
+                <font>font13</font>
+                <aligny>center</aligny>
+                <align>center</align>
+                <label>Not implemented yet</label>
+            </control>
+            <control type="label">
+                <posx>0</posx>
+                <posy>400</posy>
+                <width>400</width>
+                <height>40</height>
+                <font>font13</font>
+                <aligny>center</aligny>
+                <align>center</align>
+                <label>Not implemented yet</label>
+            </control>
+
+        </control>
+
+    </controls>
+</window>

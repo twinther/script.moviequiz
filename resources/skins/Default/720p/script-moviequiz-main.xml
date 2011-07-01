@@ -90,23 +90,6 @@
                 <height>452</height>
                 <texture>quiz-video-background.png</texture>
             </control>
-<!-- todo test -->
-            <control type="button" id="4010">
-                <description>Replay video</description>
-                <posx>100</posx>
-                <posy>100</posy>
-                <width>80</width>
-                <height>80</height>
-                <texturefocus>quiz-background-glass.png</texturefocus>
-                <texturenofocus />
-                <label>Replay</label>
-                <onup>4000</onup>
-                <ondown>4000</ondown>
-                <onright>4000</onright>
-                <onleft>4000</onleft>
-                <visible>Control.IsVisible(5007)</visible>
-            </control>
-
 
             <control type="videowindow" id="2">
                 <posx>15</posx>
@@ -303,17 +286,6 @@
                 <texture>quiz-background-glass.png</texture>
             </control>
 
-            <control type="label" id="4105">
-                <description>Question points</description>
-                <posx>190</posx>
-                <posy>145</posy>
-                <width>90</width>
-                <height>40</height>
-                <textcolor>ffffffff</textcolor>
-                <font>font13</font>
-                <align>right</align>
-            </control>
-
             <control type="label" id="4100">
                 <description>Score label</description>
                 <posx>10</posx>
@@ -357,13 +329,40 @@
             </control>
 
             <control type="label" id="4104">
-                <description>Question x of y</description>
+                <description>Game type information</description>
                 <posx>10</posx>
-                <posy>130</posy>
+                <posy>90</posy>
                 <width>210</width>
                 <height>40</height>
                 <textcolor>ffffffff</textcolor>
                 <font>font13</font>
+            </control>
+
+            <control type="button" id="4010">
+                <description>Replay video</description>
+                <posx>0</posx>
+                <posy>170</posy>
+                <width>115</width>
+                <height>40</height>
+                <texturefocus>quiz-button-background.png</texturefocus>
+                <texturenofocus />
+                <label>Replay</label>
+                <align>center</align>
+                <onright>4011</onright>
+                <visible>Control.IsVisible(5007)</visible>
+            </control>
+            <control type="button" id="4011">
+                <description>Exit quiz</description>
+                <posx>115</posx>
+                <posy>170</posy>
+                <width>115</width>
+                <height>40</height>
+                <texturefocus>quiz-button-background.png</texturefocus>
+                <texturenofocus/>
+                <label>Quit</label>
+                <align>center</align>
+                <onleft>4010</onleft>
+                <onright>4000</onright>
             </control>
 
         </control>
@@ -432,7 +431,7 @@
                 <texturenofocus />
                 <onup>4003</onup>
                 <ondown>4001</ondown>
-                <onright>4011</onright>
+                <onleft>4011</onleft>
             </control>
             <control type="image">
                 <description>One</description>
@@ -456,7 +455,7 @@
                 <texturenofocus />
                 <onup>4000</onup>
                 <ondown>4002</ondown>
-                <onright>4011</onright>
+                <onleft>4011</onleft>
             </control>
             <control type="image">
                 <description>Two</description>
@@ -480,7 +479,7 @@
                 <texturenofocus />
                 <onup>4001</onup>
                 <ondown>4003</ondown>
-                <onright>4011</onright>
+                <onleft>4011</onleft>
             </control>
             <control type="image">
                 <description>Three</description>
@@ -504,7 +503,7 @@
                 <texturenofocus />
                 <onup>4002</onup>
                 <ondown>4000</ondown>
-                <onright>4011</onright>
+                <onleft>4011</onleft>
             </control>
             <control type="image">
                 <description>Four</description>
@@ -525,43 +524,5 @@
             <height>260</height>
             <aspectratio>keep</aspectratio>
         </control>
-
-        <control type="button" id="4011">
-            <description>Exit quiz</description>
-            <posx>1180</posx>
-            <posy>0</posy>
-            <width>100</width>
-            <height>40</height>
-            <texturefocus>quiz-button-background.png</texturefocus>
-            <texturenofocus>quiz-background-glass.png</texturenofocus>
-            <label>Quit</label>
-            <align>center</align>
-            <onleft>4000</onleft>
-        </control>
-
-<!--        <control type="image">
-            <description>Correct answer</description>
-            <posx>1085</posx>
-            <posy>35</posy>
-            <width>150</width>
-            <height>150</height>
-            <texture>quiz-correct.png</texture>
-            <visible>!Control.IsVisible(5002)</visible>
-            <animation effect="fade" start="100" end="0" time="1000">Hidden</animation>
-            <animation effect="slide" start="200,0" time="1000">Visible</animation>
-        </control>
-        <control type="image">
-            <description>Wrong answer</description>
-            <posx>1085</posx>
-            <posy>35</posy>
-            <width>150</width>
-            <height>150</height>
-            <texture>quiz-wrong.png</texture>
-            <visible>!Control.IsVisible(5003)</visible>
-            <animation effect="fade" start="100" end="0" time="1000">Hidden</animation>
-            <animation effect="slide" start="200,0" time="1000" delay="500">Visible</animation>
-        </control>
--->
-
     </controls>
 </window>

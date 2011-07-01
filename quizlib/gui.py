@@ -238,7 +238,6 @@ class QuizGui(xbmcgui.WindowXML):
     def onAction(self, action):
         if action.getId() == ACTION_PARENT_DIR or action.getId() == ACTION_PREVIOUS_MENU:
             self._game_over()
-            self.close()
 
         elif action.getId() == REMOTE_1:
             self.setFocusId(self.C_MAIN_FIRST_ANSWER)
@@ -275,11 +274,7 @@ class QuizGui(xbmcgui.WindowXML):
 
         if self.interactive:
             total = self.gameType.correctAnswers + self.gameType.wrongAnswers
-            line1 = strings(G_GAME_OVER)
-            line2 = strings(G_YOU_SCORED) % (self.gameType.correctAnswers, total)
-            line3 = "Points: " + str(self.gameType.points)
-
-            w = ClapperDialog(line1, line2, line3)
+            w = GameOverDialog(self, self.gameType.correctAnswers, total, self.gameType.points)
             w.doModal()
             del w
 
@@ -435,8 +430,7 @@ class QuizGui(xbmcgui.WindowXML):
 
         label = self.getControl(self.C_MAIN_QUESTION_COUNT)
         label.setLabel(self.gameType.getStatsString())
-
-
+        
     def _update_thumb(self, controlId = None):
         if self.question is None:
             return # not initialized yet
@@ -470,7 +464,7 @@ class QuizGui(xbmcgui.WindowXML):
         self.getControl(self.C_MAIN_QUOTE_VISIBILITY).setVisible(not quote)
         self.getControl(self.C_MAIN_THREE_PHOTOS_VISIBILITY).setVisible(not threePhotos)
         
-        self.getControl(self.C_MAIN_REPLAY_BUTTON_VISIBILITY).setVisible(video)
+        self.getControl(self.C_MAIN_REPLAY_BUTTON_VISIBILITY).setEnabled(video)
 
     def _obfuscateQuote(self, quote):
         names = list()
@@ -485,6 +479,49 @@ class QuizGui(xbmcgui.WindowXML):
 
         return quote
 
+
+class GameOverDialog(xbmcgui.WindowXMLDialog):
+    C_GAMEOVER_RETRY = 4000
+    C_GAMEOVER_MAINMENU = 4003
+
+    def __new__(cls, parentWindow, correctAnswers, totalAnswers, score):
+        return super(GameOverDialog, cls).__new__(cls, 'script-moviequiz-gameover.xml', ADDON.getAddonInfo('path'))
+
+    def __init__(self, parentWindow, correctAnswers, totalAnswers, score):
+        super(GameOverDialog, self).__init__()
+
+        self.parentWindow = parentWindow
+        self.correctAnswers = correctAnswers
+        self.totalAnswers = totalAnswers
+        self.score = score
+
+    def onInit(self):
+        self.getControl(4100).setLabel(strings(G_YOU_SCORED) % (self.correctAnswers, self.totalAnswers))
+        self.getControl(4101).setLabel(str(self.score))
+
+    def onAction(self, action):
+        print "GameOverDialog.onAction " + str(action)
+
+        if action.getId() == ACTION_PARENT_DIR or action.getId() == ACTION_PREVIOUS_MENU:
+            self.close()
+
+    def onClick(self, controlId):
+        print "GameOverDialog.onClick " + str(controlId)
+
+        if controlId == self.C_GAMEOVER_RETRY:
+            self.close()
+            self.parentWindow.close()
+
+            w = QuizGui(self.parentWindow.type, self.parentWindow.gameType, self.parentWindow.maxRating, self.parentWindow.interactive)
+            w.doModal()
+            del w
+
+        elif controlId == self.C_GAMEOVER_MAINMENU:
+            self.close()
+            self.parentWindow.close()
+
+    def onFocus(self, controlId):
+        print "GameOverDialog.onFocus " + str(controlId)
 
 
 class ClapperDialog(xbmcgui.WindowXMLDialog):

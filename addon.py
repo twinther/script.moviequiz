@@ -1,7 +1,16 @@
-from quizlib.gui import MenuGui
+import sys
 
-if __name__ == '__main__':
-    w = MenuGui()
-    w.doModal()
-    del w
+def moviequiz_excepthook(type, value, traceback):
+    import xbmcgui
+    print 'Unhandled error:', type, value, traceback
+    xbmcgui.Dialog().ok('Unhandled exception', str(type), str(value), 'Exiting addon...')
+#    sys.exit(1)
+
+
+sys.excepthook = moviequiz_excepthook
+
+from quizlib.gui import MenuGui
+w = MenuGui()
+w.doModal()
+del w
 
