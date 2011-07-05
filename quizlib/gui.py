@@ -94,44 +94,13 @@ class MenuGui(xbmcgui.WindowXML):
             self.close()
 
     def onClick(self, controlId):
-        if ADDON.getSetting('question.limit.enabled') == 'true':
-            maxQuestions = int(ADDON.getSetting('question.limit'))
-            gameType = gametype.QuestionLimitedGameType(maxQuestions)
-        else:
-            gameType = gametype.UnlimitedGameType()
-
-        maxRating = None
-
         if controlId == self.C_MENU_MOVIE_QUIZ:
-#            self.getControl(5000).setVisible(False)
-#            xbmc.sleep(250)
-#            self.setFocusId(4100)
-
-            w = GameTypeDialog()
-            w.doModal()
-            del w
-
-        elif controlId == 4100:
-            selectedPosition = self.getControl(4100).getSelectedPosition()
-            print "selectedPosition = " + str(selectedPosition)
-            if not selectedPosition:
-                gameType = gametype.UnlimitedGameType()
-            elif selectedPosition == 1:
-                maxQuestions = int(ADDON.getSetting('question.limit'))
-                gameType = gametype.QuestionLimitedGameType(maxQuestions)
-            elif selectedPosition == 2:
-                gameType = gametype.TimeLimitedGameType()
-
-            if ADDON.getSetting('movie.rating.limit.enabled') == 'true':
-                maxRating = ADDON.getSetting('movie.rating.limit')
-            w = QuizGui(type=question.TYPE_MOVIE, gameType=gameType, maxRating=maxRating)
+            w = GameTypeDialog(question.TYPE_MOVIE)
             w.doModal()
             del w
 
         elif controlId == self.C_MENU_TVSHOW_QUIZ:
-            if ADDON.getSetting('tvshow.rating.limit.enabled') == 'true':
-                maxRating = ADDON.getSetting('tvshow.rating.limit')
-            w = QuizGui(type=question.TYPE_TV, gameType=gameType, maxRating=maxRating)
+            w = GameTypeDialog(question.TYPE_TV)
             w.doModal()
             del w
 
@@ -150,15 +119,53 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
     C_GAMETYPE_UNLIMITED = 4000
     C_GAMETYPE_TIME_LIMITED = 4001
     C_GAMETYPE_QUESTION_LIMITED = 4002
+    C_GAMETYPE_CANCEL = 4003
 
     C_GAMETYPE_TIME_LIMIT = 4100
     C_GAMETYPE_QUESTION_LIMIT = 4200
 
-    def __new__(cls):
+    QUESTION_LIMITS = [
+        {'limit' : '5', 'text' : '5 questions'},
+        {'limit' : '10', 'text' : '10 questions'},
+        {'limit' : '15', 'text' : '15 questions'},
+        {'limit' : '25', 'text' : '25 qustions'},
+        {'limit' : '50', 'text' : '50 questions'},
+        {'limit' : '100', 'text' : '100 questions'}
+    ]
+    TIME_LIMITS = [
+        {'limit' : '1', 'text' : '1 minute'},
+        {'limit' : '2', 'text' : '2 minutes'},
+        {'limit' : '3', 'text' : '3 minutes'},
+        {'limit' : '5', 'text' : '5 minutes'},
+        {'limit' : '10', 'text' : '10 minutes'},
+        {'limit' : '15', 'text' : '15 minutes'},
+        {'limit' : '30', 'text' : '30 minutes'}
+    ]
+
+    def __new__(cls, type):
         return super(GameTypeDialog, cls).__new__(cls, 'script-moviequiz-gametype.xml', ADDON.getAddonInfo('path'))
 
-    def __init__(self):
+    def __init__(self, type):
         super(GameTypeDialog, self).__init__()
+        self.type = type
+
+    def onInit(self):
+        if self.type == question.TYPE_MOVIE:
+            control = self.getControl(3999).setLabel('MOVIE')
+        elif  self.type == question.TYPE_TV:
+            control = self.getControl(3999).setLabel('TV')
+
+        control = self.getControl(self.C_GAMETYPE_QUESTION_LIMIT)
+        for questionLimit in self.QUESTION_LIMITS:
+            item = xbmcgui.ListItem(questionLimit['text'])
+            item.setProperty("limit", questionLimit['limit'])
+            control.addItem(item)
+
+        control = self.getControl(self.C_GAMETYPE_TIME_LIMIT)
+        for questionLimit in self.TIME_LIMITS:
+            item = xbmcgui.ListItem(questionLimit['text'])
+            item.setProperty("limit", questionLimit['limit'])
+            control.addItem(item)
 
     def onAction(self, action):
         print "GameTypeDialog.onAction " + str(action)
@@ -170,25 +177,34 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
         print "GameTypeDialog.onClick " + str(controlId)
 
         gameType = None
-        if controlId == self.C_GAMETYPE_UNLIMITED:
-            gameType = gametype.UnlimitedGameType()
-        elif controlId == self.C_GAMETYPE_QUESTION_LIMITED:
-            c = self.getControl(self.C_GAMETYPE_QUESTION_LIMIT)
-            print c.size()
-            return
+        if controlId == self.C_GAMETYPE_CANCEL:
+            self.close()
 
-            #maxQuestions = int(ADDON.getSetting('question.limit'))
-            #gameType = gametype.QuestionLimitedGameType(maxQuestions)
+        elif controlId == self.C_GAMETYPE_UNLIMITED:
+            gameType = gametype.UnlimitedGameType()
+
+        elif controlId == self.C_GAMETYPE_QUESTION_LIMITED:
+            control = self.getControl(self.C_GAMETYPE_QUESTION_LIMIT)
+            maxQuestions = int(control.getSelectedItem().getProperty("limit"))
+            gameType = gametype.QuestionLimitedGameType(maxQuestions)
+
         elif controlId == self.C_GAMETYPE_TIME_LIMITED:
-            gameType = gametype.TimeLimitedGameType()
+
+
+            control = self.getControl(self.C_GAMETYPE_TIME_LIMIT)
+            timeLimit = int(control.getSelectedItem().getProperty("limit"))
+            gameType = gametype.TimeLimitedGameType(timeLimit)
 
         if gameType is not None:
             self.close()
 
             maxRating = None
-            if ADDON.getSetting('movie.rating.limit.enabled') == 'true':
+            if self.type == question.TYPE_MOVIE and ADDON.getSetting('movie.rating.limit.enabled') == 'true':
                 maxRating = ADDON.getSetting('movie.rating.limit')
-            w = QuizGui(type=question.TYPE_MOVIE, gameType=gameType, maxRating=maxRating)
+            elif self.type == question.TYPE_TV and ADDON.getSetting('tvshow.rating.limit.enabled') == 'true':
+                maxRating = ADDON.getSetting('tvshow.rating.limit')
+
+            w = QuizGui(type=self.type, gameType=gameType, maxRating=maxRating)
             w.doModal()
             del w
 

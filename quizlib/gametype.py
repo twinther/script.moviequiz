@@ -49,10 +49,10 @@ class QuestionLimitedGameType(GameType):
         #return strings(G_QUESTION_X_OF_Y, (self.questionCount, self.questionLimit))
 
 class TimeLimitedGameType(GameType):
-    def __init__(self):
+    def __init__(self, timeLimitMinutes):
         super(TimeLimitedGameType, self).__init__()
         self.startTime = datetime.datetime.now()
-        self.timeLimitMinutes = 5
+        self.timeLimitMinutes = timeLimitMinutes
 
     def isGameOver(self):
         return self._minutesLeft() >= self.timeLimitMinutes

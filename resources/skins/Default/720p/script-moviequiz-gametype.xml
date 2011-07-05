@@ -27,7 +27,7 @@
             <animation effect="fade" start="0" end="100" time="200">WindowOpen</animation>
             <animation effect="fade" start="100" end="0" time="200">WindowClose</animation>
 
-            <control type="label">
+            <control type="label" id="3999">
                 <posx>0</posx>
                 <posy>20</posy>
                 <width>680</width>
@@ -49,6 +49,7 @@
                 <label>Unlimited</label>
                 <onleft>4002</onleft>
                 <onright>4001</onright>
+                <ondown>4003</ondown>
             </control>
             <control type="button" id="4001">
                 <posx>240</posx>
@@ -75,6 +76,18 @@
                 <onleft>4001</onleft>
                 <onright>4000</onright>
                 <ondown>4200</ondown>
+            </control>
+
+            <control type="button" id="4003">
+                <posx>240</posx>
+                <posy>320</posy>
+                <width>200</width>
+                <height>40</height>
+                <font>font13</font>
+                <align>center</align>
+                <aligny>center</aligny>
+                <label>Cancel</label>
+                <onup>4000</onup>
             </control>
 
 
@@ -140,6 +153,7 @@
                     <width>200</width>
                     <height>40</height>
                     <onup>4001</onup>
+                    <ondown>4003</ondown>
                     <viewtype label="list">list</viewtype>
                     <orientation>horizontal</orientation>
                     <pagecontrol>25</pagecontrol>
@@ -232,6 +246,7 @@
                     <width>200</width>
                     <height>40</height>
                     <onup>4002</onup>
+                    <ondown>4003</ondown>
                     <viewtype label="list">list</viewtype>
                     <orientation>horizontal</orientation>
                     <pagecontrol>25</pagecontrol>
@@ -269,17 +284,8 @@
                             <aligny>center</aligny>
                         </control>
                     </focusedlayout>
-                    <content>
-                        <item id="5"><label>5 questions</label><onclick>-</onclick></item>
-                        <item id="10"><label>10 questions</label><onclick>-</onclick></item>
-                        <item id="15"><label>15 questions</label><onclick>-</onclick></item>
-                        <item id="25"><label>25 questions</label><onclick>-</onclick></item>
-                        <item id="50"><label>50 questions</label><onclick>-</onclick></item>
-                        <item id="100"><label>100 questions</label><onclick>-</onclick></item>
-                    </content>
                 </control>
             </control>
-
 
         </control>
 
