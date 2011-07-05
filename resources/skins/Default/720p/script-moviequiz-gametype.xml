@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<window id="5200" type="dialog">
+    <allowoverlay>no</allowoverlay>
+    <visible>true</visible>
+    <defaultcontrol always="true">4000</defaultcontrol>
+    <coordinates>
+        <system>1</system>
+        <posx>0</posx>
+        <posy>0</posy>
+    </coordinates>
+    <animation effect="fade" start="100" end="0" time="200">WindowClose</animation> 
+    <controls>
+
+        <control type="image">
+            <posx>0</posx>
+            <posy>200</posy>
+            <width>1280</width>
+            <height>400</height>
+            <texture>quiz-gametype-background.png</texture>
+        </control>
+
+        <control type="group">
+            <posx>300</posx>
+            <posy>200</posy>
+            <width>680</width>
+            <height>400</height>
+            <animation effect="fade" start="0" end="100" time="200">WindowOpen</animation>
+            <animation effect="fade" start="100" end="0" time="200">WindowClose</animation>
+
+            <control type="label">
+                <posx>0</posx>
+                <posy>20</posy>
+                <width>680</width>
+                <height>40</height>
+                <font>font13</font>
+                <align>center</align>
+                <aligny>center</aligny>
+                <label>[B]Choose XYZ game type - click to play[/B]</label>
+            </control>
+
+            <control type="button" id="4000">
+                <posx>0</posx>
+                <posy>80</posy>
+                <width>200</width>
+                <height>40</height>
+                <font>font13</font>
+                <align>center</align>
+                <aligny>center</aligny>
+                <label>Unlimited</label>
+                <onleft>4002</onleft>
+                <onright>4001</onright>
+            </control>
+            <control type="button" id="4001">
+                <posx>240</posx>
+                <posy>80</posy>
+                <width>200</width>
+                <height>40</height>
+                <font>font13</font>
+                <align>center</align>
+                <aligny>center</aligny>
+                <label>Time limited</label>
+                <onleft>4000</onleft>
+                <onright>4002</onright>
+                <ondown>4100</ondown>
+            </control>
+            <control type="button" id="4002">
+                <posx>480</posx>
+                <posy>80</posy>
+                <width>200</width>
+                <height>40</height>
+                <font>font13</font>
+                <align>center</align>
+                <aligny>center</aligny>
+                <label>Question limited</label>
+                <onleft>4001</onleft>
+                <onright>4000</onright>
+                <ondown>4200</ondown>
+            </control>
+
+
+            <control type="group">
+                <description>Unlimited game type</description>
+                <posx>0</posx>
+                <posy>160</posy>
+                <width>680</width>
+                <height>300</height>
+                <animation effect="fade" start="0" end="100" time="200" condition="Control.HasFocus(4000)">Conditional</animation>
+                <visible>Control.HasFocus(4000)</visible>
+
+                <control type="label">
+                    <posx>0</posx>
+                    <posy>0</posy>
+                    <width>400</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <aligny>center</aligny>
+                    <label>No limit on game time</label>
+                </control>
+                <control type="label">
+                    <posx>0</posx>
+                    <posy>40</posy>
+                    <width>400</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <aligny>center</aligny>
+                    <label>No limit on questions</label>
+                </control>
+                <control type="label">
+                    <posx>0</posx>
+                    <posy>80</posy>
+                    <width>400</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <aligny>center</aligny>
+                    <label>End the game by using the Quiz option</label>
+                </control>
+            </control>
+
+            <control type="group">
+                <description>Time limited game type</description>
+                <posx>0</posx>
+                <posy>160</posy>
+                <width>680</width>
+                <height>300</height>
+                <animation effect="fade" start="0" end="100" time="200" condition="Control.HasFocus(4001) | Control.HasFocus(4100)">Conditional</animation>
+                <visible>Control.HasFocus(4001) | Control.HasFocus(4100)</visible>
+
+                <control type="label">
+                    <posx>0</posx>
+                    <posy>0</posy>
+                    <width>400</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <aligny>center</aligny>
+                    <label>Game will ends after</label>
+                </control>
+                <control type="fixedlist" id="4100">
+                    <posx>480</posx>
+                    <posy>0</posy>
+                    <width>200</width>
+                    <height>40</height>
+                    <onup>4001</onup>
+                    <viewtype label="list">list</viewtype>
+                    <orientation>horizontal</orientation>
+                    <pagecontrol>25</pagecontrol>
+                    <scrolltime>200</scrolltime>
+                    <visible>true</visible>
+                    <focusposition>0</focusposition>
+                    <itemlayout width="200" height="40">
+                        <control type="label">
+                            <posx>0</posx>
+                            <posy>0</posy>
+                            <width>200</width>
+                            <height>40</height>
+                            <font>font13</font>
+                            <info>ListItem.Label</info>
+                            <aligny>center</aligny>
+                        </control>
+                    </itemlayout>
+                    <focusedlayout width="200" height="40">
+                        <control type="image">
+                            <posx>0</posx>
+                            <posy>0</posy>
+                            <width>200</width>
+                            <height>40</height>
+                            <texture>quiz-white-square.png</texture>
+                            <visible>Control.Hasfocus(4100)</visible>
+                            <colordiffuse>88ff0000</colordiffuse>
+                        </control>
+                        <control type="label">
+                            <posx>0</posx>
+                            <posy>0</posy>
+                            <width>200</width>
+                            <height>40</height>
+                            <font>font13</font>
+                            <info>ListItem.Label</info>
+                            <aligny>center</aligny>
+                        </control>
+                    </focusedlayout>
+                    <content>
+                        <item id="1"><label>1 minute</label><onclick>-</onclick></item>
+                        <item id="2"><label>2 minutes</label><onclick>-</onclick></item>
+                        <item id="3"><label>3 minutes</label><onclick>-</onclick></item>
+                        <item id="5"><label>5 minutes</label><onclick>-</onclick></item>
+                        <item id="10"><label>10 minutes</label><onclick>-</onclick></item>
+                        <item id="15"><label>15 minutes</label><onclick>-</onclick></item>
+                        <item id="30"><label>30 minutes</label><onclick>-</onclick></item>
+                    </content>
+                </control>
+
+                <control type="label">
+                    <posx>0</posx>
+                    <posy>40</posy>
+                    <width>400</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <aligny>center</aligny>
+                    <label>No limit on questions</label>
+                </control>
+            </control>
+
+            <control type="group">
+                <description>Question limited game type</description>
+                <posx>0</posx>
+                <posy>160</posy>
+                <width>680</width>
+                <height>300</height>
+                <animation effect="fade" start="0" end="100" time="200" condition="Control.HasFocus(4002) | Control.HasFocus(4200)">Conditional</animation>
+                <visible>Control.HasFocus(4002) | Control.HasFocus(4200)</visible>
+
+                <control type="label">
+                    <posx>0</posx>
+                    <posy>0</posy>
+                    <width>400</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <aligny>center</aligny>
+                    <label>No limit on game time</label>
+                </control>
+                <control type="label">
+                    <posx>0</posx>
+                    <posy>40</posy>
+                    <width>480</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <aligny>center</aligny>
+                    <label>Game will ends after</label>
+                </control>
+                <control type="fixedlist" id="4200">
+                    <posx>480</posx>
+                    <posy>40</posy>
+                    <width>200</width>
+                    <height>40</height>
+                    <onup>4002</onup>
+                    <viewtype label="list">list</viewtype>
+                    <orientation>horizontal</orientation>
+                    <pagecontrol>25</pagecontrol>
+                    <scrolltime>200</scrolltime>
+                    <visible>true</visible>
+                    <focusposition>0</focusposition>
+                    <itemlayout width="200" height="40">
+                        <control type="label">
+                            <posx>0</posx>
+                            <posy>0</posy>
+                            <width>200</width>
+                            <height>40</height>
+                            <font>font13</font>
+                            <info>ListItem.Label</info>
+                            <aligny>center</aligny>
+                        </control>
+                    </itemlayout>
+                    <focusedlayout width="200" height="40">
+                        <control type="image">
+                            <posx>0</posx>
+                            <posy>0</posy>
+                            <width>200</width>
+                            <height>40</height>
+                            <texture>quiz-white-square.png</texture>
+                            <visible>Control.Hasfocus(4200)</visible>
+                            <colordiffuse>88ff0000</colordiffuse>
+                        </control>
+                        <control type="label">
+                            <posx>0</posx>
+                            <posy>0</posy>
+                            <width>200</width>
+                            <height>40</height>
+                            <font>font13</font>
+                            <info>ListItem.Label</info>
+                            <aligny>center</aligny>
+                        </control>
+                    </focusedlayout>
+                    <content>
+                        <item id="5"><label>5 questions</label><onclick>-</onclick></item>
+                        <item id="10"><label>10 questions</label><onclick>-</onclick></item>
+                        <item id="15"><label>15 questions</label><onclick>-</onclick></item>
+                        <item id="25"><label>25 questions</label><onclick>-</onclick></item>
+                        <item id="50"><label>50 questions</label><onclick>-</onclick></item>
+                        <item id="100"><label>100 questions</label><onclick>-</onclick></item>
+                    </content>
+                </control>
+            </control>
+
+
+        </control>
+
+
+    </controls>
+</window>

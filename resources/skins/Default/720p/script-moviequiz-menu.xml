@@ -127,55 +127,6 @@
             <scrollsuffix>  *  </scrollsuffix>
         </control>
 
-        <control type="wraplist" id="4100">
-            <description>My first fixed list container</description>
-            <posx>415</posx>
-            <posy>550</posy>
-            <width>450</width>
-            <height>200</height>
-            <visible>!Control.IsVisible(5000)</visible>
-            <onup>4001</onup>
-            <viewtype label="list">list</viewtype>
-            <orientation>horizontal</orientation>
-            <pagecontrol>25</pagecontrol>
-            <scrolltime>200</scrolltime>
-            <focusposition>1</focusposition>
-            <itemlayout width="150" height="29">
-                <control type="label">
-                    <posx>0</posx>
-                    <posy>3</posy>
-                    <width>150</width>
-                    <height>22</height>
-                    <font>font13</font>
-                    <aligny>center</aligny>
-                    <selectedcolor>green</selectedcolor>
-                    <align>left</align>
-                    <info>ListItem.Label</info>
-                </control>
-            </itemlayout>
-            <focusedlayout width="150" height="29">
-                <control type="image">
-                    <width>150</width>
-                    <height>29</height>
-                    <posx>0</posx>
-                    <posy>0</posy>
-                    <visible>Control.HasFocus(4100)</visible>
-                    <texture>quiz-background-glass.png</texture>
-                </control>
-                <control type="label">
-                    <posx>0</posx>
-                    <posy>3</posy>
-                    <width>150</width>
-                    <height>22</height>
-                    <font>font13</font>
-                    <aligny>center</aligny>
-                    <selectedcolor>green</selectedcolor>
-                    <align>left</align>
-                    <info>ListItem.Label</info>
-                </control>
-            </focusedlayout>
-        </control>
-
         <control type="image">
             <description>Activate glasspane when addon settings are visible</description>
             <posx>0</posx>

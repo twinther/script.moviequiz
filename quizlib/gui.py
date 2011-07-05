@@ -40,14 +40,6 @@ class MenuGui(xbmcgui.WindowXML):
     def onInit(self):
         print "MenuGui.onInit"
 
-        list = self.getControl(4100)
-        unlimitedGameType = xbmcgui.ListItem('Unlimited')
-        list.addItem(unlimitedGameType)
-        questionLimitedGameType = xbmcgui.ListItem('Question limited')
-        list.addItem(questionLimitedGameType)
-        timeLimitedGameType = xbmcgui.ListItem('Time limited')
-        list.addItem(timeLimitedGameType)
-
         trivia = [strings(M_TRANSLATED_BY)]
 
         database = db.connect()
@@ -88,10 +80,7 @@ class MenuGui(xbmcgui.WindowXML):
             line1 = 'Missing requirements!'
             line2 = 'To play the Movie Quiz you must[CR]have some movies or TV shows'
             line3 = 'in your Video library. See the[CR]XBMC wiki for information.'
-            w = ClapperDialog(line1, line2, line3, autoClose = False)
-            w.doModal()
-            del w
-
+            xbmcgui.Dialog().ok(line1, line2, line3)
             self.close()
 
 
@@ -114,9 +103,13 @@ class MenuGui(xbmcgui.WindowXML):
         maxRating = None
 
         if controlId == self.C_MENU_MOVIE_QUIZ:
-            self.getControl(5000).setVisible(False)
-            xbmc.sleep(250)
-            self.setFocusId(4100)
+#            self.getControl(5000).setVisible(False)
+#            xbmc.sleep(250)
+#            self.setFocusId(4100)
+
+            w = GameTypeDialog()
+            w.doModal()
+            del w
 
         elif controlId == 4100:
             selectedPosition = self.getControl(4100).getSelectedPosition()
@@ -151,6 +144,57 @@ class MenuGui(xbmcgui.WindowXML):
     #noinspection PyUnusedLocal
     def onFocus(self, controlId):
         pass
+
+
+class GameTypeDialog(xbmcgui.WindowXMLDialog):
+    C_GAMETYPE_UNLIMITED = 4000
+    C_GAMETYPE_TIME_LIMITED = 4001
+    C_GAMETYPE_QUESTION_LIMITED = 4002
+
+    C_GAMETYPE_TIME_LIMIT = 4100
+    C_GAMETYPE_QUESTION_LIMIT = 4200
+
+    def __new__(cls):
+        return super(GameTypeDialog, cls).__new__(cls, 'script-moviequiz-gametype.xml', ADDON.getAddonInfo('path'))
+
+    def __init__(self):
+        super(GameTypeDialog, self).__init__()
+
+    def onAction(self, action):
+        print "GameTypeDialog.onAction " + str(action)
+
+        if action.getId() == ACTION_PARENT_DIR or action.getId() == ACTION_PREVIOUS_MENU:
+            self.close()
+
+    def onClick(self, controlId):
+        print "GameTypeDialog.onClick " + str(controlId)
+
+        gameType = None
+        if controlId == self.C_GAMETYPE_UNLIMITED:
+            gameType = gametype.UnlimitedGameType()
+        elif controlId == self.C_GAMETYPE_QUESTION_LIMITED:
+            c = self.getControl(self.C_GAMETYPE_QUESTION_LIMIT)
+            print c.size()
+            return
+
+            #maxQuestions = int(ADDON.getSetting('question.limit'))
+            #gameType = gametype.QuestionLimitedGameType(maxQuestions)
+        elif controlId == self.C_GAMETYPE_TIME_LIMITED:
+            gameType = gametype.TimeLimitedGameType()
+
+        if gameType is not None:
+            self.close()
+
+            maxRating = None
+            if ADDON.getSetting('movie.rating.limit.enabled') == 'true':
+                maxRating = ADDON.getSetting('movie.rating.limit')
+            w = QuizGui(type=question.TYPE_MOVIE, gameType=gameType, maxRating=maxRating)
+            w.doModal()
+            del w
+
+    def onFocus(self, controlId):
+        print "GameTypeDialog.onFocus " + str(controlId)
+
 
 
 class QuizGui(xbmcgui.WindowXML):
@@ -524,52 +568,4 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
         print "GameOverDialog.onFocus " + str(controlId)
 
 
-class ClapperDialog(xbmcgui.WindowXMLDialog):
-    C_CLAPPER_LINE1 = 4000
-    C_CLAPPER_LINE2 = 4001
-    C_CLAPPER_LINE3 = 4002
-
-    def __new__(cls, line1 = None, line2 = None, line3 = None, autoClose = True):
-        return super(ClapperDialog, cls).__new__(cls, 'script-moviequiz-clapper.xml', ADDON.getAddonInfo('path'))
-
-    def __init__(self, line1 = None, line2 = None, line3 = None, autoClose = True):
-        super(ClapperDialog, self).__init__()
-
-        self.line1 = line1
-        self.line2 = line2
-        self.line3 = line3
-        self.autoClose = autoClose
-        self.timer = threading.Timer(5, self.delayedClose)
-
-    def onInit(self):
-        print "ClapperDialog.onInit"
-
-        if self.line1 is None:
-            self.line1 = ''
-        if self.line2 is None:
-            self.line2 = ''
-        if self.line3 is None:
-            self.line3 = ''
-
-        self.getControl(self.C_CLAPPER_LINE1).setLabel(self.line1)
-        self.getControl(self.C_CLAPPER_LINE2).setLabel(self.line2)
-        self.getControl(self.C_CLAPPER_LINE3).setLabel(self.line3)
-
-        if self.autoClose:
-            self.timer.start()
-
-    def delayedClose(self):
-        print "ClapperDialog.delayedClose"
-        self.close()
-
-    def onAction(self, action):
-        print "ClapperDialog.onAction " + str(action)
-        self.timer.cancel()
-        self.close()
-
-    def onClick(self, controlId):
-        print "ClapperDialog.onClick " + str(controlId)
-
-    def onFocus(self, controlId):
-        print "ClapperDialog.onFocus " + str(controlId)
 
