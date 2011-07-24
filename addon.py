@@ -7,7 +7,7 @@ def moviequiz_excepthook(type, value, traceback):
 #    sys.exit(1)
 
 
-sys.excepthook = moviequiz_excepthook
+#sys.excepthook = moviequiz_excepthook
 
 from quizlib.gui import MenuGui
 w = MenuGui()

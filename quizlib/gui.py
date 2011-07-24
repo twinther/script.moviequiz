@@ -19,7 +19,7 @@ REMOTE_2 = 60
 REMOTE_3 = 61
 REMOTE_4 = 62
 
-ADDON = xbmcaddon.Addon()
+ADDON = xbmcaddon.Addon(id = 'script.moviequiz')
 AUDIO_CORRECT = os.path.join(ADDON.getAddonInfo('path'), 'resources', 'audio', 'correct.wav')
 AUDIO_WRONG = os.path.join(ADDON.getAddonInfo('path'), 'resources', 'audio', 'wrong.wav')
 
@@ -121,6 +121,10 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
     C_GAMETYPE_QUESTION_LIMITED = 4002
     C_GAMETYPE_CANCEL = 4003
 
+    C_GAMETYPE_UNLIMITED_PLAY = 4004
+    C_GAMETYPE_TIME_LIMITED_PLAY = 4104
+    C_GAMETYPE_QUESTION_LIMITED_PLAY = 4204
+
     C_GAMETYPE_TIME_LIMIT = 4100
     C_GAMETYPE_QUESTION_LIMIT = 4200
 
@@ -151,9 +155,9 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
 
     def onInit(self):
         if self.type == question.TYPE_MOVIE:
-            control = self.getControl(3999).setLabel('MOVIE')
+            self.getControl(3999).setLabel(strings(30600))
         elif  self.type == question.TYPE_TV:
-            control = self.getControl(3999).setLabel('TV')
+            self.getControl(3999).setLabel(strings(30601))
 
         control = self.getControl(self.C_GAMETYPE_QUESTION_LIMIT)
         for questionLimit in self.QUESTION_LIMITS:
@@ -180,17 +184,15 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
         if controlId == self.C_GAMETYPE_CANCEL:
             self.close()
 
-        elif controlId == self.C_GAMETYPE_UNLIMITED:
+        elif controlId == self.C_GAMETYPE_UNLIMITED or controlId == self.C_GAMETYPE_UNLIMITED_PLAY:
             gameType = gametype.UnlimitedGameType()
 
-        elif controlId == self.C_GAMETYPE_QUESTION_LIMITED:
+        elif controlId == self.C_GAMETYPE_QUESTION_LIMITED or controlId == self.C_GAMETYPE_QUESTION_LIMITED_PLAY:
             control = self.getControl(self.C_GAMETYPE_QUESTION_LIMIT)
             maxQuestions = int(control.getSelectedItem().getProperty("limit"))
             gameType = gametype.QuestionLimitedGameType(maxQuestions)
 
-        elif controlId == self.C_GAMETYPE_TIME_LIMITED:
-
-
+        elif controlId == self.C_GAMETYPE_TIME_LIMITED or controlId == self.C_GAMETYPE_TIME_LIMITED:
             control = self.getControl(self.C_GAMETYPE_TIME_LIMIT)
             timeLimit = int(control.getSelectedItem().getProperty("limit"))
             gameType = gametype.TimeLimitedGameType(timeLimit)

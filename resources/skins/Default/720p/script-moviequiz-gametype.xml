@@ -22,7 +22,7 @@
         <control type="group">
             <posx>300</posx>
             <posy>200</posy>
-            <width>680</width>
+            <width>680</width>a
             <height>400</height>
             <animation effect="fade" start="0" end="100" time="200">WindowOpen</animation>
             <animation effect="fade" start="100" end="0" time="200">WindowClose</animation>
@@ -32,64 +32,61 @@
                 <posy>20</posy>
                 <width>680</width>
                 <height>40</height>
+                <textcolor>ffffffff</textcolor>
                 <font>font13</font>
                 <align>center</align>
                 <aligny>center</aligny>
-                <label>[B]Choose XYZ game type - click to play[/B]</label>
+                <label>[B]Choose XYZ game type[/B]</label>
             </control>
 
             <control type="button" id="4000">
+                <description>Unlimited game type button</description>
                 <posx>0</posx>
                 <posy>80</posy>
                 <width>200</width>
                 <height>40</height>
+                <textcolor>ffffffff</textcolor>
                 <font>font13</font>
                 <align>center</align>
                 <aligny>center</aligny>
-                <label>Unlimited</label>
+                <label>$ADDON[script.moviequiz 30602]</label>
                 <onleft>4002</onleft>
                 <onright>4001</onright>
-                <ondown>4003</ondown>
+                <onup>4004</onup>
+                <ondown>4004</ondown>
             </control>
             <control type="button" id="4001">
+                <description>Time limited game type button</description>
                 <posx>240</posx>
                 <posy>80</posy>
                 <width>200</width>
                 <height>40</height>
+                <textcolor>ffffffff</textcolor>
                 <font>font13</font>
                 <align>center</align>
                 <aligny>center</aligny>
-                <label>Time limited</label>
+                <label>$ADDON[script.moviequiz 30603]</label>
                 <onleft>4000</onleft>
                 <onright>4002</onright>
+                <onup>4104</onup>
                 <ondown>4100</ondown>
             </control>
             <control type="button" id="4002">
+                <description>Question limited game type button</description>
                 <posx>480</posx>
                 <posy>80</posy>
                 <width>200</width>
                 <height>40</height>
+                <textcolor>ffffffff</textcolor>
                 <font>font13</font>
                 <align>center</align>
                 <aligny>center</aligny>
-                <label>Question limited</label>
+                <label>$ADDON[script.moviequiz 30604]</label>
                 <onleft>4001</onleft>
                 <onright>4000</onright>
+                <onup>4204</onup>
                 <ondown>4200</ondown>
             </control>
-
-            <control type="button" id="4003">
-                <posx>240</posx>
-                <posy>320</posy>
-                <width>200</width>
-                <height>40</height>
-                <font>font13</font>
-                <align>center</align>
-                <aligny>center</aligny>
-                <label>Cancel</label>
-                <onup>4000</onup>
-            </control>
-
 
             <control type="group">
                 <description>Unlimited game type</description>
@@ -97,35 +94,70 @@
                 <posy>160</posy>
                 <width>680</width>
                 <height>300</height>
-                <animation effect="fade" start="0" end="100" time="200" condition="Control.HasFocus(4000)">Conditional</animation>
-                <visible>Control.HasFocus(4000)</visible>
+                <animation effect="fade" start="0" end="100" time="200" condition="Control.HasFocus(4000) | Control.HasFocus(4003) | Control.HasFocus(4004)">Conditional</animation>
+                <visible>Control.HasFocus(4000) | Control.HasFocus(4003) | Control.HasFocus(4004)</visible>
 
                 <control type="label">
+                    <description>No limit on game time</description>
                     <posx>0</posx>
                     <posy>0</posy>
                     <width>400</width>
                     <height>40</height>
+                    <textcolor>ffffffff</textcolor>
                     <font>font13</font>
                     <aligny>center</aligny>
-                    <label>No limit on game time</label>
+                    <label>$ADDON[script.moviequiz 30610]</label>
                 </control>
                 <control type="label">
+                    <description>No limit on questions</description>
                     <posx>0</posx>
                     <posy>40</posy>
                     <width>400</width>
                     <height>40</height>
+                    <textcolor>ffffffff</textcolor>
                     <font>font13</font>
                     <aligny>center</aligny>
-                    <label>No limit on questions</label>
+                    <label>$ADDON[script.moviequiz 30611]</label>
                 </control>
                 <control type="label">
+                    <description>End the game by using the Quiz option</description>
                     <posx>0</posx>
                     <posy>80</posy>
                     <width>400</width>
                     <height>40</height>
+                    <textcolor>ffffffff</textcolor>
                     <font>font13</font>
                     <aligny>center</aligny>
-                    <label>End the game by using the Quiz option</label>
+                    <label>$ADDON[script.moviequiz 30612]</label>
+                </control>
+
+                <control type="button" id="4003">
+                    <description>Cancel</description>
+                    <posx>120</posx>
+                    <posy>160</posy>
+                    <width>200</width>
+                    <height>40</height>
+                    <textcolor>ffffffff</textcolor>
+                    <font>font13</font>
+                    <align>center</align>
+                    <aligny>center</aligny>
+                    <label>$ADDON[script.moviequiz 30605]</label>
+                    <onup>4000</onup>
+                    <onright>4004</onright>
+                </control>
+                <control type="button" id="4004">
+                    <description>Play</description>
+                    <posx>360</posx>
+                    <posy>160</posy>
+                    <width>200</width>
+                    <height>40</height>
+                    <textcolor>ffffffff</textcolor>
+                    <font>font13</font>
+                    <align>center</align>
+                    <aligny>center</aligny>
+                    <label>$ADDON[script.moviequiz 30606]</label>
+                    <onup>4000</onup>
+                    <onleft>4003</onleft>
                 </control>
             </control>
 
@@ -135,17 +167,19 @@
                 <posy>160</posy>
                 <width>680</width>
                 <height>300</height>
-                <animation effect="fade" start="0" end="100" time="200" condition="Control.HasFocus(4001) | Control.HasFocus(4100)">Conditional</animation>
-                <visible>Control.HasFocus(4001) | Control.HasFocus(4100)</visible>
+                <animation effect="fade" start="0" end="100" time="200" condition="Control.HasFocus(4001) | Control.HasFocus(4100) | Control.HasFocus(4103) | Control.HasFocus(4104)">Conditional</animation>
+                <visible>Control.HasFocus(4001) | Control.HasFocus(4100) | Control.HasFocus(4103) | Control.HasFocus(4104)</visible>
 
                 <control type="label">
+                    <description>Game will ends after</description>
                     <posx>0</posx>
                     <posy>0</posy>
                     <width>400</width>
                     <height>40</height>
+                    <textcolor>ffffffff</textcolor>
                     <font>font13</font>
                     <aligny>center</aligny>
-                    <label>Game will ends after</label>
+                    <label>$ADDON[script.moviequiz 30613]</label>
                 </control>
                 <control type="fixedlist" id="4100">
                     <posx>480</posx>
@@ -153,7 +187,7 @@
                     <width>200</width>
                     <height>40</height>
                     <onup>4001</onup>
-                    <ondown>4003</ondown>
+                    <ondown>4104</ondown>
                     <viewtype label="list">list</viewtype>
                     <orientation>horizontal</orientation>
                     <pagecontrol>25</pagecontrol>
@@ -166,6 +200,7 @@
                             <posy>0</posy>
                             <width>200</width>
                             <height>40</height>
+                            <textcolor>ffffffff</textcolor>
                             <font>font13</font>
                             <info>ListItem.Label</info>
                             <aligny>center</aligny>
@@ -186,30 +221,55 @@
                             <posy>0</posy>
                             <width>200</width>
                             <height>40</height>
+                            <textcolor>ffffffff</textcolor>
                             <font>font13</font>
                             <info>ListItem.Label</info>
                             <aligny>center</aligny>
                         </control>
                     </focusedlayout>
-                    <content>
-                        <item id="1"><label>1 minute</label><onclick>-</onclick></item>
-                        <item id="2"><label>2 minutes</label><onclick>-</onclick></item>
-                        <item id="3"><label>3 minutes</label><onclick>-</onclick></item>
-                        <item id="5"><label>5 minutes</label><onclick>-</onclick></item>
-                        <item id="10"><label>10 minutes</label><onclick>-</onclick></item>
-                        <item id="15"><label>15 minutes</label><onclick>-</onclick></item>
-                        <item id="30"><label>30 minutes</label><onclick>-</onclick></item>
-                    </content>
                 </control>
 
                 <control type="label">
+                    <description>No limit on questions</description>
                     <posx>0</posx>
                     <posy>40</posy>
                     <width>400</width>
                     <height>40</height>
+                    <textcolor>ffffffff</textcolor>
                     <font>font13</font>
                     <aligny>center</aligny>
-                    <label>No limit on questions</label>
+                    <label>$ADDON[script.moviequiz 30611]</label>
+                </control>
+
+                <control type="button" id="4103">
+                    <description>Cancel</description>
+                    <posx>120</posx>
+                    <posy>160</posy>
+                    <width>200</width>
+                    <height>40</height>
+                    <textcolor>ffffffff</textcolor>
+                    <font>font13</font>
+                    <align>center</align>
+                    <aligny>center</aligny>
+                    <label>$ADDON[script.moviequiz 30605]</label>
+                    <onup>4100</onup>
+                    <ondown>4001</ondown>
+                    <onright>4104</onright>
+                </control>
+                <control type="button" id="4104">
+                    <description>Play</description>
+                    <posx>360</posx>
+                    <posy>160</posy>
+                    <width>200</width>
+                    <height>40</height>
+                    <textcolor>ffffffff</textcolor>
+                    <font>font13</font>
+                    <align>center</align>
+                    <aligny>center</aligny>
+                    <label>$ADDON[script.moviequiz 30606]</label>
+                    <onup>4100</onup>
+                    <ondown>4001</ondown>
+                    <onleft>4103</onleft>
                 </control>
             </control>
 
@@ -219,26 +279,30 @@
                 <posy>160</posy>
                 <width>680</width>
                 <height>300</height>
-                <animation effect="fade" start="0" end="100" time="200" condition="Control.HasFocus(4002) | Control.HasFocus(4200)">Conditional</animation>
-                <visible>Control.HasFocus(4002) | Control.HasFocus(4200)</visible>
+                <animation effect="fade" start="0" end="100" time="200" condition="Control.HasFocus(4002) | Control.HasFocus(4200) | Control.HasFocus(4203) | Control.HasFocus(4204)">Conditional</animation>
+                <visible>Control.HasFocus(4002) | Control.HasFocus(4200) | Control.HasFocus(4203) | Control.HasFocus(4204)</visible>
 
                 <control type="label">
+                    <description>No limit on game time</description>
                     <posx>0</posx>
                     <posy>0</posy>
                     <width>400</width>
                     <height>40</height>
+                    <textcolor>ffffffff</textcolor>
                     <font>font13</font>
                     <aligny>center</aligny>
-                    <label>No limit on game time</label>
+                    <label>$ADDON[script.moviequiz 30610]</label>
                 </control>
                 <control type="label">
+                    <description>Game will ends after</description>
                     <posx>0</posx>
                     <posy>40</posy>
                     <width>480</width>
                     <height>40</height>
+                    <textcolor>ffffffff</textcolor>
                     <font>font13</font>
                     <aligny>center</aligny>
-                    <label>Game will ends after</label>
+                    <label>$ADDON[script.moviequiz 30613]</label>
                 </control>
                 <control type="fixedlist" id="4200">
                     <posx>480</posx>
@@ -246,7 +310,7 @@
                     <width>200</width>
                     <height>40</height>
                     <onup>4002</onup>
-                    <ondown>4003</ondown>
+                    <ondown>4204</ondown>
                     <viewtype label="list">list</viewtype>
                     <orientation>horizontal</orientation>
                     <pagecontrol>25</pagecontrol>
@@ -259,6 +323,7 @@
                             <posy>0</posy>
                             <width>200</width>
                             <height>40</height>
+                            <textcolor>ffffffff</textcolor>
                             <font>font13</font>
                             <info>ListItem.Label</info>
                             <aligny>center</aligny>
@@ -279,16 +344,47 @@
                             <posy>0</posy>
                             <width>200</width>
                             <height>40</height>
+                            <textcolor>ffffffff</textcolor>
                             <font>font13</font>
                             <info>ListItem.Label</info>
                             <aligny>center</aligny>
                         </control>
                     </focusedlayout>
                 </control>
+
+                <control type="button" id="4203">
+                    <description>Cancel</description>
+                    <posx>120</posx>
+                    <posy>160</posy>
+                    <width>200</width>
+                    <height>40</height>
+                    <textcolor>ffffffff</textcolor>
+                    <font>font13</font>
+                    <align>center</align>
+                    <aligny>center</aligny>
+                    <label>$ADDON[script.moviequiz 30605]</label>
+                    <onup>4200</onup>
+                    <ondown>4002</ondown>
+                    <onright>4204</onright>
+                </control>
+                <control type="button" id="4204">
+                    <description>Play</description>
+                    <posx>360</posx>
+                    <posy>160</posy>
+                    <width>200</width>
+                    <height>40</height>
+                    <textcolor>ffffffff</textcolor>
+                    <font>font13</font>
+                    <align>center</align>
+                    <aligny>center</aligny>
+                    <label>$ADDON[script.moviequiz 30606]</label>
+                    <onup>4200</onup>
+                    <ondown>4002</ondown>
+                    <onleft>4203</onleft>
+                </control>
             </control>
 
         </control>
-
 
     </controls>
 </window>

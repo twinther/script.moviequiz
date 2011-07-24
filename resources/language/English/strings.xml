@@ -57,7 +57,6 @@
     <string id="30455">Who plays [B]%s[/B] in [B]%s[/B]?</string><!-- 1st %s is role, 2nd %s is tvshow title -->
     <string id="30456">Who voices [B]%s[/B] in [B]%s[/B]?</string><!-- 1st %s is role, 2nd %s is tvshow title -->
 
-
     <!-- Settings strings -->
     <string id="30500">General</string>
     <string id="30501">Movies</string>
@@ -77,6 +76,21 @@
     <string id="30521">Retrieved %d of %d mb.</string>
     <string id="30522">Some questions require additional local data,</string>
     <string id="30523">which can be downloaded below:</string>
+
+    <!-- Game type strings -->
+    <string id="30600">[B]Choose Movie Quiz game type[/B]</string>
+    <string id="30601">[B]Choose TV Quiz game type[/B]</string>
+    <string id="30602">Unlimited</string>
+    <string id="30603">Time limited</string>
+    <string id="30604">Question limited</string>
+    <string id="30605">Cancel</string>
+    <string id="30606">Play</string>
+
+    <string id="30610">No limit on game time</string>
+    <string id="30611">No limit on questions</string>
+    <string id="30612">End the game by using the Quiz option</string>
+    <string id="30613">Game will ends after</string>
+
 
     <string id="39999">Translated by Tommy Winther</string>
 </strings>

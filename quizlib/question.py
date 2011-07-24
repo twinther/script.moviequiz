@@ -32,7 +32,7 @@ class Answer(object):
             self.coverFile = thumb.getCachedVideoThumb(path, filename)
 
 class Question(object):
-    ADDON = xbmcaddon.Addon()
+    ADDON = xbmcaddon.Addon(id = 'script.moviequiz')
     IMDB = imdb.Imdb(ADDON.getAddonInfo('profile'))
     
     def __init__(self, database, maxRating, onlyWatchedMovies):
