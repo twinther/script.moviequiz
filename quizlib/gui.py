@@ -119,7 +119,10 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
     C_GAMETYPE_UNLIMITED = 4000
     C_GAMETYPE_TIME_LIMITED = 4001
     C_GAMETYPE_QUESTION_LIMITED = 4002
-    C_GAMETYPE_CANCEL = 4003
+
+    C_GAMETYPE_UNLIMITED_CANCEL = 4003
+    C_GAMETYPE_TIME_LIMITED_CANCEL = 4103
+    C_GAMETYPE_QUESTION_LIMITED_CANCEL = 4203
 
     C_GAMETYPE_UNLIMITED_PLAY = 4004
     C_GAMETYPE_TIME_LIMITED_PLAY = 4104
@@ -181,7 +184,7 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
         print "GameTypeDialog.onClick " + str(controlId)
 
         gameType = None
-        if controlId == self.C_GAMETYPE_CANCEL:
+        if controlId == self.C_GAMETYPE_UNLIMITED_CANCEL or  controlId == self.C_GAMETYPE_TIME_LIMITED_CANCEL or controlId == self.C_GAMETYPE_QUESTION_LIMITED_CANCEL:
             self.close()
 
         elif controlId == self.C_GAMETYPE_UNLIMITED or controlId == self.C_GAMETYPE_UNLIMITED_PLAY:
@@ -192,7 +195,7 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
             maxQuestions = int(control.getSelectedItem().getProperty("limit"))
             gameType = gametype.QuestionLimitedGameType(maxQuestions)
 
-        elif controlId == self.C_GAMETYPE_TIME_LIMITED or controlId == self.C_GAMETYPE_TIME_LIMITED:
+        elif controlId == self.C_GAMETYPE_TIME_LIMITED or controlId == self.C_GAMETYPE_TIME_LIMITED_PLAY:
             control = self.getControl(self.C_GAMETYPE_TIME_LIMIT)
             timeLimit = int(control.getSelectedItem().getProperty("limit"))
             gameType = gametype.TimeLimitedGameType(timeLimit)
