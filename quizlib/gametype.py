@@ -23,12 +23,18 @@ class GameType(object):
     def getStatsString(self):
         return ''
 
+    def getIdentifier(self):
+        raise
+
 class UnlimitedGameType(GameType):
     def __init__(self):
         super(UnlimitedGameType, self).__init__()
 
     def isGameOver(self):
         return False
+
+    def getIdentifier(self):
+        return 'unlimited'
 
 class QuestionLimitedGameType(GameType):
     def __init__(self, questionLimit):
@@ -48,6 +54,9 @@ class QuestionLimitedGameType(GameType):
             return str(questionsLeft) + " questions left"
         #return strings(G_QUESTION_X_OF_Y, (self.questionCount, self.questionLimit))
 
+    def getIdentifier(self):
+        return 'question-limited-' + str(self.questionLimit)
+
 class TimeLimitedGameType(GameType):
     def __init__(self, timeLimitMinutes):
         super(TimeLimitedGameType, self).__init__()
@@ -64,4 +73,7 @@ class TimeLimitedGameType(GameType):
         delta = datetime.datetime.now() - self.startTime
         print delta
         return delta.seconds / 60
+
+    def getIdentifier(self):
+        return 'time-limited-' + str(self.timeLimitMinutes)
 

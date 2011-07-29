@@ -339,7 +339,7 @@ class QuizGui(xbmcgui.WindowXML):
 
         if self.interactive:
             total = self.gameType.correctAnswers + self.gameType.wrongAnswers
-            w = GameOverDialog(self, self.gameType.correctAnswers, total, self.gameType.points)
+            w = GameOverDialog(self, self.gameType.correctAnswers, total, self.gameType.points, self.gameType)
             w.doModal()
             del w
 
@@ -549,24 +549,37 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
     C_GAMEOVER_RETRY = 4000
     C_GAMEOVER_MAINMENU = 4003
 
-    def __new__(cls, parentWindow, correctAnswers, totalAnswers, score):
+    C_GAMEOVER_LOCAL_HIGHSCORE_LIST = 9001
+
+    def __new__(cls, parentWindow, correctAnswers, totalAnswers, score, gameType):
         return super(GameOverDialog, cls).__new__(cls, 'script-moviequiz-gameover.xml', ADDON.getAddonInfo('path'))
 
-    def __init__(self, parentWindow, correctAnswers, totalAnswers, score):
+    def __init__(self, parentWindow, correctAnswers, totalAnswers, score, gameType):
         super(GameOverDialog, self).__init__()
 
         self.parentWindow = parentWindow
         self.correctAnswers = correctAnswers
         self.totalAnswers = totalAnswers
         self.score = score
+        self.gameType = gameType
 
     def onInit(self):
         self.getControl(4100).setLabel(strings(G_YOU_SCORED) % (self.correctAnswers, self.totalAnswers))
         self.getControl(4101).setLabel(str(self.score))
+        
+        highscore = db.HighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
+        newHighscoreId = highscore.addHighscore(ADDON.getSetting('highscore.nickname'), self.score, self.gameType, self.correctAnswers, self.totalAnswers)
+
+        listControl = self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_LIST)
+        for entry in highscore.getHighscores(self.gameType):
+            item = xbmcgui.ListItem(entry['nickname'])
+            score = '%f / %d' % (entry['score'], entry['correctAnswers'])
+            item.setProperty('score', score)
+            if entry['id'] == newHighscoreId:
+                item.setProperty('highlight', 'true')
+            listControl.addItem(item)
 
     def onAction(self, action):
-        print "GameOverDialog.onAction " + str(action)
-
         if action.getId() == ACTION_PARENT_DIR or action.getId() == ACTION_PREVIOUS_MENU:
             self.close()
 

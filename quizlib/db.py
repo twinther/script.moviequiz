@@ -181,7 +181,7 @@ class SQLiteDatabase(Database):
 
         xbmc.log("Connecting to SQLite database file: %s" % db_file)
         self.conn = sqlite3.connect(db_file, check_same_thread = False)
-        self.conn.row_factory = self._sqlite_dict_factory
+        self.conn.row_factory = _sqlite_dict_factory
         xbmc.log("SQLiteDatabase opened")
 
     def hasMovies(self):
@@ -198,15 +198,16 @@ class SQLiteDatabase(Database):
         else:
             return False
 
-    def _sqlite_dict_factory(self, cursor, row):
-        d = {}
-        for idx, col in enumerate(cursor.description):
-            dot = col[0].find('.') + 1
-            if dot != -1:
-                d[col[0][dot:]] = row[idx]
-            else:
-                d[col[0]] = row[idx]
-        return d
+def _sqlite_dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        dot = col[0].find('.') + 1
+        if dot != -1:
+            d[col[0][dot:]] = row[idx]
+        else:
+            d[col[0]] = row[idx]
+    return d
+
 
 class DbException(Exception):
     def __init__(self, sql):
@@ -252,3 +253,55 @@ def _loadSettings():
 
     return settings
     
+
+
+# Highscore Database
+
+class HighscoreDatabase(object):
+    HIGHSCORE_DB = 'highscore.db'
+    def __init__(self, path):
+        highscoreDbPath = os.path.join(path, HighscoreDatabase.HIGHSCORE_DB)
+        exists = os.path.exists(highscoreDbPath)
+
+        self.conn = sqlite3.connect(highscoreDbPath, check_same_thread = False)
+        self.conn.row_factory = _sqlite_dict_factory
+        xbmc.log("HighscoreDatabase opened: " + highscoreDbPath)
+
+        if not exists:
+            self._createTables()
+
+    def addHighscore(self, nickname, score, gameType, correctAnswers, numberOfQuestions):
+        if score <= 0:
+            return -1
+
+        c = self.conn.cursor()
+        c.execute("INSERT INTO highscore(type, nickname, score, correctAnswers, numberOfQuestions, timestamp) VALUES(?, ?, ?, ?, ?, datetime('now'))",
+            [gameType.getIdentifier(), nickname, score, correctAnswers, numberOfQuestions])
+        self.conn.commit()
+
+        rowid = c.lastrowid
+        c.close()
+
+        return rowid
+
+    def getHighscores(self, gameType):
+        c = self.conn.cursor()
+        c.execute('SELECT * FROM highscore WHERE type=? ORDER BY score DESC, correctAnswers DESC, timestamp DESC',
+            [gameType.getIdentifier()])
+        return c.fetchall()
+
+    def _createTables(self):
+        xbmc.log('HighscoreDatabase._createTables()')
+        c = self.conn.cursor()
+        c.execute('CREATE TABLE highscore ('
+            + 'id INTEGER PRIMARY KEY,'
+            + 'type TEXT,'
+            + 'nickname TEXT,'
+            + 'score REAL,'
+            + 'correctAnswers INTEGER,'
+            + 'numberOfQuestions INTEGER,'
+            + 'timestamp INTEGER )'
+        )
+        self.conn.commit()
+        c.close()
+

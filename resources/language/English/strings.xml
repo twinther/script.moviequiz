@@ -62,6 +62,8 @@
     <string id="30501">Movies</string>
     <string id="30502">TV Shows</string>
     <string id="30503">Downloads</string>
+    <string id="30504">Highscore</string>
+    <string id="30505">Questions</string>
 
     <string id="30510">Limit number of questions</string>
     <string id="30511">Question limit</string>
@@ -76,6 +78,7 @@
     <string id="30521">Retrieved %d of %d mb.</string>
     <string id="30522">Some questions require additional local data,</string>
     <string id="30523">which can be downloaded below:</string>
+    <string id="30524">Nickname</string>
 
     <!-- Game type strings -->
     <string id="30600">[B]Choose Movie Quiz game type[/B]</string>
@@ -90,6 +93,14 @@
     <string id="30611">No limit on questions</string>
     <string id="30612">End the game by using the Exit option</string>
     <string id="30613">Game will ends after</string>
+
+    <!-- Game over strings -->
+    <string id="30700">[B]Game Over[/B]</string>
+    <string id="30701">Retry</string>
+    <string id="30702">Highscore</string>
+    <string id="30703">Local highscore</string>
+    <string id="30704">Main menu</string>
+
 
 
     <string id="39999">Translated by Tommy Winther</string>

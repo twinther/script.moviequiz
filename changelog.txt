@@ -1,5 +1,13 @@
 [B]Version 1.0.0 - 2011-xx-xx[/B]
 - Dropped support for XBMC Dharma
+
+[B]Version 0.4.1 - 2011-xx-xx[/B]
+- Added initial local highscore support
+- Translation of game over screen on-going
+- Added Bulgarian translation thanks to Plamen Petkov
+
+[B]Version 0.4.0 - 2011-07-24[/B]
+- Same improvements as 1.0.0, but with support for XBMC Dharma.
 - Redesign main game screen
 - New question types
   - What movie has the longest runtime?
@@ -7,9 +15,6 @@
   - Added sound effects
 - Added game type selection screen with option for unlimited, time limited and question limited game types
 - Added audio feedback for correct and wrong answers
-
-[B]Version 0.4.0[/B]
-- Same improvements as 1.0.0, but with support for XBMC Dharma.
 
 [B]Version 0.3.2 - 2011-04-17[/B]
 - Improved support for XBMC Eden nightly builds

@@ -1043,8 +1043,8 @@ class WhoPlayedRoleInTVShowQuestion(TVQuestion, PhotoDisplayType):
         self.setPhotoFile(thumb.getCachedTVShowThumb(row['strPath']))
 
 class QuestionException(Exception):
-    def __init__(self, msg):
-        super(QuestionException, self).__init__(msg)
+    pass
+
 
 def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
     """
