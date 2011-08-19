@@ -39,7 +39,7 @@
 
             <control type="label">
                 <posx>20</posx>
-                <posy>160</posy>
+                <posy>120</posy>
                 <width>360</width>
                 <height>40</height>
                 <font>font13</font>
@@ -50,7 +50,7 @@
 
             <control type="label" id="4100">
                 <posx>20</posx>
-                <posy>200</posy>
+                <posy>160</posy>
                 <width>360</width>
                 <height>40</height>
                 <font>font13</font>
@@ -60,7 +60,7 @@
 
             <control type="label">
                 <posx>20</posx>
-                <posy>240</posy>
+                <posy>200</posy>
                 <width>360</width>
                 <height>40</height>
                 <font>font13</font>
@@ -69,7 +69,7 @@
             </control>
             <control type="label" id="4101">
                 <posx>380</posx>
-                <posy>240</posy>
+                <posy>200</posy>
                 <width>360</width>
                 <height>40</height>
                 <font>font13</font>
@@ -80,8 +80,9 @@
 
 
             <control type="button" id="4000">
+                <description>Retry</description>
                 <posx>20</posx>
-                <posy>300</posy>
+                <posy>240</posy>
                 <width>360</width>
                 <height>40</height>
                 <font>font13</font>
@@ -91,8 +92,9 @@
                 <ondown>4001</ondown>
             </control>
             <control type="button" id="4001">
+                <description>Global highscore</description>
                 <posx>20</posx>
-                <posy>340</posy>
+                <posy>280</posy>
                 <width>360</width>
                 <height>40</height>
                 <font>font13</font>
@@ -102,8 +104,9 @@
                 <ondown>4002</ondown>
             </control>
             <control type="button" id="4002">
+                <description>Local highscore</description>
                 <posx>20</posx>
-                <posy>380</posy>
+                <posy>320</posy>
                 <width>360</width>
                 <height>40</height>
                 <font>font13</font>
@@ -114,8 +117,9 @@
                 <onright>9001</onright>
             </control>
             <control type="button" id="4003">
+                <description>Main menu</description>
                 <posx>20</posx>
-                <posy>420</posy>
+                <posy>360</posy>
                 <width>360</width>
                 <height>40</height>
                 <font>font13</font>
@@ -145,7 +149,7 @@
 
             <control type="label">
                 <posx>20</posx>
-                <posy>160</posy>
+                <posy>120</posy>
                 <width>360</width>
                 <height>40</height>
                 <font>font13</font>
@@ -184,6 +188,19 @@
             </control>
 
             <control type="label">
+                <description>Local highscore title</description>
+                <posx>20</posx>
+                <posy>120</posy>
+                <width>360</width>
+                <height>40</height>
+                <font>font13</font>
+                <aligny>center</aligny>
+                <align>center</align>
+                <label>[B]$ADDON[script.moviequiz 30703][/B]</label>
+            </control>
+
+            <control type="label" id="9002">
+                <description>Local highscore type</description>
                 <posx>20</posx>
                 <posy>160</posy>
                 <width>360</width>
@@ -191,7 +208,6 @@
                 <font>font13</font>
                 <aligny>center</aligny>
                 <align>center</align>
-                <label>[B]$ADDON[script.moviequiz 30703][/B]</label>
             </control>
 
             <control type="fixedlist" id="9001">

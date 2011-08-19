@@ -550,6 +550,7 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
     C_GAMEOVER_MAINMENU = 4003
 
     C_GAMEOVER_LOCAL_HIGHSCORE_LIST = 9001
+    C_GAMEOVER_LOCAL_HIGHSCORE_TYPE = 9002
 
     def __new__(cls, parentWindow, correctAnswers, totalAnswers, score, gameType):
         return super(GameOverDialog, cls).__new__(cls, 'script-moviequiz-gameover.xml', ADDON.getAddonInfo('path'))
@@ -570,11 +571,16 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
         highscore = db.HighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
         newHighscoreId = highscore.addHighscore(ADDON.getSetting('highscore.nickname'), self.score, self.gameType, self.correctAnswers, self.totalAnswers)
 
+        if newHighscoreId != -1:
+            entries = highscore.getHighscoresNear(self.gameType, newHighscoreId)
+        else:
+            entries = highscore.getHighscores(self.gameType)
+
+        self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_TYPE).setLabel(self.gameType.getIdentifier())
         listControl = self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_LIST)
-        for entry in highscore.getHighscores(self.gameType):
-            item = xbmcgui.ListItem(entry['nickname'])
-            score = '%f / %d' % (entry['score'], entry['correctAnswers'])
-            item.setProperty('score', score)
+        for entry in entries:
+            item = xbmcgui.ListItem("%d. %s" % (entry['position'], entry['nickname']))
+            item.setProperty('score', str(entry['score']))
             if entry['id'] == newHighscoreId:
                 item.setProperty('highlight', 'true')
             listControl.addItem(item)
@@ -586,15 +592,19 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
     def onClick(self, controlId):
         print "GameOverDialog.onClick " + str(controlId)
 
+        print controlId == self.C_GAMEOVER_RETRY
         if controlId == self.C_GAMEOVER_RETRY:
+            print "RETRY"
             self.close()
             self.parentWindow.close()
 
+            self.parentWindow.gameType.reset()
             w = QuizGui(self.parentWindow.type, self.parentWindow.gameType, self.parentWindow.maxRating, self.parentWindow.interactive)
             w.doModal()
             del w
 
         elif controlId == self.C_GAMEOVER_MAINMENU:
+            print "MAINMENU"
             self.close()
             self.parentWindow.close()
 

@@ -26,6 +26,11 @@ class GameType(object):
     def getIdentifier(self):
         raise
 
+    def reset(self):
+        self.points = 0
+        self.correctAnswers = 0
+        self.wrongAnswers = 0
+
 class UnlimitedGameType(GameType):
     def __init__(self):
         super(UnlimitedGameType, self).__init__()
@@ -52,10 +57,12 @@ class QuestionLimitedGameType(GameType):
             return "Last question"
         else:
             return str(questionsLeft) + " questions left"
-        #return strings(G_QUESTION_X_OF_Y, (self.questionCount, self.questionLimit))
 
     def getIdentifier(self):
         return 'question-limited-' + str(self.questionLimit)
+
+    def reset(self):
+        self.questionCount = 0
 
 class TimeLimitedGameType(GameType):
     def __init__(self, timeLimitMinutes):
@@ -76,4 +83,7 @@ class TimeLimitedGameType(GameType):
 
     def getIdentifier(self):
         return 'time-limited-' + str(self.timeLimitMinutes)
+
+    def reset(self):
+        self.startTime = datetime.datetime.now()
 
