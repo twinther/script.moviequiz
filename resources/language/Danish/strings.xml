@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <strings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="../../strings.xsd">
-    <!-- -->
+    <!-- General -->
     <string id="30000">Spørgsmål %d af %d</string>
     <string id="30001">Score:</string>
     <string id="30002">Spørgsmålets værdi:</string>
@@ -12,6 +12,11 @@
     <string id="30006">Sæson %s</string><!-- same value as id="20358" in main xbmc strings.xml -->
     <string id="30007">%e. %B %Y</string><!-- episode first aired date format: http://docs.python.org/library/time.html#time.strftime -->
     <string id="30008">[B]Indlæser[/B]</string>
+
+    <string id="30050">Advarsel</string>
+    <string id="30051">Alle film spørgsmål er slået fra,</string>
+    <string id="30052">Alle TV spørgsmål er slået fra,</string>
+    <string id="30053">så denne quiz type er ikke tilgængelig.</string>
 
     <!-- Menu -->
     <string id="30100">Spil Film Quiz</string>
@@ -62,6 +67,8 @@
     <string id="30501">Film</string>
     <string id="30502">TV-serier</string>
     <string id="30503">Downloads</string>
+    <string id="30504">Highscore</string>
+    <string id="30505">Spørgsmål</string>
 
     <string id="30510">Begræns antallet af spørgsmål</string>
     <string id="30511">Spørgsmålsgrænse</string>
@@ -76,6 +83,30 @@
     <string id="30521">%d af %d mb. modtaget</string>
     <string id="30522">Nogle spørgsmål kræver ekstra lokale data,</string>
     <string id="30523">som kan hentes herunder:</string>
+
+    <string id="30550">Brug disse spørgsmål til film quiz</string>
+    <string id="30551">Brug disse spørgsmål til TV quiz</string>
+
+    <string id="30552">Hvilken film er dette?</string>
+    <string id="30553">Hvilken film medvirker skuespiller ikke i?</string>
+    <string id="30554">Hvilket år blev filmen udgivet?</string>
+    <string id="30555">Hvilken tagline hører til filmen?</string>
+    <string id="30556">Hvem var instruktør filmen?</string>
+    <string id="30557">Hvilket studiet udgav filmen?</string>
+    <string id="30558">Hvem er denne skuespiller?</string>
+    <string id="30559">Hvem spillede rollen i filmen?</string>
+    <string id="30560">Hvilken film er dette citat fra?</string>
+    <string id="30561">Hvilken film er nyest?</string>
+    <string id="30562">Hvilken film er ikke instrueret af?</string>
+    <string id="30563">Hvilken skuespiller medvirker i disse film?</string>
+    <string id="30564">Hvilken skuespiller medvirker i denne film udover anden skuespiller?</string>
+    <string id="30565">Hvilken film har længst spilletid?</string>
+
+    <string id="30580">Hvilken TV-serie er det?</string>
+    <string id="30581">Hvilken sæson er det?</string>
+    <string id="30582">Hvilket afsnit er det?</string>
+    <string id="30583">Hvornår blev TV-serien sendt først gang?</string>
+    <string id="30584">Hvem spiller rollen i TV-serien?</string>
 
     <!-- Game type strings -->
     <string id="30600">[B]Vælg Movie Quiz spil type[/B]</string>

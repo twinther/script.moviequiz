@@ -2,9 +2,11 @@
 - Dropped support for XBMC Dharma
 
 [B]Version 0.4.1 - 2011-xx-xx[/B]
+- Added settings to enable and disable individual question types
 - Added initial local highscore support
-- Translation of game over screen on-going
+- Translation of game over screen
 - Added Bulgarian translation thanks to Plamen Petkov
+- Added French translation thanks to DanoneKiD
 
 [B]Version 0.4.0 - 2011-07-24[/B]
 - Same improvements as 1.0.0, but with support for XBMC Dharma.

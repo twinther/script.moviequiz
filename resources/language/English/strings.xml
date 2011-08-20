@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <strings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="../../strings.xsd">
-    <!-- -->
+    <!-- General -->
     <string id="30000">Question %d of %d</string>
     <string id="30001">Score:</string>
     <string id="30002">Question value:</string>
@@ -12,6 +12,11 @@
     <string id="30006">Season %i</string><!-- same value as id="20358" in main xbmc strings.xml -->
     <string id="30007">%B %e, %Y</string><!-- episode first aired date format: http://docs.python.org/library/time.html#time.strftime -->
     <string id="30008">[B]Loading[/B]</string>
+
+    <string id="30050">Warning</string>
+    <string id="30051">All movie questions types are disabled,</string>
+    <string id="30052">All TV show questions types are disabled,</string>
+    <string id="30053">so this quiz type is not available.</string>
 
     <!-- Menu -->
     <string id="30100">Play Movie Quiz</string>
@@ -79,6 +84,30 @@
     <string id="30522">Some questions require additional local data,</string>
     <string id="30523">which can be downloaded below:</string>
     <string id="30524">Nickname</string>
+
+    <string id="30550">Use these question types for movies</string>
+    <string id="30551">Use these question types for TV shows</string>
+
+    <string id="30552">What movie is this?</string>
+    <string id="30553">What movie is actor not in?</string>
+    <string id="30554">What year was movie released?</string>
+    <string id="30555">What tagline belongs to movie?</string>
+    <string id="30556">Who directed this movie?</string>
+    <string id="30557">What studio relased this movie?</string>
+    <string id="30558">What actor is this?</string>
+    <string id="30559">Who played this role in movie?</string>
+    <string id="30560">What movie is this quote from?</string>
+    <string id="30561">What movie is newest?</string>
+    <string id="30562">What movie was not directed by?</string>
+    <string id="30563">What actor is in these movies?</string>
+    <string id="30564">What actor is in these movie besides other actor?</string>
+    <string id="30565">What movie has longest runtime?</string>
+
+    <string id="30580">What TV show is this?</string>
+    <string id="30581">What season is this?</string>
+    <string id="30582">What episode is this?</string>
+    <string id="30583">When was TV show first aired?</string>
+    <string id="30584">Who played role in TV show?</string>
 
     <!-- Game type strings -->
     <string id="30600">[B]Choose Movie Quiz game type[/B]</string>

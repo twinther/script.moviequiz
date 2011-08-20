@@ -2,7 +2,6 @@ TODOs and suggestions in no particular order
 
 - DVD ISO's plays menu instead of movie
 - Add support for global statistics, eg. "lifetime" correct/incorrect answers and such
-- Settings to enable/disable each question type
 - Multiplayer support
 
 Movie Question suggestions:

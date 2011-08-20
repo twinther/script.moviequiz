@@ -2,6 +2,7 @@
 <settings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="settings.xsd">
 	<category label="30500">
+        <!-- general -->
         <setting id="show.correct.answer" label="30514" type="bool" default="false" />
         <setting id="only.watched.movies" label="30515" type="bool" default="true" />
 
@@ -18,10 +19,34 @@
 	</category>
 
     <category label="30505">
-        <setting id="question.type1.enabled" label="Question type 1 enabled" type="bool" default="true"/>
+        <!-- question types -->
+        <setting type="lsep" label="30550"/>
+        <setting id="question.whatmovieisthis.enabled" label="30552" type="bool" default="true"/>
+        <setting id="question.actornotinmovie.enabled" label="30553" type="bool" default="true"/>
+        <setting id="question.whatyearwasmoviereleased.enabled" label="30554" type="bool" default="true"/>
+        <setting id="question.whattaglinebelongstomovie.enabled" label="30555" type="bool" default="true"/>
+        <setting id="question.whodirectedthismovie.enabled" label="30556" type="bool" default="true"/>
+        <setting id="question.whatstudioreleasedmovie.enabled" label="30557" type="bool" default="true"/>
+        <setting id="question.whatactoristhis.enabled" label="30558" type="bool" default="true"/>
+        <setting id="question.whoplayedroleinmovie.enabled" label="30559" type="bool" default="true"/>
+        <setting id="question.whatmovieisthisquotefrom.enabled" label="30560" type="bool" default="true"/>
+        <setting id="question.whatmovieisnewest.enabled" label="30561" type="bool" default="true"/>
+        <setting id="question.whatmovieisnotdirectedby.enabled" label="30562" type="bool" default="true"/>
+        <setting id="question.whatactorisinthesemovies.enabled" label="30563" type="bool" default="true"/>
+        <setting id="question.whatactorisinmoviebesidesotheractor.enabled" label="30564" type="bool" default="true"/>
+        <setting id="question.whatmoviehaslongestruntime.enabled" label="30565" type="bool" default="true"/>
+
+        <setting type="lsep" label="30551"/>
+        <setting id="question.whattvshowisthis.enabled" label="30580" type="bool" default="true"/>
+        <setting id="question.whatseasonisthis.enabled" label="30581" type="bool" default="true"/>
+        <setting id="question.whatepisodeisthis.enabled" label="30582" type="bool" default="true"/>
+        <setting id="question.whenwastvshowfirstaired.enabled" label="30583" type="bool" default="true"/>
+        <setting id="question.whoplayedroleintvshow.enabled" label="30584" type="bool" default="true"/>
+
      </category>
 
     <category label="30503">
+        <!-- imdb integration -->
         <setting type="lsep" label="30522"/>
         <setting type="lsep" label="30523"/>
         <setting label="30519" type="action" action="RunScript($CWD/quizlib/imdb.py)"/>

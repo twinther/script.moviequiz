@@ -23,6 +23,22 @@ class Database(object):
     def __del__(self):
         self.close()
 
+    def postInit(self):
+        self._fixMissingTVShowView()
+
+    def _fixMissingTVShowView(self):
+        self.conn.execute("""
+        CREATE VIEW IF NOT EXISTS tvshowview AS
+            SELECT tvshow.*, path.strPath AS strPath, NULLIF(COUNT(episode.c12), 0) AS totalCount, COUNT(files.playCount) AS watchedcount, NULLIF(COUNT(DISTINCT(episode.c12)), 0) AS totalSeasons
+            FROM tvshow
+                LEFT JOIN tvshowlinkpath ON tvshowlinkpath.idShow=tvshow.idShow
+                LEFT JOIN path ON path.idPath=tvshowlinkpath.idPath
+                LEFT JOIN tvshowlinkepisode ON tvshowlinkepisode.idShow=tvshow.idShow
+                LEFT JOIN episode ON episode.idEpisode=tvshowlinkepisode.idEpisode
+                LEFT JOIN files ON files.idFile=episode.idFile
+            GROUP BY tvshow.idShow;
+        """)
+
     def close(self):
         self.conn.close()
         print "Database closed"
@@ -98,8 +114,7 @@ class Database(object):
 
 class MySQLDatabase(Database):
     def __init__(self, settings):
-        Database.__init__(self)
-
+        super(MySQLDatabase, self).__init__()
         self.conn = mysql.connector.connect(
             host = settings['host'],
             user = settings['user'],
@@ -108,6 +123,7 @@ class MySQLDatabase(Database):
             )
 
         xbmc.log("MySQLDatabase opened")
+        super(MySQLDatabase, self).postInit()
 
     def hasMovies(self):
         row = self.fetchone("SELECT COUNT(table_name) AS cnt FROM information_schema.tables WHERE table_name='movieview'")
@@ -159,7 +175,7 @@ class MySQLCursorDict(mysql.connector.cursor.MySQLCursor):
 
 class SQLiteDatabase(Database):
     def __init__(self, settings):
-        Database.__init__(self)
+        super(SQLiteDatabase, self).__init__()
         found = True
         db_file = None
 
@@ -183,6 +199,8 @@ class SQLiteDatabase(Database):
         self.conn = sqlite3.connect(db_file, check_same_thread = False)
         self.conn.row_factory = _sqlite_dict_factory
         xbmc.log("SQLiteDatabase opened")
+
+        super(SQLiteDatabase, self).postInit()
 
     def hasMovies(self):
         row = self.fetchone("SELECT COUNT(*) AS cnt FROM sqlite_master WHERE name='movieview'")
@@ -223,7 +241,7 @@ def connect():
     else:
         return SQLiteDatabase(settings)
 
-        
+
 def _loadSettings():
     settings = {
         'type' : 'sqlite3',
@@ -252,7 +270,7 @@ def _loadSettings():
            xbmc.log("Unable to parse advancedsettings.xml")
 
     return settings
-    
+
 
 
 # Highscore Database
@@ -269,7 +287,9 @@ class HighscoreDatabase(object):
         self._createTables()
 
     def __del__(self):
-        print "Closing Highscore Database"
+        self.close()
+
+    def close(self):
         self.conn.close()
 
     def addHighscore(self, nickname, score, gameType, correctAnswers, numberOfQuestions):
@@ -302,7 +322,7 @@ class HighscoreDatabase(object):
         c.execute('SELECT position FROM highscore WHERE id=?', [highscoreId])
         r = c.fetchone()
         position = r['position']
-                
+
         c.execute("SELECT * FROM highscore WHERE type=? AND position > ? AND position < ? ORDER BY position",
             [gameType.getIdentifier(), position - 5, position + 5])
         return c.fetchall()

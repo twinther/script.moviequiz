@@ -47,6 +47,9 @@ class MenuGui(xbmcgui.WindowXML):
         if not database.hasMovies():
             self.getControl(self.C_MENU_MOVIE_QUIZ).setEnabled(False)
         else:
+            if not question.isAnyMovieQuestionsEnabled():
+                self.getControl(self.C_MENU_MOVIE_QUIZ).setEnabled(False)
+
             movies = database.fetchone('SELECT COUNT(*) AS count, (SUM(c11) / 60) AS total_hours FROM movie')
             actors = database.fetchone('SELECT COUNT(DISTINCT idActor) AS count FROM actorlinkmovie')
             directors = database.fetchone('SELECT COUNT(DISTINCT idDirector) AS count FROM directorlinkmovie')
@@ -65,6 +68,9 @@ class MenuGui(xbmcgui.WindowXML):
         if not database.hasTVShows():
             self.getControl(self.C_MENU_TVSHOW_QUIZ).setEnabled(False)
         else:
+            if not question.isAnyTVShowQuestionsEnabled():
+                self.getControl(self.C_MENU_TVSHOW_QUIZ).setEnabled(False)
+                
             shows = database.fetchone('SELECT COUNT(*) AS count FROM tvshow')
             seasons = database.fetchone('SELECT SUM(season_count) AS count FROM (SELECT idShow, COUNT(DISTINCT c12) AS season_count from episodeview GROUP BY idShow) AS tbl')
             episodes = database.fetchone('SELECT COUNT(*) AS count FROM episode')
@@ -88,6 +94,12 @@ class MenuGui(xbmcgui.WindowXML):
 
         label = '  *  '.join(trivia)
         self.getControl(self.C_MENU_COLLECTION_TRIVIA).setLabel(label)
+
+        if not question.isAnyMovieQuestionsEnabled():
+            xbmcgui.Dialog().ok(ADDON.getLocalizedString(30050), ADDON.getLocalizedString(30051), ADDON.getLocalizedString(30053))
+
+        if not question.isAnyTVShowQuestionsEnabled():
+            xbmcgui.Dialog().ok(ADDON.getLocalizedString(30050), ADDON.getLocalizedString(30052), ADDON.getLocalizedString(30053))
 
     def onAction(self, action):
         if action.getId() == ACTION_PARENT_DIR or action.getId() == ACTION_PREVIOUS_MENU:
@@ -568,13 +580,14 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
         self.getControl(4100).setLabel(strings(G_YOU_SCORED) % (self.correctAnswers, self.totalAnswers))
         self.getControl(4101).setLabel(str(self.score))
         
-        highscore = db.HighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
-        newHighscoreId = highscore.addHighscore(ADDON.getSetting('highscore.nickname'), self.score, self.gameType, self.correctAnswers, self.totalAnswers)
+        highscoreDb = db.HighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
+        newHighscoreId = highscoreDb.addHighscore(ADDON.getSetting('highscore.nickname'), self.score, self.gameType, self.correctAnswers, self.totalAnswers)
 
         if newHighscoreId != -1:
-            entries = highscore.getHighscoresNear(self.gameType, newHighscoreId)
+            entries = highscoreDb.getHighscoresNear(self.gameType, newHighscoreId)
         else:
-            entries = highscore.getHighscores(self.gameType)
+            entries = highscoreDb.getHighscores(self.gameType)
+        highscoreDb.close()
 
         self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_TYPE).setLabel(self.gameType.getIdentifier())
         listControl = self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_LIST)
