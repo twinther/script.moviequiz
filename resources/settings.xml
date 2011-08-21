@@ -7,7 +7,7 @@
         <setting id="only.watched.movies" label="30515" type="bool" default="true" />
 
         <setting type="lsep" label="30504"/>
-        <setting id="highscore.nickname" label="30524" type="text" default="Player one"/>
+        <setting id="highscore.nickname" label="30524" type="text"/>
 
         <setting type="lsep" label="30501"/>
         <setting id="movie.rating.limit.enabled" label="30512" type="bool" default="false" />

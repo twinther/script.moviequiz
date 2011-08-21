@@ -3,7 +3,7 @@
 
 [B]Version 0.4.1 - 2011-xx-xx[/B]
 - Added settings to enable and disable individual question types
-- Added initial local highscore support
+- Added initial global and local highscore support
 - Translation of game over screen
 - Added Bulgarian translation thanks to Plamen Petkov
 - Added French translation thanks to DanoneKiD

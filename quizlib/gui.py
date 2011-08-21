@@ -9,6 +9,7 @@ import gametype
 import question
 import player
 import db
+import highscore
 from strings import *
 
 # Constants from [xbmc]/xbmc/guilib/Key.h
@@ -95,6 +96,8 @@ class MenuGui(xbmcgui.WindowXML):
         label = '  *  '.join(trivia)
         self.getControl(self.C_MENU_COLLECTION_TRIVIA).setLabel(label)
 
+        self._checkHighscoreNickname()
+
         if not question.isAnyMovieQuestionsEnabled():
             xbmcgui.Dialog().ok(ADDON.getLocalizedString(30050), ADDON.getLocalizedString(30051), ADDON.getLocalizedString(30053))
 
@@ -126,6 +129,16 @@ class MenuGui(xbmcgui.WindowXML):
     def onFocus(self, controlId):
         pass
 
+    def _checkHighscoreNickname(self):
+        if ADDON.getSetting('highscore.nickname') == '':
+            keyboard = xbmc.Keyboard('Player One', 'Welcome to Movie Quiz, please enter your nick name:')
+            keyboard.doModal()
+            if keyboard.isConfirmed() and len(keyboard.getText().strip()) > 0:
+                ADDON.setSetting('highscore.nickname', keyboard.getText().strip())
+            else:
+                ADDON.setSetting('highscore.nickname', 'Player One')
+
+        self.getControl(6001).setLabel("Playing as [B]" + ADDON.getSetting("highscore.nickname") + "[/B]")
 
 class GameTypeDialog(xbmcgui.WindowXMLDialog):
     C_GAMETYPE_UNLIMITED = 4000
@@ -561,6 +574,9 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
     C_GAMEOVER_RETRY = 4000
     C_GAMEOVER_MAINMENU = 4003
 
+    C_GAMEOVER_GLOBAL_HIGHSCORE_LIST = 8001
+    C_GAMEOVER_GLOBAL_HIGHSCORE_TYPE = 8002
+
     C_GAMEOVER_LOCAL_HIGHSCORE_LIST = 9001
     C_GAMEOVER_LOCAL_HIGHSCORE_TYPE = 9002
 
@@ -579,24 +595,8 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
     def onInit(self):
         self.getControl(4100).setLabel(strings(G_YOU_SCORED) % (self.correctAnswers, self.totalAnswers))
         self.getControl(4101).setLabel(str(self.score))
-        
-        highscoreDb = db.HighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
-        newHighscoreId = highscoreDb.addHighscore(ADDON.getSetting('highscore.nickname'), self.score, self.gameType, self.correctAnswers, self.totalAnswers)
 
-        if newHighscoreId != -1:
-            entries = highscoreDb.getHighscoresNear(self.gameType, newHighscoreId)
-        else:
-            entries = highscoreDb.getHighscores(self.gameType)
-        highscoreDb.close()
-
-        self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_TYPE).setLabel(self.gameType.getIdentifier())
-        listControl = self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_LIST)
-        for entry in entries:
-            item = xbmcgui.ListItem("%d. %s" % (entry['position'], entry['nickname']))
-            item.setProperty('score', str(entry['score']))
-            if entry['id'] == newHighscoreId:
-                item.setProperty('highlight', 'true')
-            listControl.addItem(item)
+        self._setupHighscores()
 
     def onAction(self, action):
         if action.getId() == ACTION_PARENT_DIR or action.getId() == ACTION_PREVIOUS_MENU:
@@ -623,6 +623,45 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
 
     def onFocus(self, controlId):
         print "GameOverDialog.onFocus " + str(controlId)
+
+    def _setupHighscores(self):
+        # Local highscore
+        localHighscore = highscore.LocalHighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
+        newHighscoreId = localHighscore.addHighscore(ADDON.getSetting('highscore.nickname'), self.score, self.gameType, self.correctAnswers, self.totalAnswers)
+
+        if newHighscoreId != -1:
+            entries = localHighscore.getHighscoresNear(self.gameType, newHighscoreId)
+        else:
+            entries = localHighscore.getHighscores(self.gameType)
+        localHighscore.close()
+
+        self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_TYPE).setLabel(self.gameType.getIdentifier())
+        listControl = self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_LIST)
+        for entry in entries:
+            item = xbmcgui.ListItem("%d. %s" % (entry['position'], entry['nickname']))
+            item.setProperty('score', str(entry['score']))
+            if entry['id'] == newHighscoreId:
+                item.setProperty('highlight', 'true')
+            listControl.addItem(item)
+
+        # Global highscore
+        globalHighscore = highscore.GlobalHighscoreDatabase()
+        newHighscoreId = globalHighscore.addHighscore(ADDON.getSetting('highscore.nickname'), self.score, self.gameType, self.correctAnswers, self.totalAnswers)
+
+        if newHighscoreId != -1:
+            entries = globalHighscore.getHighscoresNear(self.gameType, newHighscoreId)
+        else:
+            entries = globalHighscore.getHighscores(self.gameType)
+
+        self.getControl(self.C_GAMEOVER_GLOBAL_HIGHSCORE_TYPE).setLabel(self.gameType.getIdentifier())
+        listControl = self.getControl(self.C_GAMEOVER_GLOBAL_HIGHSCORE_LIST)
+        for entry in entries:
+            item = xbmcgui.ListItem("%s. %s" % (entry['position'], entry['nickname']))
+            item.setProperty('score', str(entry['score']))
+            if int(entry['id']) == int(newHighscoreId):
+                item.setProperty('highlight', 'true')
+            listControl.addItem(item)
+
 
 
 

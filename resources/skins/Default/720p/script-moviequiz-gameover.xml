@@ -102,6 +102,7 @@
                 <label>$ADDON[script.moviequiz 30702]</label>
                 <onup>4000</onup>
                 <ondown>4002</ondown>
+                <onright>8001</onright>
             </control>
             <control type="button" id="4002">
                 <description>Local highscore</description>
@@ -148,6 +149,7 @@
             </control>
 
             <control type="label">
+                <description>Global highscore title</description>
                 <posx>20</posx>
                 <posy>120</posy>
                 <width>360</width>
@@ -158,15 +160,91 @@
                 <label>[B]$ADDON[script.moviequiz 30702][/B]</label>
             </control>
 
-            <control type="label">
-                <posx>0</posx>
-                <posy>200</posy>
-                <width>400</width>
+            <control type="label" id="8002">
+                <description>global highscore type</description>
+                <posx>20</posx>
+                <posy>160</posy>
+                <width>360</width>
                 <height>40</height>
                 <font>font13</font>
                 <aligny>center</aligny>
                 <align>center</align>
-                <label>Not implemented yet</label>
+            </control>
+
+            <control type="fixedlist" id="8001">
+                <posx>10</posx>
+                <posy>200</posy>
+                <width>380</width>
+                <height>400</height>
+                <onleft>4001</onleft>
+                <viewtype label="list">list</viewtype>
+                <orientation>vertical</orientation>
+                <pagecontrol>25</pagecontrol>
+                <scrolltime>200</scrolltime>
+                <visible>true</visible>
+                <itemlayout width="380" height="40">
+                    <control type="image">
+                        <posx>0</posx>
+                        <posy>0</posy>
+                        <width>380</width>
+                        <height>40</height>
+                        <texture>quiz-white-square.png</texture>
+                        <colordiffuse>8800ff00</colordiffuse>
+                        <visible>!IsEmpty(ListItem.Property(highlight))</visible>
+                    </control>
+                    <control type="label">
+                        <posx>0</posx>
+                        <posy>0</posy>
+                        <width>200</width>
+                        <height>40</height>
+                        <textcolor>ffffffff</textcolor>
+                        <font>font13</font>
+                        <info>ListItem.Label</info>
+                        <aligny>center</aligny>
+                    </control>
+                    <control type="label">
+                        <posx>380</posx>
+                        <posy>0</posy>
+                        <width>200</width>
+                        <height>40</height>
+                        <textcolor>ffffffff</textcolor>
+                        <font>font13</font>
+                        <info>ListItem.Property(score)</info>
+                        <aligny>center</aligny>
+                        <align>right</align>
+                    </control>
+                </itemlayout>
+                <focusedlayout width="380" height="40">
+                    <control type="image">
+                        <posx>0</posx>
+                        <posy>0</posy>
+                        <width>380</width>
+                        <height>40</height>
+                        <texture>quiz-white-square.png</texture>
+                        <colordiffuse>88333333</colordiffuse>
+                    </control>
+                    <control type="label">
+                        <posx>0</posx>
+                        <posy>0</posy>
+                        <width>200</width>
+                        <height>40</height>
+                        <textcolor>ffffffff</textcolor>
+                        <font>font13</font>
+                        <info>ListItem.Label</info>
+                        <aligny>center</aligny>
+                    </control>
+                    <control type="label">
+                        <posx>380</posx>
+                        <posy>0</posy>
+                        <width>200</width>
+                        <height>40</height>
+                        <textcolor>ffffffff</textcolor>
+                        <font>font13</font>
+                        <info>ListItem.Property(score)</info>
+                        <aligny>center</aligny>
+                        <align>right</align>
+                    </control>
+                </focusedlayout>
             </control>
         </control>
 
@@ -176,7 +254,7 @@
             <posy>0</posy>
             <width>400</width>
             <height>720</height>
-            <animation effect="fade" start="0" end="100" time="200" condition="Control.HasFocus(4002)">Conditional</animation>
+            <animation effect="fade" start="0" end="100" time="200" condition="Control.HasFocus(4002) | Control.HasFocus(9001)">Conditional</animation>
             <visible>Control.HasFocus(4002) | Control.HasFocus(9001)</visible>
 
             <control type="image">
@@ -221,7 +299,6 @@
                 <pagecontrol>25</pagecontrol>
                 <scrolltime>200</scrolltime>
                 <visible>true</visible>
-                <focusposition>0</focusposition>
                 <itemlayout width="380" height="40">
                     <control type="image">
                         <posx>0</posx>
@@ -229,8 +306,8 @@
                         <width>380</width>
                         <height>40</height>
                         <texture>quiz-white-square.png</texture>
-                        <visible>!IsEmpty(ListItem.Property(highlight))</visible>
                         <colordiffuse>8800ff00</colordiffuse>
+                        <visible>!IsEmpty(ListItem.Property(highlight))</visible>
                     </control>
                     <control type="label">
                         <posx>0</posx>
@@ -261,17 +338,7 @@
                         <width>380</width>
                         <height>40</height>
                         <texture>quiz-white-square.png</texture>
-                        <visible>!IsEmpty(ListItem.Property(highlight))</visible>
-                        <colordiffuse>8800ff00</colordiffuse>
-                    </control>
-                    <control type="image">
-                        <posx>0</posx>
-                        <posy>0</posy>
-                        <width>380</width>
-                        <height>40</height>
-                        <texture>quiz-white-square.png</texture>
-                        <visible>Control.Hasfocus(4200) + !IsEmpty(ListItem.Property(highlight))</visible>
-                        <colordiffuse>88ff0000</colordiffuse>
+                        <colordiffuse>88333333</colordiffuse>
                     </control>
                     <control type="label">
                         <posx>0</posx>
@@ -296,7 +363,6 @@
                     </control>
                 </focusedlayout>
             </control>
-
 
         </control>
 
