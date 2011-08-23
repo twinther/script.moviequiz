@@ -3,7 +3,10 @@ import datetime
 from strings import *
 
 class GameType(object):
-    def __init__(self):
+    def __init__(self, type, maxRating, interactive):
+        self.type = type
+        self.maxRating = maxRating
+        self.interactive = interactive
         self.points = 0
         self.correctAnswers = 0
         self.wrongAnswers = 0
@@ -32,8 +35,8 @@ class GameType(object):
         self.wrongAnswers = 0
 
 class UnlimitedGameType(GameType):
-    def __init__(self):
-        super(UnlimitedGameType, self).__init__()
+    def __init__(self, type, maxRating, interactive):
+        super(UnlimitedGameType, self).__init__(type, maxRating, interactive)
 
     def isGameOver(self):
         return False
@@ -42,8 +45,8 @@ class UnlimitedGameType(GameType):
         return 'unlimited'
 
 class QuestionLimitedGameType(GameType):
-    def __init__(self, questionLimit):
-        super(QuestionLimitedGameType, self).__init__()
+    def __init__(self, type, maxRating, interactive, questionLimit):
+        super(QuestionLimitedGameType, self).__init__(type, maxRating, interactive)
         self.questionLimit = questionLimit
         self.questionCount = 0
 
@@ -65,8 +68,8 @@ class QuestionLimitedGameType(GameType):
         self.questionCount = 0
 
 class TimeLimitedGameType(GameType):
-    def __init__(self, timeLimitMinutes):
-        super(TimeLimitedGameType, self).__init__()
+    def __init__(self, type, maxRating, interactive, timeLimitMinutes):
+        super(TimeLimitedGameType, self).__init__(type, maxRating, interactive)
         self.startTime = datetime.datetime.now()
         self.timeLimitMinutes = timeLimitMinutes
 
