@@ -279,7 +279,6 @@ class QuizGui(xbmcgui.WindowXML):
         print "Using game type: " + str(self.gameType)
 
         self.type = type
-        self.questionCount = 0
         self.maxRating = maxRating
         self.interactive = interactive
 
@@ -297,9 +296,6 @@ class QuizGui(xbmcgui.WindowXML):
         self.question = question.Question(self.database, None, None)
         self.previousQuestions = []
 
-        self.correctAnswerCount = 0
-        self.wrongAnswerCount = 0
-
         self.maxRating = None
         if maxRating is not None:
             self.maxRating = maxRating
@@ -310,37 +306,33 @@ class QuizGui(xbmcgui.WindowXML):
         self.onlyWatchedMovies = ADDON.getSetting('only.watched.movies') == 'true'
 
     def onInit(self):
-        try :
-            xbmcgui.lock()
-            if self.type == question.TYPE_TV:
-                self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(self.defaultBackground)
-        finally:
-            xbmcgui.unlock()
+        if self.type == question.TYPE_TV:
+            self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(self.defaultBackground)
 
-        self._setup_question()
+        self.onNewQuestion()
 
     def close(self):
         if self.player and self.player.isPlaying():
             self.player.stop()
         # TODO self.database.close()
-        xbmcgui.WindowXML.close(self)
+        super(QuizGui, self).close()
         
     def onAction(self, action):
         if action.getId() == ACTION_PARENT_DIR or action.getId() == ACTION_PREVIOUS_MENU:
-            self._game_over()
+            self.onGameOver()
 
         elif action.getId() == REMOTE_1:
             self.setFocusId(self.C_MAIN_FIRST_ANSWER)
-            self._handle_answer(self.question.getAnswer(0))
+            self.onQuestionAnswered(self.question.getAnswer(0))
         elif action.getId() == REMOTE_2:
             self.setFocusId(self.C_MAIN_FIRST_ANSWER + 1)
-            self._handle_answer(self.question.getAnswer(1))
+            self.onQuestionAnswered(self.question.getAnswer(1))
         elif action.getId() == REMOTE_3:
             self.setFocusId(self.C_MAIN_FIRST_ANSWER + 2)
-            self._handle_answer(self.question.getAnswer(2))
+            self.onQuestionAnswered(self.question.getAnswer(2))
         elif action.getId() == REMOTE_4:
             self.setFocusId(self.C_MAIN_FIRST_ANSWER + 3)
-            self._handle_answer(self.question.getAnswer(3))
+            self.onQuestionAnswered(self.question.getAnswer(3))
 
 
     def onClick(self, controlId):
@@ -349,16 +341,16 @@ class QuizGui(xbmcgui.WindowXML):
 
         if self.question and (controlId >= self.C_MAIN_FIRST_ANSWER and controlId <= self.C_MAIN_LAST_ANSWER):
             answer = self.question.getAnswer(controlId - self.C_MAIN_FIRST_ANSWER)
-            self._handle_answer(answer)
+            self.onQuestionAnswered(answer)
         elif controlId == self.C_MAIN_EXIT:
-            self._game_over()
+            self.onGameOver()
         elif controlId == self.C_MAIN_REPLAY:
             self.player.replay()
 
     def onFocus(self, controlId):
-        self._update_thumb(controlId)
+        self.onThumbChanged(controlId)
 
-    def _game_over(self):
+    def onGameOver(self):
         if self.questionPointsThread is not None:
            self.questionPointsThread.cancel()
 
@@ -370,11 +362,11 @@ class QuizGui(xbmcgui.WindowXML):
 
         self.close()
 
-    def _setup_question(self):
+    def onNewQuestion(self):
         self.getControl(self.C_MAIN_LOADING_VISIBILITY).setVisible(True)
 
         if self.gameType.isGameOver():
-            self._game_over()
+            self.onGameOver()
             return
 
         self.question = self._getNewQuestion()
@@ -394,8 +386,8 @@ class QuizGui(xbmcgui.WindowXML):
                 # highlight correct answer
                 self.setFocusId(self.C_MAIN_FIRST_ANSWER + idx)
 
-        self._update_thumb()
-        self._update_stats()
+        self.onThumbChanged()
+        self.onStatsChanged()
 
         if self.question.getFanartFile() is not None and os.path.exists(self.question.getFanartFile()):
             self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(self.question.getFanartFile())
@@ -404,28 +396,28 @@ class QuizGui(xbmcgui.WindowXML):
 
         correctAnswer = self.question.getCorrectAnswer()
         if isinstance(self.question, question.VideoDisplayType):
-            self._changeVisibility(video = True)
+            self.onVisibilityChanged(video = True)
             xbmc.sleep(1500) # give skin animation time to execute
             self.player.playWindowed(self.question.getVideoFile(), correctAnswer.idFile)
 
         elif isinstance(self.question, question.PhotoDisplayType):
             self.getControl(self.C_MAIN_PHOTO).setImage(self.question.getPhotoFile())
-            self._changeVisibility(photo = True)
+            self.onVisibilityChanged(photo = True)
 
         elif isinstance(self.question, question.ThreePhotoDisplayType):
             self.getControl(self.C_MAIN_PHOTO_1).setImage(self.question.getPhotoFile(0))
             self.getControl(self.C_MAIN_PHOTO_2).setImage(self.question.getPhotoFile(1))
             self.getControl(self.C_MAIN_PHOTO_3).setImage(self.question.getPhotoFile(2))
-            self._changeVisibility(threePhotos = True)
+            self.onVisibilityChanged(threePhotos = True)
 
         elif isinstance(self.question, question.QuoteDisplayType):
             quoteText = self.question.getQuoteText()
             quoteText = self._obfuscateQuote(quoteText)
             self.getControl(self.C_MAIN_QUOTE_LABEL).setText(quoteText)
-            self._changeVisibility(quote = True)
+            self.onVisibilityChanged(quote = True)
 
         else:
-            self._changeVisibility()
+            self.onVisibilityChanged()
 
         if not self.interactive:
             # answers correctly in ten seconds
@@ -434,7 +426,7 @@ class QuizGui(xbmcgui.WindowXML):
         self.getControl(self.C_MAIN_LOADING_VISIBILITY).setVisible(False)
 
         self.questionPoints = None
-        self._question_points()
+        self.onQuestionPointTimer()
 
     def _getNewQuestion(self):
         retries = 0
@@ -445,16 +437,22 @@ class QuizGui(xbmcgui.WindowXML):
             q = question.getRandomQuestion(self.type, self.database, self.maxRating, self.onlyWatchedMovies)
             if q is None:
                 continue
-                
-            try:
-                self.previousQuestions.index(q.getUniqueIdentifier())
-            except Exception:
+            
+            if not q.getUniqueIdentifier() in self.previousQuestions:
                 self.previousQuestions.append(q.getUniqueIdentifier())
                 break
 
         return q
 
-    def _question_points(self):
+    def onQuestionPointTimer(self):
+        """
+        onQuestionPointTimer handles the decreasing amount of points awareded to the user when a question is answered correctly.
+
+        The points start a 100 and is decreasing exponentially slower to make it more difficult to get a higher score.
+        When the points reach 10 the decreasing ends, making 10 the lowes score you can get.
+
+        Before the timer starts the user gets a three second head start - this is to actually make it possible to get a perfect 100 score.
+        """
         if self.questionPointsThread is not None:
            self.questionPointsThread.cancel()
 
@@ -466,21 +464,21 @@ class QuizGui(xbmcgui.WindowXML):
         self.getControl(4103).setLabel(str(self.questionPoints / 10.0))
         if self.questionPoints == 100:
             # three second head start
-            self.questionPointsThread = threading.Timer(3, self._question_points)
+            self.questionPointsThread = threading.Timer(3, self.onQuestionPointTimer)
             self.questionPointsThread.start()
         elif self.questionPoints > 10:
             seconds = (100 - self.questionPoints) / 100.0
-            self.questionPointsThread = threading.Timer(seconds, self._question_points)
+            self.questionPointsThread = threading.Timer(seconds, self.onQuestionPointTimer)
             self.questionPointsThread.start()
 #        else:
 #            self.questionPointsThread = None
 
     def _answer_correctly(self):
         answer = self.question.getCorrectAnswer()
-        self._handle_answer(answer)
+        self.onQuestionAnswered(answer)
 
-    def _handle_answer(self, answer):
-        print "_handle_answer(..)"
+    def onQuestionAnswered(self, answer):
+        print "onQuestionAnswered(..)"
         if self.questionPointsThread is not None:
            self.questionPointsThread.cancel()
 
@@ -497,7 +495,7 @@ class QuizGui(xbmcgui.WindowXML):
         if self.player.isPlaying():
             self.player.stop()
 
-        threading.Timer(0.5, self._hide_icons).start()
+        threading.Timer(0.5, self.onQuestionAnswerFeedbackTimer).start()
         if ADDON.getSetting('show.correct.answer') == 'true' and not answer.correct:
             for idx, answer in enumerate(self.question.getAnswers()):
                 if answer.correct:
@@ -512,21 +510,22 @@ class QuizGui(xbmcgui.WindowXML):
 
             xbmc.sleep(3000)
 
-        self._setup_question()
+        self.onNewQuestion()
 
-    def _update_stats(self):
+    def onStatsChanged(self):
         self.getControl(self.C_MAIN_CORRECT_SCORE).setLabel(str(self.gameType.points))
 #        self.getControl(self.C_MAIN_INCORRECT_SCORE).setLabel(str(self.gameType.wrongAnswers))
 
         label = self.getControl(self.C_MAIN_QUESTION_COUNT)
         label.setLabel(self.gameType.getStatsString())
         
-    def _update_thumb(self, controlId = None):
+    def onThumbChanged(self, controlId = None):
         if self.question is None:
             return # not initialized yet
 
         if controlId is None:
             controlId = self.getFocusId()
+
         if controlId >= self.C_MAIN_FIRST_ANSWER or controlId <= self.C_MAIN_LAST_ANSWER:
             answer = self.question.getAnswer(controlId - self.C_MAIN_FIRST_ANSWER)
             coverImage = self.getControl(self.C_MAIN_COVER_IMAGE)
@@ -540,13 +539,17 @@ class QuizGui(xbmcgui.WindowXML):
             else:
                 coverImage.setVisible(False)
 
-    def _hide_icons(self):
-        """Visibility is inverted in skin
+    def onQuestionAnswerFeedbackTimer(self):
+        """
+        onQuestionAnswerFeedbackTimer is invoked by a timer when the red or green background behind the answers box
+        must be faded out and hidden.
+
+        Note: Visibility is inverted in skin
         """
         self.getControl(self.C_MAIN_CORRECT_VISIBILITY).setVisible(True)
         self.getControl(self.C_MAIN_INCORRECT_VISIBILITY).setVisible(True)
 
-    def _changeVisibility(self, video = False, photo = False, quote = False, threePhotos = False):
+    def onVisibilityChanged(self, video = False, photo = False, quote = False, threePhotos = False):
         """Visibility is inverted in skin
         """
         self.getControl(self.C_MAIN_VIDEO_VISIBILITY).setVisible(not video)
