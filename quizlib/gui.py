@@ -27,6 +27,7 @@ AUDIO_CORRECT = os.path.join(RESOURCES_PATH, 'audio', 'correct.wav')
 AUDIO_WRONG = os.path.join(RESOURCES_PATH, 'audio', 'wrong.wav')
 BACKGROUND_MOVIE = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz-background.png')
 BACKGROUND_TV = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz-background-tvshows.png')
+NO_PHOTO_IMAGE = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz-no-photo.png')
 
 class MenuGui(xbmcgui.WindowXML):
 
@@ -43,9 +44,7 @@ class MenuGui(xbmcgui.WindowXML):
         super(MenuGui, self).__init__()
     
     def onInit(self):
-        print "MenuGui.onInit"
-
-        trivia = [strings(M_TRANSLATED_BY)]
+        trivia = [strings(M_DEVELOPED_BY), strings(M_TRANSLATED_BY)]
 
         database = db.connect()
 
@@ -87,11 +86,11 @@ class MenuGui(xbmcgui.WindowXML):
                 strings(M_EPISODE_COUNT) % episodes['count']
             ]
 
+
         if not database.hasMovies() and not database.hasTVShows():
-            line1 = 'Missing requirements!'
-            line2 = 'To play the Movie Quiz you must[CR]have some movies or TV shows'
-            line3 = 'in your Video library. See the[CR]XBMC wiki for information.'
-            xbmcgui.Dialog().ok(line1, line2, line3)
+            # Missing requirements
+            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_REQUIREMENTS_MISSING_LINE1),
+                strings(E_REQUIREMENTS_MISSING_LINE2))
             self.close()
 
 
@@ -103,13 +102,13 @@ class MenuGui(xbmcgui.WindowXML):
         self._checkHighscoreNickname()
 
         if not question.isAnyMovieQuestionsEnabled():
-            xbmcgui.Dialog().ok(ADDON.getLocalizedString(30050), ADDON.getLocalizedString(30051), ADDON.getLocalizedString(30053))
+            xbmcgui.Dialog().ok(strings(E_WARNING), strings(E_ALL_MOVIE_QUESTIONS_DISABLED), strings(E_QUIZ_TYPE_NOT_AVAILABLE))
 
         if not question.isAnyTVShowQuestionsEnabled():
-            xbmcgui.Dialog().ok(ADDON.getLocalizedString(30050), ADDON.getLocalizedString(30052), ADDON.getLocalizedString(30053))
+            xbmcgui.Dialog().ok(strings(E_WARNING), strings(E_ALL_TVSHOW_QUESTIONS_DISABLED), strings(E_QUIZ_TYPE_NOT_AVAILABLE))
 
     def onAction(self, action):
-        if action.getId() == ACTION_PARENT_DIR or action.getId() == ACTION_PREVIOUS_MENU:
+        if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
             self.close()
 
     def onClick(self, controlId):
@@ -135,7 +134,7 @@ class MenuGui(xbmcgui.WindowXML):
 
     def _checkHighscoreNickname(self):
         if ADDON.getSetting('highscore.nickname') == '':
-            keyboard = xbmc.Keyboard('Player One', 'Welcome to Movie Quiz, please enter your nick name:')
+            keyboard = xbmc.Keyboard('Player One', strings(G_WELCOME_ENTER_NICKNAME))
             keyboard.doModal()
             if keyboard.isConfirmed() and len(keyboard.getText().strip()) > 0:
                 ADDON.setSetting('highscore.nickname', keyboard.getText().strip())
@@ -160,22 +159,22 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
     C_GAMETYPE_TIME_LIMIT = 4100
     C_GAMETYPE_QUESTION_LIMIT = 4200
 
-    QUESTION_LIMITS = [
-        {'limit' : '5', 'text' : '5 questions'},
-        {'limit' : '10', 'text' : '10 questions'},
-        {'limit' : '15', 'text' : '15 questions'},
-        {'limit' : '25', 'text' : '25 qustions'},
-        {'limit' : '50', 'text' : '50 questions'},
-        {'limit' : '100', 'text' : '100 questions'}
+    QUESTION_SUB_TYPES = [
+        {'limit' : '5', 'text' : strings(M_X_QUESTIONS, '5')},
+        {'limit' : '10', 'text' : strings(M_X_QUESTIONS, '10')},
+        {'limit' : '15', 'text' : strings(M_X_QUESTIONS, '15')},
+        {'limit' : '25', 'text' : strings(M_X_QUESTIONS, '25')},
+        {'limit' : '50', 'text' : strings(M_X_QUESTIONS, '50')},
+        {'limit' : '100', 'text' : strings(M_X_QUESTIONS, '100')}
     ]
-    TIME_LIMITS = [
-        {'limit' : '1', 'text' : '1 minute'},
-        {'limit' : '2', 'text' : '2 minutes'},
-        {'limit' : '3', 'text' : '3 minutes'},
-        {'limit' : '5', 'text' : '5 minutes'},
-        {'limit' : '10', 'text' : '10 minutes'},
-        {'limit' : '15', 'text' : '15 minutes'},
-        {'limit' : '30', 'text' : '30 minutes'}
+    TIME_SUB_TYPES = [
+        {'limit' : '1', 'text' : strings(M_ONE_MINUTE)},
+        {'limit' : '2', 'text' : strings(M_X_MINUTES, '2')},
+        {'limit' : '3', 'text' : strings(M_X_MINUTES, '3')},
+        {'limit' : '5', 'text' : strings(M_X_MINUTES, '5')},
+        {'limit' : '10', 'text' : strings(M_X_MINUTES, '10')},
+        {'limit' : '15', 'text' : strings(M_X_MINUTES, '15')},
+        {'limit' : '30', 'text' : strings(M_X_MINUTES, '30')}
     ]
 
     def __new__(cls, type):
@@ -187,31 +186,27 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
 
     def onInit(self):
         if self.type == game.GAMETYPE_MOVIE:
-            self.getControl(3999).setLabel(strings(30600))
+            self.getControl(3999).setLabel(strings(M_CHOOSE_MOVIE_GAME_TYPE))
         elif  self.type == game.GAMETYPE_TVSHOW:
-            self.getControl(3999).setLabel(strings(30601))
+            self.getControl(3999).setLabel(strings(M_CHOOSE_TV_GAME_TYPE))
 
         control = self.getControl(self.C_GAMETYPE_QUESTION_LIMIT)
-        for questionLimit in self.QUESTION_LIMITS:
-            item = xbmcgui.ListItem(questionLimit['text'])
-            item.setProperty("limit", questionLimit['limit'])
+        for subTypes in self.QUESTION_SUB_TYPES:
+            item = xbmcgui.ListItem(subTypes['text'])
+            item.setProperty("limit", subTypes['limit'])
             control.addItem(item)
 
         control = self.getControl(self.C_GAMETYPE_TIME_LIMIT)
-        for questionLimit in self.TIME_LIMITS:
-            item = xbmcgui.ListItem(questionLimit['text'])
-            item.setProperty("limit", questionLimit['limit'])
+        for subTypes in self.TIME_SUB_TYPES:
+            item = xbmcgui.ListItem(subTypes['text'])
+            item.setProperty("limit", subTypes['limit'])
             control.addItem(item)
 
     def onAction(self, action):
-        print "GameTypeDialog.onAction " + str(action)
-
         if action.getId() == ACTION_PARENT_DIR or action.getId() == ACTION_PREVIOUS_MENU:
             self.close()
 
     def onClick(self, controlId):
-        print "GameTypeDialog.onClick " + str(controlId)
-
         interactive = True
         gameInstance = None
         if controlId in [self.C_GAMETYPE_UNLIMITED_CANCEL, self.C_GAMETYPE_TIME_LIMITED_CANCEL, self.C_GAMETYPE_QUESTION_LIMITED_CANCEL]:
@@ -237,10 +232,9 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
             w.doModal()
             del w
 
+    #noinspection PyUnusedLocal
     def onFocus(self, controlId):
-        print "GameTypeDialog.onFocus " + str(controlId)
-
-
+        pass
 
 class QuizGui(xbmcgui.WindowXML):
     C_MAIN_FIRST_ANSWER = 4000
@@ -293,6 +287,7 @@ class QuizGui(xbmcgui.WindowXML):
         self.player = player.TenSecondPlayer()
         self.question = None
         self.previousQuestions = []
+        self.isLoading = False
 
     def onInit(self):
         if self.gameInstance.getType() == game.GAMETYPE_TVSHOW:
@@ -310,6 +305,8 @@ class QuizGui(xbmcgui.WindowXML):
         if action.getId() == ACTION_PARENT_DIR or action.getId() == ACTION_PREVIOUS_MENU:
             self.onGameOver()
 
+        if self.isLoading:
+            return
         elif action.getId() == REMOTE_1:
             self.setFocusId(self.C_MAIN_FIRST_ANSWER)
             self.onQuestionAnswered(self.question.getAnswer(0))
@@ -327,12 +324,13 @@ class QuizGui(xbmcgui.WindowXML):
     def onClick(self, controlId):
         if not self.gameInstance.isInteractive():
             return # ignore
-
-        if self.question and (controlId >= self.C_MAIN_FIRST_ANSWER and controlId <= self.C_MAIN_LAST_ANSWER):
-            answer = self.question.getAnswer(controlId - self.C_MAIN_FIRST_ANSWER)
-            self.onQuestionAnswered(answer)
         elif controlId == self.C_MAIN_EXIT:
             self.onGameOver()
+        elif self.isLoading:
+            return # ignore the rest while we are loading
+        elif self.question and (controlId >= self.C_MAIN_FIRST_ANSWER and controlId <= self.C_MAIN_LAST_ANSWER):
+            answer = self.question.getAnswer(controlId - self.C_MAIN_FIRST_ANSWER)
+            self.onQuestionAnswered(answer)
         elif controlId == self.C_MAIN_REPLAY:
             self.player.replay()
 
@@ -351,12 +349,12 @@ class QuizGui(xbmcgui.WindowXML):
         self.close()
 
     def onNewQuestion(self):
-        self.getControl(self.C_MAIN_LOADING_VISIBILITY).setVisible(True)
-
         if self.gameInstance.isGameOver():
             self.onGameOver()
             return
 
+        self.isLoading = True
+        self.getControl(self.C_MAIN_LOADING_VISIBILITY).setVisible(True)
         self.question = self._getNewQuestion()
         self.getControl(self.C_MAIN_QUESTION_LABEL).setLabel(self.question.getText())
 
@@ -411,6 +409,7 @@ class QuizGui(xbmcgui.WindowXML):
             # answers correctly in ten seconds
             threading.Timer(10.0, self._answer_correctly).start()
 
+        self.isLoading = False
         self.getControl(self.C_MAIN_LOADING_VISIBILITY).setVisible(False)
 
         self.questionPoints = None
@@ -520,9 +519,8 @@ class QuizGui(xbmcgui.WindowXML):
                 coverImage.setVisible(True)
                 coverImage.setImage(answer.coverFile)
             elif answer is not None and answer.coverFile is not None :
-                path = ADDON.getAddonInfo('path')
                 coverImage.setVisible(True)
-                coverImage.setImage(os.path.join(path, 'resources', 'skins', 'Default', 'media', 'quiz-no-photo.png'))
+                coverImage.setImage(NO_PHOTO_IMAGE)
             else:
                 coverImage.setVisible(False)
 
@@ -594,22 +592,21 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
         print "GameOverDialog.onClick " + str(controlId)
 
         if controlId == self.C_GAMEOVER_RETRY:
-            print "RETRY"
             self.close()
             self.parentWindow.close()
 
-            self.parentWindow.game.reset()
+            self.parentWindow.gameInstance.reset()
             w = QuizGui(self.parentWindow.game)
             w.doModal()
             del w
 
         elif controlId == self.C_GAMEOVER_MAINMENU:
-            print "MAINMENU"
             self.close()
             self.parentWindow.close()
 
+    #noinspection PyUnusedLocal
     def onFocus(self, controlId):
-        print "GameOverDialog.onFocus " + str(controlId)
+        pass
 
     def _setupHighscores(self):
         # Local highscore
@@ -622,7 +619,19 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
             entries = localHighscore.getHighscores(self.game)
         localHighscore.close()
 
-        self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_TYPE).setLabel(self.game.getGameType())
+        subTypeText = None
+        if isinstance(self.game, game.UnlimitedGame):
+            subTypeText = strings(M_UNLIMITED)
+        elif isinstance(self.game, game.QuestionLimitedGame):
+            subTypeText = strings(M_X_QUESTIONS_LIMIT, self.game.getGameSubType())
+
+        elif isinstance(self.game, game.TimeLimitedGame):
+            if int(self.game.getGameSubType()) == 1:
+                subTypeText = strings(M_ONE_MINUT_LIMIT)
+            else:
+                subTypeText = strings(M_X_MINUTS_LIMIT, self.game.getGameSubType())
+
+        self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_TYPE).setLabel(subTypeText)
         listControl = self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_LIST)
         for entry in entries:
             item = xbmcgui.ListItem("%d. %s" % (entry['position'], entry['nickname']))
@@ -640,7 +649,7 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
         else:
             entries = globalHighscore.getHighscores(self.game)
 
-        self.getControl(self.C_GAMEOVER_GLOBAL_HIGHSCORE_TYPE).setLabel(self.game.getGameType())
+        self.getControl(self.C_GAMEOVER_GLOBAL_HIGHSCORE_TYPE).setLabel(subTypeText)
         listControl = self.getControl(self.C_GAMEOVER_GLOBAL_HIGHSCORE_LIST)
         for entry in entries:
             item = xbmcgui.ListItem("%s. %s" % (entry['position'], entry['nickname']))

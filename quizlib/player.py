@@ -25,6 +25,8 @@ class TenSecondPlayer(xbmc.Player):
         self.lastIdFile = None
         self.lastStartTime = None
 
+        self.playBackEventReceived = False
+
     def __del__(self):
         self.database.close()
 
@@ -92,10 +94,11 @@ class TenSecondPlayer(xbmc.Player):
         except db.DbException:
             self.bookmark = {'idFile' : idFile}
 
+        self.playBackEventReceived = False
         self.play(item = file, windowed = True)
 
         retries = 0
-        while not self.isPlaying() and retries < 20:
+        while not self.playBackEventReceived and retries < 20:
             xbmc.sleep(250) # keep sleeping to get onPlayBackStarted() event
             retries += 1
         xbmc.log(">> TenSecondPlayer.playWindowed() - end")
@@ -136,6 +139,7 @@ class TenSecondPlayer(xbmc.Player):
 
     def onPlayBackStarted(self):
         xbmc.log(">> TenSecondPlayer.onPlayBackStarted()")
+        self.playBackEventReceived = True
 
         if self.lastStartTime is not None:
             startTime = self.lastStartTime
@@ -156,6 +160,8 @@ class TenSecondPlayer(xbmc.Player):
 
     def onPlayBackStopped(self):
         xbmc.log(">> TenSecondPlayer.onPlayBackStopped()")
+        self.playBackEventReceived = True
+
         if self.tenSecondTimer is not None:
             self.tenSecondTimer.cancel()
 

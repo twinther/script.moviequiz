@@ -13,10 +13,17 @@
     <string id="30007">%B %e, %Y</string><!-- episode first aired date format: http://docs.python.org/library/time.html#time.strftime -->
     <string id="30008">[B]Loading[/B]</string>
 
+    <string id="30010">Welcome to Movie Quiz, please enter your nickname:</string>
+
     <string id="30050">Warning</string>
     <string id="30051">All movie questions types are disabled,</string>
     <string id="30052">All TV show questions types are disabled,</string>
     <string id="30053">so this quiz type is not available.</string>
+
+    <string id="30054">Missing requirements!</string>
+    <string id="30055">To play the Movie Quiz you must[CR]have some movies or TV shows</string>
+    <string id="30056">in your Video library. See the[CR]XBMC wiki for information.</string>
+    
 
     <!-- Menu -->
     <string id="30100">Play Movie Quiz</string>
@@ -35,6 +42,10 @@
     <string id="30121">%d TV shows</string><!-- %d is TV show count -->
     <string id="30122">%d seasons</string><!-- %d is season count -->
     <string id="30123">%d episodes</string><!-- %d is episodes count -->
+
+    <string id="30130">One minute</string>
+    <string id="30131">%s minutes</string>
+    <string id="30132">%s questions</string>
 
     <!-- Movie Questions -->
     <string id="30400">What movie is this?</string>
@@ -129,8 +140,13 @@
     <string id="30702">Highscore</string>
     <string id="30703">Local highscore</string>
     <string id="30704">Main menu</string>
+    <string id="30705">Unlimited</string>
+    <string id="30706">%s questions limit</string>
+    <string id="30707">one minute time limit</string>
+    <string id="30708">%s minuts time limit</string>
 
 
 
+    <string id="39998">Developed by Tommy Winther</string>
     <string id="39999">Translated by Tommy Winther</string>
 </strings>

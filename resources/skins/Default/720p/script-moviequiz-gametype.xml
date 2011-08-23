@@ -123,7 +123,7 @@
                     <description>End the game by using the Quiz option</description>
                     <posx>0</posx>
                     <posy>80</posy>
-                    <width>400</width>
+                    <width>680</width>
                     <height>40</height>
                     <textcolor>ffffffff</textcolor>
                     <font>font13</font>

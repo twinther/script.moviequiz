@@ -25,6 +25,7 @@ class HighscoreDatabase(object):
         raise
 
 class GlobalHighscoreDatabase(HighscoreDatabase):
+    STATUS_OK = 'OK'
     SERVICE_URL = 'http://moviequiz.xbmc.info/service.json.php'
 
     def addHighscore(self, nickname, game):
@@ -45,7 +46,11 @@ class GlobalHighscoreDatabase(HighscoreDatabase):
         }
 
         resp = self._request(req)
-        return int(resp['newHighscoreId'])
+
+        if resp['status'] == self.STATUS_OK:
+            return int(resp['newHighscoreId'])
+        else:
+            return -1
 
 
     def getHighscores(self, game):
@@ -57,7 +62,10 @@ class GlobalHighscoreDatabase(HighscoreDatabase):
         }
 
         resp = self._request(req)
-        return resp['highscores']
+        if resp['status'] == 'OK':
+            return resp['highscores']
+        else:
+            return []
 
     def getHighscoresNear(self, game, highscoreId):
         return self.getHighscores(game)
@@ -71,14 +79,14 @@ class GlobalHighscoreDatabase(HighscoreDatabase):
         req.add_header('X-MovieQuiz-Checksum', md5.new(jsonData).hexdigest())
         req.add_header('Content-Type', 'text/json')
 
-        u = urllib2.urlopen(req)
-        resp = u.read()
-        u.close()
-
-        xbmc.log("GlobalHighscore response: " + resp)
-
-        return simplejson.loads(resp)
-
+        try:
+            u = urllib2.urlopen(req)
+            resp = u.read()
+            u.close()
+            xbmc.log("GlobalHighscore response: " + resp)
+            return simplejson.loads(resp)
+        except urllib2.URLError:
+            return {'status' : 'error'}
 
 
 class LocalHighscoreDatabase(HighscoreDatabase):
