@@ -24,15 +24,17 @@ class Answer(object):
         self.coverFile = None
         self.sortWeight = sortWeight
 
-    def __str__(self):
-        return "Answer(id=%s, text=%s, correct=%s)" % (self.id, self.text, self.correct)
-        
+       
     def setCoverFile(self, path, filename = None):
         if filename is None:
             self.coverFile = path
         else:
             self.coverFile = thumb.getCachedVideoThumb(path, filename)
 
+    def __repr__(self):
+        return "<Answer(id=%s, text=%s, correct=%s)>" % (self.id, self.text, self.correct)
+
+ 
 class Question(object):
     IMDB = imdb.Imdb(ADDON.getAddonInfo('profile'))
     
@@ -1127,15 +1129,15 @@ class QuestionException(Exception):
     pass
 
 
-def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
+def getRandomQuestion(gameType, database):
     """
         Gets random question from one of the Question subclasses.
     """
     subclasses = []
-    if type == TYPE_MOVIE:
+    if gameType.type == TYPE_MOVIE:
         #noinspection PyUnresolvedReferences
         subclasses = MovieQuestion.__subclasses__()
-    elif type == TYPE_TV:
+    elif gameType.type == TYPE_TV:
         #noinspection PyUnresolvedReferences
         subclasses = TVQuestion.__subclasses__()
 
@@ -1144,22 +1146,22 @@ def getRandomQuestion(type, database, maxRating, onlyWatchedMovies):
 
     for subclass in subclasses:
         try:
-            return subclass(database, maxRating, onlyWatchedMovies)
+            return subclass(database, gameType.maxRating, gameType.onlyWatchedMovies)
         except QuestionException, ex:
             print "QuestionException in %s: %s" % (subclass, ex)
-        except db.DbException, ex:
+         except db.DbException, ex:
             print "DbException in %s: %s" % (subclass, ex)
 
     return None
 
 def isAnyMovieQuestionsEnabled():
-        #noinspection PyUnresolvedReferences
+    #noinspection PyUnresolvedReferences
     subclasses = MovieQuestion.__subclasses__()
     subclasses  = [ subclass for subclass in subclasses if subclass.isEnabledInSettings() ]
-    return len(subclasses) > 0
+    return subclasses
 
 def isAnyTVShowQuestionsEnabled():
-        #noinspection PyUnresolvedReferences
+    #noinspection PyUnresolvedReferences
     subclasses = TVQuestion.__subclasses__()
     subclasses  = [ subclass for subclass in subclasses if subclass.isEnabledInSettings() ]
-    return len(subclasses) > 0    
+    return subclasses

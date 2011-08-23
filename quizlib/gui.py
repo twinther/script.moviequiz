@@ -424,7 +424,7 @@ class QuizGui(xbmcgui.WindowXML):
         while retries < 100:
             retries += 1
 
-            q = question.getRandomQuestion(self.game.type, self.database, self.game.maxRating, self.game.onlyWatchedMovies)
+            q = question.getRandomQuestion(self.game, self.database)
             if q is None:
                 continue
             
