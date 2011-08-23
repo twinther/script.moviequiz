@@ -15,30 +15,32 @@ except ImportError:
     from pysqlite2 import dbapi2 as sqlite3
 
 class HighscoreDatabase(object):
-    def addHighscore(self, nickname, score, gameType, correctAnswers, numberOfQuestions):
+    def addHighscore(self, nickname, game):
         raise
 
-    def getHighscores(self, gameType):
+    def getHighscores(self, game):
         raise
 
-    def getHighscoresNear(self, gameType, highscoreId):
+    def getHighscoresNear(self, game, highscoreId):
         raise
 
 class GlobalHighscoreDatabase(HighscoreDatabase):
     SERVICE_URL = 'http://moviequiz.xbmc.info/service.json.php'
 
-    def addHighscore(self, nickname, score, gameType, correctAnswers, numberOfQuestions):
-        if score <= 0:
+    def addHighscore(self, nickname, game):
+        if game.getPoints() <= 0:
             return -1
 
         req = {
             'action' : 'submit',
             'entry' : {
-                'type' : gameType.getIdentifier(),
+                'type' : game.getType(),
+                'gameType' : game.getGameType(),
+                'gameSubType' : game.getGameSubType(),
                 'nickname' : nickname,
-                'score' : score,
-                'correctAnswers' : correctAnswers,
-                'numberOfQuestions' : numberOfQuestions
+                'score' : game.getPoints(),
+                'correctAnswers' : game.getCorrectAnswers(),
+                'numberOfQuestions' : game.getTotalAnswers()
             }
         }
 
@@ -46,21 +48,24 @@ class GlobalHighscoreDatabase(HighscoreDatabase):
         return int(resp['newHighscoreId'])
 
 
-    def getHighscores(self, gameType):
+    def getHighscores(self, game):
         req = {
             'action' : 'highscores',
-            'type' : gameType.getIdentifier()
+            'type' : game.getType(),
+            'gameType' : game.getGameType(),
+            'gameSubType' : game.getGameSubType()
         }
 
         resp = self._request(req)
         return resp['highscores']
 
-    def getHighscoresNear(self, gameType, highscoreId):
-        return self.getHighscores(gameType)
+    def getHighscoresNear(self, game, highscoreId):
+        return self.getHighscores(game)
 
 
     def _request(self, data):
         jsonData = simplejson.dumps(data)
+        xbmc.log("GlobalHighscore request: " + jsonData)
 
         req = urllib2.Request(self.SERVICE_URL, jsonData)
         req.add_header('X-MovieQuiz-Checksum', md5.new(jsonData).hexdigest())
@@ -69,6 +74,8 @@ class GlobalHighscoreDatabase(HighscoreDatabase):
         u = urllib2.urlopen(req)
         resp = u.read()
         u.close()
+
+        xbmc.log("GlobalHighscore response: " + resp)
 
         return simplejson.loads(resp)
 
@@ -91,18 +98,20 @@ class LocalHighscoreDatabase(HighscoreDatabase):
     def close(self):
         self.conn.close()
 
-    def addHighscore(self, nickname, score, gameType, correctAnswers, numberOfQuestions):
-        if score <= 0:
+        
+    def addHighscore(self, nickname, game):
+        if game.getPoints() <= 0:
             return -1
 
         c = self.conn.cursor()
-        c.execute("INSERT INTO highscore(type, nickname, score, correctAnswers, numberOfQuestions, timestamp) VALUES(?, ?, ?, ?, ?, datetime('now'))",
-            [gameType.getIdentifier(), nickname, score, correctAnswers, numberOfQuestions])
+        c.execute("INSERT INTO highscore(type, gameType, gameSubType, nickname, score, correctAnswers, numberOfQuestions, timestamp)"
+            + " VALUES(?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+            [game.getType(), game.getGameType(), game.getGameSubType(), nickname, game.getPoints(), game.getCorrectAnswers(), game.getTotalAnswers()])
         self.conn.commit()
         rowid = c.lastrowid
 
         # reposition highscore
-        highscores = self.getHighscores(gameType)
+        highscores = self.getHighscores(game)
         for idx, highscore in enumerate(highscores):
             c.execute("UPDATE highscore SET position=? WHERE id=?", [idx + 1, highscore['id']])
         self.conn.commit()
@@ -110,20 +119,20 @@ class LocalHighscoreDatabase(HighscoreDatabase):
 
         return rowid
 
-    def getHighscores(self, gameType):
+    def getHighscores(self, game):
         c = self.conn.cursor()
-        c.execute('SELECT * FROM highscore WHERE type=? ORDER BY score DESC, timestamp ASC',
-            [gameType.getIdentifier()])
+        c.execute('SELECT * FROM highscore WHERE type=? AND gameType=? and gameSubType=? ORDER BY score DESC, timestamp ASC',
+            [game.getType(), game.getGameType(), game.getGameSubType()])
         return c.fetchall()
 
-    def getHighscoresNear(self, gameType, highscoreId):
+    def getHighscoresNear(self, game, highscoreId):
         c = self.conn.cursor()
         c.execute('SELECT position FROM highscore WHERE id=?', [highscoreId])
         r = c.fetchone()
         position = r['position']
 
-        c.execute("SELECT * FROM highscore WHERE type=? AND position > ? AND position < ? ORDER BY position",
-            [gameType.getIdentifier(), position - 5, position + 5])
+        c.execute("SELECT * FROM highscore WHERE type=? AND gameType=? and gameSubType=? AND position > ? AND position < ? ORDER BY position",
+            [game.getType(), game.getGameType(), game.getGameSubType(), position - 5, position + 5])
         return c.fetchall()
 
 
@@ -133,6 +142,8 @@ class LocalHighscoreDatabase(HighscoreDatabase):
         c.execute('CREATE TABLE IF NOT EXISTS highscore ('
             + 'id INTEGER PRIMARY KEY,'
             + 'type TEXT,'
+            + 'gameType TEXT,'
+            + 'gameSubType TEXT,'
             + 'position INTEGER,'
             + 'nickname TEXT,'
             + 'score REAL,'
@@ -142,17 +153,6 @@ class LocalHighscoreDatabase(HighscoreDatabase):
         )
         self.conn.commit()
         c.close()
-
-
-
-if __name__ == '__main__':
-    import gametype
-    gt = gametype.UnlimitedGameType()
-
-    hs = GlobalHighscoreDatabase()
-    #hs.submitHighscore('Tommy', 123.4, gt, 10, 24)
-    for entry in hs.getHighscores(gt):
-        print entry
 
 
 

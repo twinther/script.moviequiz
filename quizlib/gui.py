@@ -5,7 +5,7 @@ import re
 import xbmc
 import xbmcgui
 
-import gametype
+import game
 import question
 import player
 import db
@@ -21,8 +21,12 @@ REMOTE_3 = 61
 REMOTE_4 = 62
 
 ADDON = xbmcaddon.Addon(id = 'script.moviequiz')
-AUDIO_CORRECT = os.path.join(ADDON.getAddonInfo('path'), 'resources', 'audio', 'correct.wav')
-AUDIO_WRONG = os.path.join(ADDON.getAddonInfo('path'), 'resources', 'audio', 'wrong.wav')
+
+RESOURCES_PATH = os.path.join(ADDON.getAddonInfo('path'), 'resources', )
+AUDIO_CORRECT = os.path.join(RESOURCES_PATH, 'audio', 'correct.wav')
+AUDIO_WRONG = os.path.join(RESOURCES_PATH, 'audio', 'wrong.wav')
+BACKGROUND_MOVIE = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz-background.png')
+BACKGROUND_TV = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz-background-tvshows.png')
 
 class MenuGui(xbmcgui.WindowXML):
 
@@ -110,12 +114,12 @@ class MenuGui(xbmcgui.WindowXML):
 
     def onClick(self, controlId):
         if controlId == self.C_MENU_MOVIE_QUIZ:
-            w = GameTypeDialog(question.TYPE_MOVIE)
+            w = GameTypeDialog(game.GAMETYPE_MOVIE)
             w.doModal()
             del w
 
         elif controlId == self.C_MENU_TVSHOW_QUIZ:
-            w = GameTypeDialog(question.TYPE_TV)
+            w = GameTypeDialog(game.GAMETYPE_TVSHOW)
             w.doModal()
             del w
 
@@ -182,9 +186,9 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
         self.type = type
 
     def onInit(self):
-        if self.type == question.TYPE_MOVIE:
+        if self.type == game.GAMETYPE_MOVIE:
             self.getControl(3999).setLabel(strings(30600))
-        elif  self.type == question.TYPE_TV:
+        elif  self.type == game.GAMETYPE_TVSHOW:
             self.getControl(3999).setLabel(strings(30601))
 
         control = self.getControl(self.C_GAMETYPE_QUESTION_LIMIT)
@@ -209,33 +213,27 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
         print "GameTypeDialog.onClick " + str(controlId)
 
         interactive = True
-        maxRating = None
-        if self.type == question.TYPE_MOVIE and ADDON.getSetting('movie.rating.limit.enabled') == 'true':
-            maxRating = ADDON.getSetting('movie.rating.limit')
-        elif self.type == question.TYPE_TV and ADDON.getSetting('tvshow.rating.limit.enabled') == 'true':
-            maxRating = ADDON.getSetting('tvshow.rating.limit')
-
-        gameType = None
+        gameInstance = None
         if controlId in [self.C_GAMETYPE_UNLIMITED_CANCEL, self.C_GAMETYPE_TIME_LIMITED_CANCEL, self.C_GAMETYPE_QUESTION_LIMITED_CANCEL]:
             self.close()
 
         elif controlId in [self.C_GAMETYPE_UNLIMITED, self.C_GAMETYPE_UNLIMITED_PLAY]:
-            gameType = gametype.UnlimitedGameType(self.type, maxRating, interactive)
+            gameInstance = game.UnlimitedGame(self.type, interactive)
 
         elif controlId in [self.C_GAMETYPE_QUESTION_LIMITED, self.C_GAMETYPE_QUESTION_LIMITED_PLAY]:
             control = self.getControl(self.C_GAMETYPE_QUESTION_LIMIT)
             maxQuestions = int(control.getSelectedItem().getProperty("limit"))
-            gameType = gametype.QuestionLimitedGameType(self.type, maxRating, interactive, maxQuestions)
+            gameInstance = game.QuestionLimitedGame(self.type, interactive, maxQuestions)
 
         elif controlId in [self.C_GAMETYPE_TIME_LIMITED, self.C_GAMETYPE_TIME_LIMITED_PLAY]:
             control = self.getControl(self.C_GAMETYPE_TIME_LIMIT)
             timeLimit = int(control.getSelectedItem().getProperty("limit"))
-            gameType = gametype.TimeLimitedGameType(self.type, maxRating, interactive, timeLimit)
+            gameInstance = game.TimeLimitedGame(self.type, interactive, timeLimit)
 
-        if gameType is not None:
+        if gameInstance is not None:
             self.close()
 
-            w = QuizGui(game=gameType)
+            w = QuizGui(gameInstance)
             w.doModal()
             del w
 
@@ -270,33 +268,34 @@ class QuizGui(xbmcgui.WindowXML):
     C_MAIN_LOADING_VISIBILITY = 5005
     C_MAIN_REPLAY_BUTTON_VISIBILITY = 5007
 
-    def __new__(cls, game):
+    def __new__(cls, gameInstance):
         return super(QuizGui, cls).__new__(cls, 'script-moviequiz-main.xml', ADDON.getAddonInfo('path'))
 
-    def __init__(self, game):
+    def __init__(self, gameInstance):
+        """
+        @param gameInstance: the Game instance
+        @type gameInstance: Game
+        """
         super(QuizGui, self).__init__()
 
-        self.game = game
-        print "Using game type: " + str(self.game)
+        self.gameInstance = gameInstance
+        xbmc.log("Starting game: %s" + str(self.gameInstance))
 
         self.questionPointsThread = None
         self.questionPoints = 0
 
-        path = ADDON.getAddonInfo('path')
-        if self.game.type == question.TYPE_TV:
-            self.defaultBackground = os.path.join(path, 'resources', 'skins', 'Default', 'media', 'quiz-background-tvshows.png')
+        if self.gameInstance.getType() == game.GAMETYPE_TVSHOW:
+            self.defaultBackground = BACKGROUND_TV
         else:
-            self.defaultBackground = os.path.join(path, 'resources', 'skins', 'Default', 'media', 'quiz-background.png')
+            self.defaultBackground = BACKGROUND_MOVIE
 
         self.database = db.connect()
         self.player = player.TenSecondPlayer()
-        self.question = question.Question(self.database, None, None)
+        self.question = None
         self.previousQuestions = []
 
-        self.onlyWatchedMovies = ADDON.getSetting('only.watched.movies') == 'true'
-
     def onInit(self):
-        if self.game.type == question.TYPE_TV:
+        if self.gameInstance.getType() == game.GAMETYPE_TVSHOW:
             self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(self.defaultBackground)
 
         self.onNewQuestion()
@@ -326,7 +325,7 @@ class QuizGui(xbmcgui.WindowXML):
 
 
     def onClick(self, controlId):
-        if not self.interactive:
+        if not self.gameInstance.isInteractive():
             return # ignore
 
         if self.question and (controlId >= self.C_MAIN_FIRST_ANSWER and controlId <= self.C_MAIN_LAST_ANSWER):
@@ -344,9 +343,8 @@ class QuizGui(xbmcgui.WindowXML):
         if self.questionPointsThread is not None:
            self.questionPointsThread.cancel()
 
-        if self.game.interactive:
-            total = self.game.correctAnswers + self.game.wrongAnswers
-            w = GameOverDialog(self, self.game.correctAnswers, total, self.game.points, self.game)
+        if self.gameInstance.isInteractive():
+            w = GameOverDialog(self, self.gameInstance)
             w.doModal()
             del w
 
@@ -355,7 +353,7 @@ class QuizGui(xbmcgui.WindowXML):
     def onNewQuestion(self):
         self.getControl(self.C_MAIN_LOADING_VISIBILITY).setVisible(True)
 
-        if self.game.isGameOver():
+        if self.gameInstance.isGameOver():
             self.onGameOver()
             return
 
@@ -372,7 +370,7 @@ class QuizGui(xbmcgui.WindowXML):
                 button.setLabel(answers[idx].text, textColor='0xFFFFFFFF')
                 button.setVisible(True)
 
-            if not self.game.interactive and answers[idx].correct:
+            if not self.gameInstance.isInteractive() and answers[idx].correct:
                 # highlight correct answer
                 self.setFocusId(self.C_MAIN_FIRST_ANSWER + idx)
 
@@ -409,7 +407,7 @@ class QuizGui(xbmcgui.WindowXML):
         else:
             self.onVisibilityChanged()
 
-        if not self.game.interactive:
+        if not self.gameInstance.isInteractive():
             # answers correctly in ten seconds
             threading.Timer(10.0, self._answer_correctly).start()
 
@@ -424,7 +422,7 @@ class QuizGui(xbmcgui.WindowXML):
         while retries < 100:
             retries += 1
 
-            q = question.getRandomQuestion(self.game, self.database)
+            q = question.getRandomQuestion(self.gameInstance, self.database)
             if q is None:
                 continue
             
@@ -474,12 +472,11 @@ class QuizGui(xbmcgui.WindowXML):
 
         if answer is not None and answer.correct:
             xbmc.playSFX(AUDIO_CORRECT)
-            self.game.addCorrectAnswer()
-            self.game.addPoints(self.questionPoints / 10.0)
+            self.gameInstance.correctAnswer(self.questionPoints / 10.0)
             self.getControl(self.C_MAIN_CORRECT_VISIBILITY).setVisible(False)
         else:
             xbmc.playSFX(AUDIO_WRONG)
-            self.game.addWrongAnswer()
+            self.gameInstance.wrongAnswer()
             self.getControl(self.C_MAIN_INCORRECT_VISIBILITY).setVisible(False)
 
         if self.player.isPlaying():
@@ -503,11 +500,11 @@ class QuizGui(xbmcgui.WindowXML):
         self.onNewQuestion()
 
     def onStatsChanged(self):
-        self.getControl(self.C_MAIN_CORRECT_SCORE).setLabel(str(self.game.points))
+        self.getControl(self.C_MAIN_CORRECT_SCORE).setLabel(str(self.gameInstance.getPoints()))
 #        self.getControl(self.C_MAIN_INCORRECT_SCORE).setLabel(str(self.gameType.wrongAnswers))
 
         label = self.getControl(self.C_MAIN_QUESTION_COUNT)
-        label.setLabel(self.game.getStatsString())
+        label.setLabel(self.gameInstance.getStatsString())
         
     def onThumbChanged(self, controlId = None):
         if self.question is None:
@@ -573,33 +570,29 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
     C_GAMEOVER_LOCAL_HIGHSCORE_LIST = 9001
     C_GAMEOVER_LOCAL_HIGHSCORE_TYPE = 9002
 
-    def __new__(cls, parentWindow, correctAnswers, totalAnswers, score, gameType):
+    def __new__(cls, parentWindow, gameType):
         return super(GameOverDialog, cls).__new__(cls, 'script-moviequiz-gameover.xml', ADDON.getAddonInfo('path'))
 
-    def __init__(self, parentWindow, correctAnswers, totalAnswers, score, gameType):
+    def __init__(self, parentWindow, game):
         super(GameOverDialog, self).__init__()
 
         self.parentWindow = parentWindow
-        self.correctAnswers = correctAnswers
-        self.totalAnswers = totalAnswers
-        self.score = score
-        self.gameType = gameType
+        self.game = game
 
     def onInit(self):
-        self.getControl(4100).setLabel(strings(G_YOU_SCORED) % (self.correctAnswers, self.totalAnswers))
-        self.getControl(4101).setLabel(str(self.score))
+        self.getControl(4100).setLabel(strings(G_YOU_SCORED) % (self.game.getCorrectAnswers(), self.game.getTotalAnswers()))
+        self.getControl(4101).setLabel(str(self.game.getPoints()))
 
-        if self.gameType.interactive:
+        if self.game.isInteractive():
             self._setupHighscores()
 
     def onAction(self, action):
-        if action.getId() == ACTION_PARENT_DIR or action.getId() == ACTION_PREVIOUS_MENU:
+        if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
             self.close()
 
     def onClick(self, controlId):
         print "GameOverDialog.onClick " + str(controlId)
 
-        print controlId == self.C_GAMEOVER_RETRY
         if controlId == self.C_GAMEOVER_RETRY:
             print "RETRY"
             self.close()
@@ -621,15 +614,15 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
     def _setupHighscores(self):
         # Local highscore
         localHighscore = highscore.LocalHighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
-        newHighscoreId = localHighscore.addHighscore(ADDON.getSetting('highscore.nickname'), self.score, self.gameType, self.correctAnswers, self.totalAnswers)
+        newHighscoreId = localHighscore.addHighscore(ADDON.getSetting('highscore.nickname'), self.game)
 
         if newHighscoreId != -1:
-            entries = localHighscore.getHighscoresNear(self.gameType, newHighscoreId)
+            entries = localHighscore.getHighscoresNear(self.game, newHighscoreId)
         else:
-            entries = localHighscore.getHighscores(self.gameType)
+            entries = localHighscore.getHighscores(self.game)
         localHighscore.close()
 
-        self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_TYPE).setLabel(self.gameType.getIdentifier())
+        self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_TYPE).setLabel(self.game.getGameType())
         listControl = self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_LIST)
         for entry in entries:
             item = xbmcgui.ListItem("%d. %s" % (entry['position'], entry['nickname']))
@@ -640,14 +633,14 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
 
         # Global highscore
         globalHighscore = highscore.GlobalHighscoreDatabase()
-        newHighscoreId = globalHighscore.addHighscore(ADDON.getSetting('highscore.nickname'), self.score, self.gameType, self.correctAnswers, self.totalAnswers)
+        newHighscoreId = globalHighscore.addHighscore(ADDON.getSetting('highscore.nickname'), self.game)
 
         if newHighscoreId != -1:
-            entries = globalHighscore.getHighscoresNear(self.gameType, newHighscoreId)
+            entries = globalHighscore.getHighscoresNear(self.game, newHighscoreId)
         else:
-            entries = globalHighscore.getHighscores(self.gameType)
+            entries = globalHighscore.getHighscores(self.game)
 
-        self.getControl(self.C_GAMEOVER_GLOBAL_HIGHSCORE_TYPE).setLabel(self.gameType.getIdentifier())
+        self.getControl(self.C_GAMEOVER_GLOBAL_HIGHSCORE_TYPE).setLabel(self.game.getGameType())
         listControl = self.getControl(self.C_GAMEOVER_GLOBAL_HIGHSCORE_LIST)
         for entry in entries:
             item = xbmcgui.ListItem("%s. %s" % (entry['position'], entry['nickname']))

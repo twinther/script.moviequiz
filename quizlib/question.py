@@ -6,11 +6,9 @@ import db
 import time
 import re
 import imdb
+import game
 
 from strings import *
-
-TYPE_MOVIE = 1
-TYPE_TV = 2
 
 ADDON = xbmcaddon.Addon(id = 'script.moviequiz')
 
@@ -1129,15 +1127,15 @@ class QuestionException(Exception):
     pass
 
 
-def getRandomQuestion(gameType, database):
+def getRandomQuestion(gameInstance, database):
     """
         Gets random question from one of the Question subclasses.
     """
     subclasses = []
-    if gameType.type == TYPE_MOVIE:
+    if gameInstance.getType() == game.GAMETYPE_MOVIE:
         #noinspection PyUnresolvedReferences
         subclasses = MovieQuestion.__subclasses__()
-    elif gameType.type == TYPE_TV:
+    elif gameInstance.getType() == game.GAMETYPE_TVSHOW:
         #noinspection PyUnresolvedReferences
         subclasses = TVQuestion.__subclasses__()
 
@@ -1146,10 +1144,10 @@ def getRandomQuestion(gameType, database):
 
     for subclass in subclasses:
         try:
-            return subclass(database, gameType.maxRating, gameType.onlyWatchedMovies)
+            return subclass(database, gameInstance.getMaxRating(), gameInstance.onlyUseWatchedMovies())
         except QuestionException, ex:
             print "QuestionException in %s: %s" % (subclass, ex)
-         except db.DbException, ex:
+        except db.DbException, ex:
             print "DbException in %s: %s" % (subclass, ex)
 
     return None
