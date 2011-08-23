@@ -292,7 +292,7 @@ class QuizGui(xbmcgui.WindowXML):
             self.defaultBackground = os.path.join(path, 'resources', 'skins', 'Default', 'media', 'quiz-background.png')
 
         self.database = db.connect()
-        self.player = player.TenSecondPlayer(database=self.database)
+        self.player = player.TenSecondPlayer()
         self.question = question.Question(self.database, None, None)
         self.previousQuestions = []
 
@@ -314,7 +314,7 @@ class QuizGui(xbmcgui.WindowXML):
     def close(self):
         if self.player and self.player.isPlaying():
             self.player.stop()
-        # TODO self.database.close()
+        self.database.close()
         super(QuizGui, self).close()
         
     def onAction(self, action):

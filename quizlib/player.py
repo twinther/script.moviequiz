@@ -8,18 +8,15 @@ import re
 class TenSecondPlayer(xbmc.Player):
     """TenSecondPlayer is a subclass of xbmc.Player that stops playback after about ten seconds."""
 
-    def __init__(self, database = None):
+    def __init__(self):
         """
         Creates and instance of TenSecondPlayer.
-        
-        Keyword arguments;
-        database - db.Database instance for loading and saving XBMC bookmark information
         """
         super(TenSecondPlayer, self).__init__()
         xbmc.log(">> TenSecondPlayer.__init__()")
         self.tenSecondTimer = None
 
-        self.database = database
+        self.database = db.connect()
         self.bookmark = None
         self.startingPlayback = False
 
@@ -27,6 +24,9 @@ class TenSecondPlayer(xbmc.Player):
         self.lastFile = None
         self.lastIdFile = None
         self.lastStartTime = None
+
+    def __del__(self):
+        self.database.close()
 
     def replay(self):
         xbmc.log(">> TenSecondPlayer.replay()")
