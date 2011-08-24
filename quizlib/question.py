@@ -1085,7 +1085,7 @@ class WhenWasTVShowFirstAiredQuestion(TVQuestion):
         list.sort(years)
 
         for year in years:
-            a = Answer(row['idFile'], str(year), row['idFile'], correct(year == int(row['year'])))
+            a = Answer(row['idFile'], str(year), row['idFile'], correct = (year == int(row['year'])))
             a.setCoverFile(thumb.getCachedTVShowThumb(row['strPath']))
             self.answers.append(a)
 
@@ -1140,7 +1140,7 @@ class WhoPlayedRoleInTVShowQuestion(TVQuestion):
             self.text = strings(Q_WHO_VOICES_ROLE_IN_TVSHOW) % (role, row['title'])
         else:
             self.text = strings(Q_WHO_PLAYS_ROLE_IN_TVSHOW) % (role, row['title'])
-        self.setPhotoFile(thumb.getCachedTVShowThumb(row['strPath']))
+        photoDisplayType.setPhotoFile(thumb.getCachedTVShowThumb(row['strPath']))
 
     @staticmethod
     def isEnabledInSettings():

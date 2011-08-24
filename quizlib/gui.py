@@ -36,6 +36,7 @@ class MenuGui(xbmcgui.WindowXML):
     C_MENU_SETTINGS = 4000
     C_MENU_EXIT = 4003
     C_MENU_COLLECTION_TRIVIA = 6000
+    C_MENU_USER_SELECT = 6001
 
     def __new__(cls):
         return super(MenuGui, cls).__new__(cls, 'script-moviequiz-menu.xml', ADDON.getAddonInfo('path'))
@@ -99,7 +100,7 @@ class MenuGui(xbmcgui.WindowXML):
         label = '  *  '.join(trivia)
         self.getControl(self.C_MENU_COLLECTION_TRIVIA).setLabel(label)
 
-        self._checkHighscoreNickname()
+        self.onUpdateUserSelectList()
 
         if not question.isAnyMovieQuestionsEnabled():
             xbmcgui.Dialog().ok(strings(E_WARNING), strings(E_ALL_MOVIE_QUESTIONS_DISABLED), strings(E_QUIZ_TYPE_NOT_AVAILABLE))
@@ -112,13 +113,16 @@ class MenuGui(xbmcgui.WindowXML):
             self.close()
 
     def onClick(self, controlId):
+        listControl = self.getControl(self.C_MENU_USER_SELECT)
+        item = listControl.getSelectedItem()
+
         if controlId == self.C_MENU_MOVIE_QUIZ:
-            w = GameTypeDialog(game.GAMETYPE_MOVIE)
+            w = GameTypeDialog(game.GAMETYPE_MOVIE, item.getProperty('id'))
             w.doModal()
             del w
 
         elif controlId == self.C_MENU_TVSHOW_QUIZ:
-            w = GameTypeDialog(game.GAMETYPE_TVSHOW)
+            w = GameTypeDialog(game.GAMETYPE_TVSHOW, item.getProperty('id'))
             w.doModal()
             del w
 
@@ -128,20 +132,61 @@ class MenuGui(xbmcgui.WindowXML):
         elif controlId == self.C_MENU_EXIT:
             self.close()
 
-    #noinspection PyUnusedLocal
-    def onFocus(self, controlId):
-        pass
+        elif controlId == self.C_MENU_USER_SELECT:
+            if item.getProperty('id') == '-1':
+                self.onAddNewUser()
+                self.onUpdateUserSelectList()
 
-    def _checkHighscoreNickname(self):
-        if ADDON.getSetting('highscore.nickname') == '':
-            keyboard = xbmc.Keyboard('Player One', strings(G_WELCOME_ENTER_NICKNAME))
-            keyboard.doModal()
-            if keyboard.isConfirmed() and len(keyboard.getText().strip()) > 0:
-                ADDON.setSetting('highscore.nickname', keyboard.getText().strip())
             else:
-                ADDON.setSetting('highscore.nickname', 'Player One')
+                deleteUser = xbmcgui.Dialog().yesno('Delete user?', str(item.getLabel()))
+                if deleteUser:
+                    localHighscore = highscore.LocalHighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
+                    localHighscore.deleteUser(item.getProperty('id'))
+                    localHighscore.close()
+                    self.onUpdateUserSelectList()
 
-        self.getControl(6001).setLabel("Playing as [B]" + ADDON.getSetting("highscore.nickname") + "[/B]")
+
+
+    def onFocus(self, controlId):
+        if controlId != self.C_MENU_USER_SELECT:
+            listControl = self.getControl(self.C_MENU_USER_SELECT)
+            if listControl.getSelectedItem() is not None and listControl.getSelectedItem().getProperty('id') == '-1':
+                # A user must be selected before leaving control
+                self.setFocusId(self.C_MENU_USER_SELECT)
+
+
+
+    def onAddNewUser(self, createDefault = False):
+        keyboard = xbmc.Keyboard('Player One', strings(G_WELCOME_ENTER_NICKNAME))
+        keyboard.doModal()
+        name = None
+        if keyboard.isConfirmed() and len(keyboard.getText().strip()) > 0:
+            name =  keyboard.getText().strip()
+        elif createDefault:
+            name = 'Player One'
+
+        if name is not None:
+            localHighscore = highscore.LocalHighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
+            localHighscore.createUser(name)
+            localHighscore.close()
+
+    def onUpdateUserSelectList(self):
+        localHighscore = highscore.LocalHighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
+        if not localHighscore.getUsers():
+            self.onAddNewUser(createDefault = True)
+
+        listControl = self.getControl(self.C_MENU_USER_SELECT)
+        listControl.reset()
+        for user in localHighscore.getUsers():
+            item = xbmcgui.ListItem(user['nickname'])
+            item.setProperty('id', str(user['id']))
+            listControl.addItem(item)
+
+        item = xbmcgui.ListItem('Add new')
+        item.setProperty('id', '-1')
+        listControl.addItem(item)
+        
+        localHighscore.close()
 
 class GameTypeDialog(xbmcgui.WindowXMLDialog):
     C_GAMETYPE_UNLIMITED = 4000
@@ -177,12 +222,13 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
         {'limit' : '30', 'text' : strings(M_X_MINUTES, '30')}
     ]
 
-    def __new__(cls, type):
+    def __new__(cls, type, userId):
         return super(GameTypeDialog, cls).__new__(cls, 'script-moviequiz-gametype.xml', ADDON.getAddonInfo('path'))
 
-    def __init__(self, type):
+    def __init__(self, type, userId):
         super(GameTypeDialog, self).__init__()
         self.type = type
+        self.userId = userId
 
     def onInit(self):
         if self.type == game.GAMETYPE_MOVIE:
@@ -203,7 +249,7 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
             control.addItem(item)
 
     def onAction(self, action):
-        if action.getId() == ACTION_PARENT_DIR or action.getId() == ACTION_PREVIOUS_MENU:
+        if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
             self.close()
 
     def onClick(self, controlId):
@@ -213,17 +259,17 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
             self.close()
 
         elif controlId in [self.C_GAMETYPE_UNLIMITED, self.C_GAMETYPE_UNLIMITED_PLAY]:
-            gameInstance = game.UnlimitedGame(self.type, interactive)
+            gameInstance = game.UnlimitedGame(self.type, self.userId, interactive)
 
         elif controlId in [self.C_GAMETYPE_QUESTION_LIMITED, self.C_GAMETYPE_QUESTION_LIMITED_PLAY]:
             control = self.getControl(self.C_GAMETYPE_QUESTION_LIMIT)
             maxQuestions = int(control.getSelectedItem().getProperty("limit"))
-            gameInstance = game.QuestionLimitedGame(self.type, interactive, maxQuestions)
+            gameInstance = game.QuestionLimitedGame(self.type, self.userId, interactive, maxQuestions)
 
         elif controlId in [self.C_GAMETYPE_TIME_LIMITED, self.C_GAMETYPE_TIME_LIMITED_PLAY]:
             control = self.getControl(self.C_GAMETYPE_TIME_LIMIT)
             timeLimit = int(control.getSelectedItem().getProperty("limit"))
-            gameInstance = game.TimeLimitedGame(self.type, interactive, timeLimit)
+            gameInstance = game.TimeLimitedGame(self.type, self.userId, interactive, timeLimit)
 
         if gameInstance is not None:
             self.close()
@@ -613,7 +659,8 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
     def _setupHighscores(self):
         # Local highscore
         localHighscore = highscore.LocalHighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
-        newHighscoreId = localHighscore.addHighscore(ADDON.getSetting('highscore.nickname'), self.game)
+        newHighscoreId = localHighscore.addHighscore(self.game)
+        name = localHighscore.getNickname(self.game.getUserId())
 
         if newHighscoreId != -1:
             entries = localHighscore.getHighscoresNear(self.game, newHighscoreId)
@@ -644,7 +691,7 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
 
         # Global highscore
         globalHighscore = highscore.GlobalHighscoreDatabase()
-        newHighscoreId = globalHighscore.addHighscore(ADDON.getSetting('highscore.nickname'), self.game)
+        newHighscoreId = globalHighscore.addHighscore(name, self.game)
 
         if newHighscoreId != -1:
             entries = globalHighscore.getHighscoresNear(self.game, newHighscoreId)
@@ -659,7 +706,4 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
             if int(entry['id']) == int(newHighscoreId):
                 item.setProperty('highlight', 'true')
             listControl.addItem(item)
-
-
-
 

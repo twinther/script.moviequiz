@@ -15,9 +15,6 @@ except ImportError:
     from pysqlite2 import dbapi2 as sqlite3
 
 class HighscoreDatabase(object):
-    def addHighscore(self, nickname, game):
-        raise
-
     def getHighscores(self, game):
         raise
 
@@ -107,14 +104,14 @@ class LocalHighscoreDatabase(HighscoreDatabase):
         self.conn.close()
 
         
-    def addHighscore(self, nickname, game):
+    def addHighscore(self, game):
         if game.getPoints() <= 0:
             return -1
 
         c = self.conn.cursor()
-        c.execute("INSERT INTO highscore(type, gameType, gameSubType, nickname, score, correctAnswers, numberOfQuestions, timestamp)"
+        c.execute("INSERT INTO highscore(user_id, type, gameType, gameSubType, score, correctAnswers, numberOfQuestions, timestamp)"
             + " VALUES(?, ?, ?, ?, ?, ?, ?, datetime('now'))",
-            [game.getType(), game.getGameType(), game.getGameSubType(), nickname, game.getPoints(), game.getCorrectAnswers(), game.getTotalAnswers()])
+            [game.getUserId(), game.getType(), game.getGameType(), game.getGameSubType(), game.getPoints(), game.getCorrectAnswers(), game.getTotalAnswers()])
         self.conn.commit()
         rowid = c.lastrowid
 
@@ -129,7 +126,7 @@ class LocalHighscoreDatabase(HighscoreDatabase):
 
     def getHighscores(self, game):
         c = self.conn.cursor()
-        c.execute('SELECT * FROM highscore WHERE type=? AND gameType=? and gameSubType=? ORDER BY score DESC, timestamp ASC',
+        c.execute('SELECT h.*, u.nickname FROM highscore h, user u WHERE h.user_id=u.id AND h.type=? AND h.gameType=? and h.gameSubType=? ORDER BY h.score DESC, h.timestamp ASC',
             [game.getType(), game.getGameType(), game.getGameSubType()])
         return c.fetchall()
 
@@ -139,26 +136,61 @@ class LocalHighscoreDatabase(HighscoreDatabase):
         r = c.fetchone()
         position = r['position']
 
-        c.execute("SELECT * FROM highscore WHERE type=? AND gameType=? and gameSubType=? AND position > ? AND position < ? ORDER BY position",
+        c.execute("SELECT h.*, u.nickname FROM highscore h, user u WHERE h.user_id=u.id AND h.type=? AND h.gameType=? and h.gameSubType=? AND h.position > ? AND h.position < ? ORDER BY h.position",
             [game.getType(), game.getGameType(), game.getGameSubType(), position - 5, position + 5])
         return c.fetchall()
 
+    def createUser(self, nickname):
+        c = self.conn.cursor()
+        c.execute('INSERT INTO user(nickname) VALUES(?)', [nickname])
+        self.conn.commit()
+        rowid = c.lastrowid
+        c.close()
+
+        return rowid
+
+    def getUsers(self):
+        c = self.conn.cursor()
+        c.execute('SELECT * FROM user ORDER BY nickname')
+        users = c.fetchall()
+        c.close()
+
+        return users
+
+    def deleteUser(self, id):
+        c = self.conn.cursor()
+        c.execute("DELETE FROM user WHERE id = ?", [id])
+        self.conn.commit()
+
+    def getNickname(self, userId):
+        c = self.conn.cursor()
+        c.execute('SELECT nickname FROM user WHERE id = ?', [userId])
+        nickname = c.fetchone()['nickname']
+        c.close()
+        return nickname
 
     def _createTables(self):
         xbmc.log('HighscoreDatabase._createTables()')
+
         c = self.conn.cursor()
         c.execute('CREATE TABLE IF NOT EXISTS highscore ('
             + 'id INTEGER PRIMARY KEY,'
+            + 'user_id INTEGER,'
             + 'type TEXT,'
             + 'gameType TEXT,'
             + 'gameSubType TEXT,'
             + 'position INTEGER,'
-            + 'nickname TEXT,'
             + 'score REAL,'
             + 'correctAnswers INTEGER,'
             + 'numberOfQuestions INTEGER,'
-            + 'timestamp INTEGER )'
+            + 'timestamp INTEGER,'
+            + 'FOREIGN KEY (user_id) REFERENCES user(id) )'
         )
+
+        c.execute('CREATE TABLE IF NOT EXISTS user ('
+            + 'id INTEGER PRIMARY KEY,'
+            + 'nickname TEXT )')
+            
         self.conn.commit()
         c.close()
 

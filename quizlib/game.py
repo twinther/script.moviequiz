@@ -9,8 +9,9 @@ GAMETYPE_TVSHOW = "tvshow"
 ADDON = xbmcaddon.Addon(id = 'script.moviequiz')
 
 class Game(object):
-    def __init__(self, type, interactive):
+    def __init__(self, type, userId, interactive):
         self.type = type
+        self.userId = userId
         self.interactive = interactive
         self.points = 0
         self.correctAnswers = 0
@@ -50,6 +51,9 @@ class Game(object):
     def getGameSubType(self):
         return -1
 
+    def getUserId(self):
+        return self.userId
+
     def onlyUseWatchedMovies(self):
         return ADDON.getSetting('only.watched.movies') == 'true'
 
@@ -68,8 +72,8 @@ class Game(object):
         self.wrongAnswers = 0
 
 class UnlimitedGame(Game):
-    def __init__(self, type, interactive):
-        super(UnlimitedGame, self).__init__(type, interactive)
+    def __init__(self, type, userId, interactive):
+        super(UnlimitedGame, self).__init__(type, userId, interactive)
 
     def isGameOver(self):
         return False
@@ -79,8 +83,8 @@ class UnlimitedGame(Game):
 
 
 class QuestionLimitedGame(Game):
-    def __init__(self, type, interactive, questionLimit):
-        super(QuestionLimitedGame, self).__init__(type, interactive)
+    def __init__(self, type, userId, interactive, questionLimit):
+        super(QuestionLimitedGame, self).__init__(type, userId, interactive)
         self.questionLimit = questionLimit
         self.questionCount = 0
 
@@ -105,8 +109,8 @@ class QuestionLimitedGame(Game):
         self.questionCount = 0
 
 class TimeLimitedGame(Game):
-    def __init__(self, type, interactive, timeLimitMinutes):
-        super(TimeLimitedGame, self).__init__(type, interactive)
+    def __init__(self, type, userId, interactive, timeLimitMinutes):
+        super(TimeLimitedGame, self).__init__(type, userId, interactive)
         self.startTime = datetime.datetime.now()
         self.timeLimitMinutes = timeLimitMinutes
 

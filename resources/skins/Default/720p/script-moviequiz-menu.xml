@@ -33,6 +33,7 @@
             <texturenofocus>quiz-button-movie.png</texturenofocus>
             <onleft>4000</onleft>
             <onright>4002</onright>
+            <ondown>6001</ondown>
             <animation effect="fade" start="100" end="50" time="400" condition="!Control.HasFocus(4001)">Conditional</animation>
         </control>
         <control type="label">
@@ -56,6 +57,7 @@
             <texturenofocus>quiz-button-tvshows.png</texturenofocus>
             <onleft>4001</onleft>
             <onright>4003</onright>
+            <ondown>6001</ondown>
             <animation effect="fade" start="100" end="50" time="400" condition="!Control.HasFocus(4002)">Conditional</animation>
         </control>
         <control type="label">
@@ -127,25 +129,69 @@
             <scrollsuffix>  *  </scrollsuffix>
         </control>
 
-        <control type="image">
-            <description>Play as xxx</description>
-            <posx>430</posx>
-            <posy>600</posy>
-            <width>420</width>
+        <!--<control type="image">-->
+            <!--<posx>565</posx>-->
+            <!--<posy>560</posy>-->
+            <!--<width>150</width>-->
+            <!--<height>40</height>-->
+            <!--<texture>quiz-background-glass.png</texture>-->
+        <!--</control>-->
+        <control type="label">
+            <description>Play as</description>
+            <posx>415</posx>
+            <posy>580</posy>
+            <width>450</width>
             <height>40</height>
-            <texture>quiz-background-glass.png</texture>
-        </control>
-        <control type="label" id="6001">
-            <description>Play as xxx</description>
-            <posx>430</posx>
-            <posy>600</posy>
-            <width>420</width>
-            <height>40</height>
+            <textcolor>ffffffff</textcolor>
             <font>font13</font>
             <align>center</align>
-            <aligny>center</aligny>
-            <textcolor>ffffffff</textcolor>
-            <wrapmultiline>true</wrapmultiline>
+            <label>[B]Choose player[/B]</label>
+        </control>
+        <control type="wraplist" id="6001">
+            <posx>340</posx>
+            <posy>620</posy>
+            <width>600</width>
+            <height>40</height>
+            <onup>4001</onup>
+            <viewtype label="list">list</viewtype>
+            <orientation>horizontal</orientation>
+            <scrolltime>200</scrolltime>
+            <visible>true</visible>
+            <focusposition>1</focusposition>
+            <itemlayout width="200" height="40">
+                <control type="label">
+                    <posx>100</posx>
+                    <posy>0</posy>
+                    <width>200</width>
+                    <height>40</height>
+                    <textcolor>ffffffff</textcolor>
+                    <font>font13</font>
+                    <info>ListItem.Label</info>
+                    <align>center</align>
+                    <aligny>center</aligny>
+                </control>
+            </itemlayout>
+            <focusedlayout width="200" height="40">
+                <control type="image">
+                    <posx>0</posx>
+                    <posy>0</posy>
+                    <width>200</width>
+                    <height>40</height>
+                    <texture>quiz-background-glass.png</texture>
+                    <visible>Control.HasFocus(6001)</visible>
+                </control>
+                <control type="label">
+                    <posx>100</posx>
+                    <posy>0</posy>
+                    <width>200</width>
+                    <height>40</height>
+                    <textcolor>ffffffff</textcolor>
+                    <font>font13</font>
+                    <label>[B]$INFO[ListItem.Label][/B]</label>
+                    <align>center</align>
+                    <aligny>center</aligny>
+                </control>
+            </focusedlayout>
         </control>
 
         <control type="image">

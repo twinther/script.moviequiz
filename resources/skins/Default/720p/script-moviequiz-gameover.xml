@@ -137,8 +137,8 @@
             <posy>0</posy>
             <width>400</width>
             <height>720</height>
-            <animation effect="fade" start="0" end="100" time="200" condition="Control.HasFocus(4001)">Conditional</animation>
-            <visible>Control.HasFocus(4001)</visible>
+            <animation effect="fade" start="0" end="100" time="200" condition="Control.HasFocus(4001) | Control.HasFocus(8001)">Conditional</animation>
+            <visible>Control.HasFocus(4001) | Control.HasFocus(8001)</visible>
 
             <control type="image">
                 <posx>0</posx>
@@ -222,6 +222,7 @@
                         <height>40</height>
                         <texture>quiz-white-square.png</texture>
                         <colordiffuse>88333333</colordiffuse>
+                        <visible>Control.HasFocus(8001)</visible>
                     </control>
                     <control type="label">
                         <posx>0</posx>
@@ -339,6 +340,7 @@
                         <height>40</height>
                         <texture>quiz-white-square.png</texture>
                         <colordiffuse>88333333</colordiffuse>
+                        <visible>Control.HasFocus(9001)</visible>
                     </control>
                     <control type="label">
                         <posx>0</posx>
