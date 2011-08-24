@@ -381,29 +381,31 @@ class QuizGui(xbmcgui.WindowXML):
             self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(self.defaultBackground)
 
         correctAnswer = self.question.getCorrectAnswer()
-        if isinstance(self.question, question.VideoDisplayType):
+        displayType = self.question.getDisplayType()
+        if displayType is None:
+            self.onVisibilityChanged()
+
+        elif isinstance(displayType, question.VideoDisplayType):
             self.onVisibilityChanged(video = True)
             xbmc.sleep(1500) # give skin animation time to execute
-            self.player.playWindowed(self.question.getVideoFile(), correctAnswer.idFile)
+            self.player.playWindowed(displayType.getVideoFile(), correctAnswer.idFile)
 
-        elif isinstance(self.question, question.PhotoDisplayType):
-            self.getControl(self.C_MAIN_PHOTO).setImage(self.question.getPhotoFile())
+        elif isinstance(displayType, question.PhotoDisplayType):
+            self.getControl(self.C_MAIN_PHOTO).setImage(displayType.getPhotoFile())
             self.onVisibilityChanged(photo = True)
 
-        elif isinstance(self.question, question.ThreePhotoDisplayType):
-            self.getControl(self.C_MAIN_PHOTO_1).setImage(self.question.getPhotoFile(0))
-            self.getControl(self.C_MAIN_PHOTO_2).setImage(self.question.getPhotoFile(1))
-            self.getControl(self.C_MAIN_PHOTO_3).setImage(self.question.getPhotoFile(2))
+        elif isinstance(displayType, question.ThreePhotoDisplayType):
+            self.getControl(self.C_MAIN_PHOTO_1).setImage(displayType.getPhotoFile(0))
+            self.getControl(self.C_MAIN_PHOTO_2).setImage(displayType.getPhotoFile(1))
+            self.getControl(self.C_MAIN_PHOTO_3).setImage(displayType.getPhotoFile(2))
             self.onVisibilityChanged(threePhotos = True)
 
-        elif isinstance(self.question, question.QuoteDisplayType):
-            quoteText = self.question.getQuoteText()
+        elif isinstance(displayType, question.QuoteDisplayType):
+            quoteText = displayType.getQuoteText()
             quoteText = self._obfuscateQuote(quoteText)
             self.getControl(self.C_MAIN_QUOTE_LABEL).setText(quoteText)
             self.onVisibilityChanged(quote = True)
 
-        else:
-            self.onVisibilityChanged()
 
         if not self.gameInstance.isInteractive():
             # answers correctly in ten seconds
@@ -490,9 +492,9 @@ class QuizGui(xbmcgui.WindowXML):
                 else:
                     self.getControl(self.C_MAIN_FIRST_ANSWER + idx).setLabel(textColor='0x88888888')
 
-            if isinstance(self.question, question.QuoteDisplayType):
+            if isinstance(self.question.getDisplayType(), question.QuoteDisplayType):
                 # Display non-obfuscated quote text
-                self.getControl(self.C_MAIN_QUOTE_LABEL).setText(self.question.getQuoteText())
+                self.getControl(self.C_MAIN_QUOTE_LABEL).setText(self.question.getDisplayType().getQuoteText())
 
             xbmc.sleep(3000)
 
