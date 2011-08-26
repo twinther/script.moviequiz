@@ -10,10 +10,6 @@
     <animation effect="fade" start="0" end="100" time="200">WindowOpen</animation>
     <animation effect="fade" start="100" end="0" time="200">WindowClose</animation>
     <controls>
-        <control type="label" id="5000">
-            <description>visibility marker for movie quiz sub menu</description>
-        </control>
-
         <!-- Background -->
         <control type="image">
             <posx>0</posx>
@@ -127,15 +123,9 @@
             <textcolor>ffffffff</textcolor>
             <scroll>true</scroll>
             <scrollsuffix>  *  </scrollsuffix>
+            <aligny>center</aligny>
         </control>
 
-        <!--<control type="image">-->
-            <!--<posx>565</posx>-->
-            <!--<posy>560</posy>-->
-            <!--<width>150</width>-->
-            <!--<height>40</height>-->
-            <!--<texture>quiz-background-glass.png</texture>-->
-        <!--</control>-->
         <control type="label">
             <description>Play as</description>
             <posx>415</posx>
@@ -172,6 +162,15 @@
                 </control>
             </itemlayout>
             <focusedlayout width="200" height="40">
+                <control type="image">
+                    <posx>0</posx>
+                    <posy>0</posy>
+                    <width>200</width>
+                    <height>40</height>
+                    <texture>quiz-button-nofocus.png</texture>
+                    <visible>!Control.HasFocus(6001)</visible>
+                    <colordiffuse>ff000000</colordiffuse>
+                </control>
                 <control type="image">
                     <posx>0</posx>
                     <posy>0</posy>

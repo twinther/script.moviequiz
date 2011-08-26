@@ -50,6 +50,8 @@
                 <align>center</align>
                 <aligny>center</aligny>
                 <label>$ADDON[script.moviequiz 30602]</label>
+                <texturenofocus>quiz-button-nofocus.png</texturenofocus>
+                <texturefocus>quiz-button-focus.png</texturefocus>
                 <onleft>4002</onleft>
                 <onright>4001</onright>
                 <onup>4004</onup>
@@ -66,6 +68,8 @@
                 <align>center</align>
                 <aligny>center</aligny>
                 <label>$ADDON[script.moviequiz 30603]</label>
+                <texturenofocus>quiz-button-nofocus.png</texturenofocus>
+                <texturefocus>quiz-button-focus.png</texturefocus>
                 <onleft>4000</onleft>
                 <onright>4002</onright>
                 <onup>4104</onup>
@@ -82,6 +86,8 @@
                 <align>center</align>
                 <aligny>center</aligny>
                 <label>$ADDON[script.moviequiz 30604]</label>
+                <texturenofocus>quiz-button-nofocus.png</texturenofocus>
+                <texturefocus>quiz-button-focus.png</texturefocus>
                 <onleft>4001</onleft>
                 <onright>4000</onright>
                 <onup>4204</onup>
@@ -142,6 +148,8 @@
                     <align>center</align>
                     <aligny>center</aligny>
                     <label>$ADDON[script.moviequiz 30605]</label>
+                    <texturenofocus>quiz-button-nofocus.png</texturenofocus>
+                    <texturefocus>quiz-button-focus.png</texturefocus>
                     <onup>4000</onup>
                     <onright>4004</onright>
                 </control>
@@ -156,6 +164,8 @@
                     <align>center</align>
                     <aligny>center</aligny>
                     <label>$ADDON[script.moviequiz 30606]</label>
+                    <texturenofocus>quiz-button-nofocus.png</texturenofocus>
+                    <texturefocus>quiz-button-focus.png</texturefocus>
                     <onup>4000</onup>
                     <onleft>4003</onleft>
                 </control>
@@ -201,6 +211,7 @@
                             <width>200</width>
                             <height>40</height>
                             <textcolor>ffffffff</textcolor>
+                            <textoffsetx>10</textoffsetx>
                             <font>font13</font>
                             <info>ListItem.Label</info>
                             <aligny>center</aligny>
@@ -212,9 +223,16 @@
                             <posy>0</posy>
                             <width>200</width>
                             <height>40</height>
-                            <texture>quiz-white-square.png</texture>
+                            <texture>quiz-button-nofocus.png</texture>
+                            <visible>!Control.Hasfocus(4100)</visible>
+                        </control>
+                        <control type="image">
+                            <posx>0</posx>
+                            <posy>0</posy>
+                            <width>200</width>
+                            <height>40</height>
+                            <texture>quiz-button-focus.png</texture>
                             <visible>Control.Hasfocus(4100)</visible>
-                            <colordiffuse>88ff0000</colordiffuse>
                         </control>
                         <control type="label">
                             <posx>0</posx>
@@ -222,6 +240,7 @@
                             <width>200</width>
                             <height>40</height>
                             <textcolor>ffffffff</textcolor>
+                            <textoffsetx>10</textoffsetx>
                             <font>font13</font>
                             <info>ListItem.Label</info>
                             <aligny>center</aligny>
@@ -252,6 +271,8 @@
                     <align>center</align>
                     <aligny>center</aligny>
                     <label>$ADDON[script.moviequiz 30605]</label>
+                    <texturenofocus>quiz-button-nofocus.png</texturenofocus>
+                    <texturefocus>quiz-button-focus.png</texturefocus>
                     <onup>4100</onup>
                     <ondown>4001</ondown>
                     <onright>4104</onright>
@@ -267,6 +288,8 @@
                     <align>center</align>
                     <aligny>center</aligny>
                     <label>$ADDON[script.moviequiz 30606]</label>
+                    <texturenofocus>quiz-button-nofocus.png</texturenofocus>
+                    <texturefocus>quiz-button-focus.png</texturefocus>
                     <onup>4100</onup>
                     <ondown>4001</ondown>
                     <onleft>4103</onleft>
@@ -318,12 +341,20 @@
                     <visible>true</visible>
                     <focusposition>0</focusposition>
                     <itemlayout width="200" height="40">
+                        <control type="image">
+                            <posx>0</posx>
+                            <posy>0</posy>
+                            <width>200</width>
+                            <height>40</height>
+                            <texture>quiz-button-nofocus.png</texture>
+                        </control>
                         <control type="label">
                             <posx>0</posx>
                             <posy>0</posy>
                             <width>200</width>
                             <height>40</height>
                             <textcolor>ffffffff</textcolor>
+                            <textoffsetx>10</textoffsetx>
                             <font>font13</font>
                             <info>ListItem.Label</info>
                             <aligny>center</aligny>
@@ -335,9 +366,16 @@
                             <posy>0</posy>
                             <width>200</width>
                             <height>40</height>
-                            <texture>quiz-white-square.png</texture>
+                            <texture>quiz-button-nofocus.png</texture>
+                            <visible>!Control.Hasfocus(4200)</visible>
+                        </control>
+                        <control type="image">
+                            <posx>0</posx>
+                            <posy>0</posy>
+                            <width>200</width>
+                            <height>40</height>
+                            <texture>quiz-button-focus.png</texture>
                             <visible>Control.Hasfocus(4200)</visible>
-                            <colordiffuse>88ff0000</colordiffuse>
                         </control>
                         <control type="label">
                             <posx>0</posx>
@@ -345,6 +383,7 @@
                             <width>200</width>
                             <height>40</height>
                             <textcolor>ffffffff</textcolor>
+                            <textoffsetx>10</textoffsetx>
                             <font>font13</font>
                             <info>ListItem.Label</info>
                             <aligny>center</aligny>
@@ -363,6 +402,8 @@
                     <align>center</align>
                     <aligny>center</aligny>
                     <label>$ADDON[script.moviequiz 30605]</label>
+                    <texturenofocus>quiz-button-nofocus.png</texturenofocus>
+                    <texturefocus>quiz-button-focus.png</texturefocus>
                     <onup>4200</onup>
                     <ondown>4002</ondown>
                     <onright>4204</onright>
@@ -378,6 +419,8 @@
                     <align>center</align>
                     <aligny>center</aligny>
                     <label>$ADDON[script.moviequiz 30606]</label>
+                    <texturenofocus>quiz-button-nofocus.png</texturenofocus>
+                    <texturefocus>quiz-button-focus.png</texturefocus>
                     <onup>4200</onup>
                     <ondown>4002</ondown>
                     <onleft>4203</onleft>

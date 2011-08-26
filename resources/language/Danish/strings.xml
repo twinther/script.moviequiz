@@ -3,8 +3,8 @@
          xsi:noNamespaceSchemaLocation="../../strings.xsd">
     <!-- General -->
     <string id="30000">Spørgsmål %d af %d</string>
-    <string id="30001">Score:</string>
-    <string id="30002">Spørgsmålets værdi:</string>
+    <string id="30001">Score ialt:</string>
+    <string id="30002">Spørgsmålet:</string>
     <string id="30003">Spillet er slut</string>
     <string id="30004">Du fik %d af %d rigtige</string><!-- 1st %d is score, 2nd %d is total question -->
 
@@ -14,6 +14,10 @@
     <string id="30008">[B]Indlæser[/B]</string>
 
 	<string id="30010">Velkommen til Movie Quiz, indtast venligst dit navn</string>
+
+    <string id="30011">Vis igen</string>
+    <string id="30012">Afslut</string>
+    <string id="30013">Din score:</string>
 
     <string id="30050">Advarsel</string>
     <string id="30051">Alle film spørgsmål er slået fra,</string>
