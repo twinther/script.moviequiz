@@ -1,7 +1,4 @@
-[B]Version 1.0.0 - 2011-xx-xx[/B]
-- Dropped support for XBMC Dharma
-
-[B]Version 0.4.1 - 2011-08-xx[/B]
+[B]Version 0.4.1 - 2011-08-27[/B]
 - Added settings to enable and disable individual question types
 - Added global and local highscore support (highscores available at http://moviequiz.xbmc.info)
 - Added user selection on main screen
