@@ -419,6 +419,7 @@
                 <textoffsety>4</textoffsety>
                 <textcolor>ffffffff</textcolor>
                 <font>font13</font>
+                <scroll>true</scroll>
             </control>
 
             <!-- Answer buttons -->

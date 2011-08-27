@@ -6,6 +6,9 @@
         <setting id="show.correct.answer" label="30514" type="bool" default="false" />
         <setting id="only.watched.movies" label="30515" type="bool" default="true" />
 
+        <setting type="lsep" label="30504"/>
+        <setting id="submit.highscores" label="30524" type="bool" default="true" />
+
         <setting type="lsep" label="30501"/>
         <setting id="movie.rating.limit.enabled" label="30512" type="bool" default="false" />
         <setting id="movie.rating.limit" label="30513" type="labelenum" default="R" values="R|PG-13|PG|G" visible="eq(-1,true)"/>

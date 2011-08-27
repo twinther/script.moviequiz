@@ -184,7 +184,7 @@ class LocalHighscoreDatabase(HighscoreDatabase):
             + 'correctAnswers INTEGER,'
             + 'numberOfQuestions INTEGER,'
             + 'timestamp INTEGER,'
-            + 'FOREIGN KEY (user_id) REFERENCES user(id) )'
+            + 'FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE )'
         )
 
         c.execute('CREATE TABLE IF NOT EXISTS user ('

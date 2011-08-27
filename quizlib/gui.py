@@ -138,7 +138,8 @@ class MenuGui(xbmcgui.WindowXML):
                 self.onUpdateUserSelectList()
 
             else:
-                deleteUser = xbmcgui.Dialog().yesno('Delete user?', str(item.getLabel()))
+                deleteUser = xbmcgui.Dialog().yesno(strings(E_DELETE_USER, str(item.getLabel())),
+                                                    strings(E_DELETE_USER_LINE1), strings(E_DELETE_USER_LINE2))
                 if deleteUser:
                     localHighscore = highscore.LocalHighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
                     localHighscore.deleteUser(item.getProperty('id'))
@@ -691,7 +692,10 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
 
         # Global highscore
         globalHighscore = highscore.GlobalHighscoreDatabase()
-        newHighscoreId = globalHighscore.addHighscore(name, self.game)
+        if ADDON.getSetting('submit.highscores') == 'true':
+            newHighscoreId = globalHighscore.addHighscore(name, self.game)
+        else:
+            newHighscoreId = -1
 
         if newHighscoreId != -1:
             entries = globalHighscore.getHighscoresNear(self.game, newHighscoreId)

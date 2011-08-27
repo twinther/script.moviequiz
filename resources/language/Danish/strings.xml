@@ -27,7 +27,11 @@
     <string id="30054">Data mangler!</string>
     <string id="30055">For at spille Movie Quiz[CR]skal du have film eller TV shows</string>
     <string id="30056">i din Video database.[CR]Se XBMC wiki for mere information.</string>
-    
+
+    <string id="30057">Slet %s?</string>
+    <string id="30058">Dette vil slette brugeren og alle relaterede</string>
+    <string id="30059">highscores permanent!</string>
+
 
     <!-- Menu -->
     <string id="30100">Spil Film Quiz</string>
@@ -98,6 +102,7 @@
     <string id="30521">%d af %d mb. modtaget</string>
     <string id="30522">Nogle spørgsmål kræver ekstra lokale data,</string>
     <string id="30523">som kan hentes herunder:</string>
+    <string id="30524">Indsend scores til online highscore</string>
 
     <string id="30550">Brug disse spørgsmål til film quiz</string>
     <string id="30551">Brug disse spørgsmål til TV quiz</string>

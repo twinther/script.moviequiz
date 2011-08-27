@@ -71,6 +71,10 @@ E_REQUIREMENTS_MISSING = 30054
 E_REQUIREMENTS_MISSING_LINE1 = 30055
 E_REQUIREMENTS_MISSING_LINE2 = 30056
 
+E_DELETE_USER = 30057
+E_DELETE_USER_LINE1 = 30058
+E_DELETE_USER_LINE2 = 30059
+
 def strings(id, replacements = None):
     string = xbmcaddon.Addon(id = 'script.moviequiz').getLocalizedString(id)
     if replacements is not None:

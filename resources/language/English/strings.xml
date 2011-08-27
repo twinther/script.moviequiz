@@ -28,6 +28,10 @@
     <string id="30055">To play the Movie Quiz you must[CR]have some movies or TV shows</string>
     <string id="30056">in your Video library. See the[CR]XBMC wiki for information.</string>
     
+    <string id="30057">Delete %s?</string>
+    <string id="30058">This will delete the user and all related</string>
+    <string id="30059">highscores permanently!</string>
+
 
     <!-- Menu -->
     <string id="30100">Play Movie Quiz</string>
@@ -98,7 +102,7 @@
     <string id="30521">Retrieved %d of %d mb.</string>
     <string id="30522">Some questions require additional local data,</string>
     <string id="30523">which can be downloaded below:</string>
-    <string id="30524">Nickname</string>
+    <string id="30524">Submit scores to online highscore</string>
 
     <string id="30550">Use these question types for movies</string>
     <string id="30551">Use these question types for TV shows</string>
