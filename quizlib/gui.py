@@ -158,13 +158,13 @@ class MenuGui(xbmcgui.WindowXML):
 
 
     def onAddNewUser(self, createDefault = False):
-        keyboard = xbmc.Keyboard('Player One', strings(G_WELCOME_ENTER_NICKNAME))
+        keyboard = xbmc.Keyboard('', strings(G_WELCOME_ENTER_NICKNAME))
         keyboard.doModal()
         name = None
         if keyboard.isConfirmed() and len(keyboard.getText().strip()) > 0:
             name =  keyboard.getText().strip()
         elif createDefault:
-            name = 'Player One'
+            name = 'Unknown player'
 
         if name is not None:
             localHighscore = highscore.LocalHighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
@@ -322,9 +322,6 @@ class QuizGui(xbmcgui.WindowXML):
         self.gameInstance = gameInstance
         xbmc.log("Starting game: %s" + str(self.gameInstance))
 
-        self.questionPointsThread = None
-        self.questionPoints = 0
-
         if self.gameInstance.getType() == game.GAMETYPE_TVSHOW:
             self.defaultBackground = BACKGROUND_TV
         else:
@@ -332,13 +329,21 @@ class QuizGui(xbmcgui.WindowXML):
 
         self.database = db.connect()
         self.player = player.TenSecondPlayer()
-        self.question = None
-        self.previousQuestions = []
-        self.isLoading = False
 
     def onInit(self):
         if self.gameInstance.getType() == game.GAMETYPE_TVSHOW:
             self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(self.defaultBackground)
+
+        self.onNewGame()
+
+    def onNewGame(self):
+        self.gameInstance.reset()
+
+        self.questionPointsThread = None
+        self.questionPoints = 0
+        self.question = None
+        self.previousQuestions = []
+        self.isLoading = False
 
         self.onNewQuestion()
 
@@ -641,13 +646,8 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
         print "GameOverDialog.onClick " + str(controlId)
 
         if controlId == self.C_GAMEOVER_RETRY:
+            self.parentWindow.onNewGame()
             self.close()
-            self.parentWindow.close()
-
-            self.parentWindow.gameInstance.reset()
-            w = QuizGui(self.parentWindow.game)
-            w.doModal()
-            del w
 
         elif controlId == self.C_GAMEOVER_MAINMENU:
             self.close()
@@ -686,7 +686,7 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
         for entry in entries:
             item = xbmcgui.ListItem("%d. %s" % (entry['position'], entry['nickname']))
             item.setProperty('score', str(entry['score']))
-            if entry['id'] == newHighscoreId:
+            if int(entry['id']) == int(newHighscoreId):
                 item.setProperty('highlight', 'true')
             listControl.addItem(item)
 

@@ -3,7 +3,6 @@ from xml.parsers.expat import ExpatError
 
 import os
 import xbmc
-import mysql.connector
 import glob
 
 try:
@@ -109,67 +108,6 @@ class Database(object):
         return int(row['cnt']) > 0
 
 #
-# MySQL
-#
-
-class MySQLDatabase(Database):
-    def __init__(self, settings):
-        super(MySQLDatabase, self).__init__()
-        self.conn = mysql.connector.connect(
-            host = settings['host'],
-            user = settings['user'],
-            passwd = settings['pass'],
-            db = settings['name']
-            )
-
-        xbmc.log("MySQLDatabase opened")
-        super(MySQLDatabase, self).postInit()
-
-    def hasMovies(self):
-        row = self.fetchone("SELECT COUNT(table_name) AS cnt FROM information_schema.tables WHERE table_name='movieview'")
-        if int(row['cnt']) > 0:
-            return Database.hasMovies(self)
-        else:
-            return False
-
-    def hasTVShows(self):
-        row = self.fetchone("SELECT COUNT(table_name) AS cnt FROM information_schema.tables WHERE table_name='tvshowview'")
-        if int(row['cnt']) > 0:
-            return Database.hasTVShows(self)
-        else:
-            return False
-
-    def _createCursor(self):
-        return self.conn.cursor(cursor_class = MySQLCursorDict)
-
-    def _prepareParameters(self, parameters):
-        return map(str, parameters)
-
-    def _prepareSql(self, sql):
-        sql = sql.replace('%', '%%')
-        sql = sql.replace('?', '%s')
-        sql = sql.replace('random()', 'rand()')
-        return sql
-
-class MySQLCursorDict(mysql.connector.cursor.MySQLCursor):
-    def fetchone(self):
-        row = self._fetch_row()
-        if row:
-            return dict(zip(self.column_names, self._row_to_python(row)))
-        return None
-
-    def fetchall(self):
-        if self._have_result is False:
-            raise DbException("No result set to fetch from.")
-        res = []
-        (rows, eof) = self.db().protocol.get_rows()
-        self.rowcount = len(rows)
-        for i in xrange(0,self.rowcount):
-            res.append(dict(zip(self.column_names, self._row_to_python(rows[i]))))
-        self._handle_eof(eof)
-        return res
-
-#
 # SQLite
 #
 
@@ -237,7 +175,7 @@ def connect():
     xbmc.log("Loaded DB settings: %s" % settings)
 
     if settings.has_key('type') and settings['type'] is not None and settings['type'].lower() == 'mysql':
-        return MySQLDatabase(settings)
+        raise DbException('MySQL database is not supported')
     else:
         return SQLiteDatabase(settings)
 

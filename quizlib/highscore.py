@@ -70,7 +70,6 @@ class GlobalHighscoreDatabase(HighscoreDatabase):
 
     def _request(self, data):
         jsonData = simplejson.dumps(data)
-        xbmc.log("GlobalHighscore request: " + jsonData)
 
         req = urllib2.Request(self.SERVICE_URL, jsonData)
         req.add_header('X-MovieQuiz-Checksum', md5.new(jsonData).hexdigest())
@@ -80,7 +79,6 @@ class GlobalHighscoreDatabase(HighscoreDatabase):
             u = urllib2.urlopen(req)
             resp = u.read()
             u.close()
-            xbmc.log("GlobalHighscore response: " + resp)
             return simplejson.loads(resp)
         except urllib2.URLError:
             return {'status' : 'error'}
@@ -142,7 +140,7 @@ class LocalHighscoreDatabase(HighscoreDatabase):
 
     def createUser(self, nickname):
         c = self.conn.cursor()
-        c.execute("INSERT INTO user(nickname, timestamp) VALUES(?, datetime('now'))", [nickname])
+        c.execute("INSERT INTO user(nickname, last_used) VALUES(?, datetime('now'))", [nickname])
         self.conn.commit()
         rowid = c.lastrowid
         c.close()
@@ -151,7 +149,7 @@ class LocalHighscoreDatabase(HighscoreDatabase):
 
     def getUsers(self):
         c = self.conn.cursor()
-        c.execute('SELECT * FROM user ORDER BY last_used, nickname')
+        c.execute('SELECT * FROM user ORDER BY last_used DESC, nickname')
         users = c.fetchall()
         c.close()
 
@@ -159,30 +157,34 @@ class LocalHighscoreDatabase(HighscoreDatabase):
 
     def deleteUser(self, id):
         c = self.conn.cursor()
-        c.execute("DELETE FROM user WHERE id = ?", [id])
+        c.execute('DELETE FROM user WHERE id = ?', [id])
+        c.execute('DELETE FROM highscore WHERE user_id = ?', [id])
         self.conn.commit()
 
     def getNickname(self, userId):
         c = self.conn.cursor()
-        c.execute("UPDATE nickname SET last_used = datetime('now') WHERE id = ?", [userId])
+        c.execute("UPDATE user SET last_used = datetime('now') WHERE id = ?", [userId])
+        self.conn.commit()
         c.execute('SELECT nickname FROM user WHERE id = ?', [userId])
         nickname = c.fetchone()['nickname']
         c.close()
         return nickname
 
     def _createTables(self):
-        xbmc.log('HighscoreDatabase._createTables()')
+        xbmc.log('Migrating Highscore Database')
 
         c = self.conn.cursor()
 
         try:
             c.execute('SELECT major, minor, patch FROM version')
-            version = c.fetchone()
+            version = c.fetchone().values()
         except sqlite3.OperationalError:
-            version = (0,0,0)
+            version = [0,0,0]
 
-        if version < (0,4,1):
-            xbmc.log("Migrating highscore database to v0.4.1")
+        xbmc.log("Highscore Database version: " + str(version))
+
+        if version < [0,4,1]:
+            xbmc.log("Migrating Highscore Database to v0.4.1")
 
             c.execute('CREATE TABLE IF NOT EXISTS highscore ('
                 + 'id INTEGER PRIMARY KEY,'
@@ -203,8 +205,8 @@ class LocalHighscoreDatabase(HighscoreDatabase):
                 + 'nickname TEXT )')
 
 
-        if version < (0,4,2):
-            xbmc.log("Migrating highscore database to v0.4.2")
+        if version < [0,4,2]:
+            xbmc.log("Migrating Highscore Database to v0.4.2")
 
             c.execute('CREATE TABLE IF NOT EXISTS version (major INTEGER, minor INTEGER, patch INTEGER)')
             c.execute('INSERT INTO version VALUES(0, 4, 2)')
@@ -213,6 +215,8 @@ class LocalHighscoreDatabase(HighscoreDatabase):
             
         self.conn.commit()
         c.close()
+
+        xbmc.log('Highscore Database is up-to-date')
 
 
 

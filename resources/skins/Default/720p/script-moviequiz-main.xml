@@ -300,7 +300,7 @@
                 <description>Points</description>
                 <posx>210</posx>
                 <posy>10</posy>
-                <width>50</width>
+                <width>100</width>
                 <height>40</height>
                 <textcolor>ffffffff</textcolor>
                 <font>font13</font>
