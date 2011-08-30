@@ -142,7 +142,7 @@ class LocalHighscoreDatabase(HighscoreDatabase):
 
     def createUser(self, nickname):
         c = self.conn.cursor()
-        c.execute('INSERT INTO user(nickname) VALUES(?)', [nickname])
+        c.execute("INSERT INTO user(nickname, timestamp) VALUES(?, datetime('now'))", [nickname])
         self.conn.commit()
         rowid = c.lastrowid
         c.close()
@@ -151,7 +151,7 @@ class LocalHighscoreDatabase(HighscoreDatabase):
 
     def getUsers(self):
         c = self.conn.cursor()
-        c.execute('SELECT * FROM user ORDER BY nickname')
+        c.execute('SELECT * FROM user ORDER BY last_used, nickname')
         users = c.fetchall()
         c.close()
 
@@ -164,6 +164,7 @@ class LocalHighscoreDatabase(HighscoreDatabase):
 
     def getNickname(self, userId):
         c = self.conn.cursor()
+        c.execute("UPDATE nickname SET last_used = datetime('now') WHERE id = ?", [userId])
         c.execute('SELECT nickname FROM user WHERE id = ?', [userId])
         nickname = c.fetchone()['nickname']
         c.close()
@@ -173,23 +174,42 @@ class LocalHighscoreDatabase(HighscoreDatabase):
         xbmc.log('HighscoreDatabase._createTables()')
 
         c = self.conn.cursor()
-        c.execute('CREATE TABLE IF NOT EXISTS highscore ('
-            + 'id INTEGER PRIMARY KEY,'
-            + 'user_id INTEGER,'
-            + 'type TEXT,'
-            + 'gameType TEXT,'
-            + 'gameSubType TEXT,'
-            + 'position INTEGER,'
-            + 'score REAL,'
-            + 'correctAnswers INTEGER,'
-            + 'numberOfQuestions INTEGER,'
-            + 'timestamp INTEGER,'
-            + 'FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE )'
-        )
 
-        c.execute('CREATE TABLE IF NOT EXISTS user ('
-            + 'id INTEGER PRIMARY KEY,'
-            + 'nickname TEXT )')
+        try:
+            c.execute('SELECT major, minor, patch FROM version')
+            version = c.fetchone()
+        except sqlite3.OperationalError:
+            version = (0,0,0)
+
+        if version < (0,4,1):
+            xbmc.log("Migrating highscore database to v0.4.1")
+
+            c.execute('CREATE TABLE IF NOT EXISTS highscore ('
+                + 'id INTEGER PRIMARY KEY,'
+                + 'user_id INTEGER,'
+                + 'type TEXT,'
+                + 'gameType TEXT,'
+                + 'gameSubType TEXT,'
+                + 'position INTEGER,'
+                + 'score REAL,'
+                + 'correctAnswers INTEGER,'
+                + 'numberOfQuestions INTEGER,'
+                + 'timestamp INTEGER,'
+                + 'FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE )'
+            )
+
+            c.execute('CREATE TABLE IF NOT EXISTS user ('
+                + 'id INTEGER PRIMARY KEY,'
+                + 'nickname TEXT )')
+
+
+        if version < (0,4,2):
+            xbmc.log("Migrating highscore database to v0.4.2")
+
+            c.execute('CREATE TABLE IF NOT EXISTS version (major INTEGER, minor INTEGER, patch INTEGER)')
+            c.execute('INSERT INTO version VALUES(0, 4, 2)')
+
+            c.execute('ALTER TABLE user ADD COLUMN last_used INTEGER')
             
         self.conn.commit()
         c.close()

@@ -3,7 +3,6 @@ TODOs and suggestions in no particular order
 - DVD ISO's plays menu instead of movie
 - Add support for global statistics, eg. "lifetime" correct/incorrect answers and such
 - Multiplayer support
-- User selection on main menu
 
 Movie Question suggestions:
 * How many movies do you have for year xy?
