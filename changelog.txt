@@ -1,4 +1,4 @@
-[B]Version 0.4.2 - 2011-xx-xx[/B]
+[B]Version 0.4.2 - 2011-08-31[/B]
 - Dropped support for MySQL for now (might add support again later with SQLAlchemy)
 - Fixed Retry option in Game Over screen
 - Minor UI tweaks
