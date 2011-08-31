@@ -13,6 +13,7 @@
     <string id="30007">%B %e, %Y</string><!-- episode first aired date format: http://docs.python.org/library/time.html#time.strftime -->
     <string id="30008">[B]Loading[/B]</string>
 
+    <string id="30009">Add user</string>
     <string id="30010">Welcome to Movie Quiz, please enter your nickname:</string>
 
     <string id="30011">Replay</string>

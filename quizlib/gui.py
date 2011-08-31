@@ -183,7 +183,7 @@ class MenuGui(xbmcgui.WindowXML):
             item.setProperty('id', str(user['id']))
             listControl.addItem(item)
 
-        item = xbmcgui.ListItem('Add new')
+        item = xbmcgui.ListItem(strings(G_ADD_USER))
         item.setProperty('id', '-1')
         listControl.addItem(item)
         
@@ -511,8 +511,6 @@ class QuizGui(xbmcgui.WindowXML):
             seconds = (100 - self.questionPoints) / 100.0
             self.questionPointsThread = threading.Timer(seconds, self.onQuestionPointTimer)
             self.questionPointsThread.start()
-#        else:
-#            self.questionPointsThread = None
 
     def _answer_correctly(self):
         answer = self.question.getCorrectAnswer()
@@ -554,7 +552,6 @@ class QuizGui(xbmcgui.WindowXML):
 
     def onStatsChanged(self):
         self.getControl(self.C_MAIN_CORRECT_SCORE).setLabel(str(self.gameInstance.getPoints()))
-#        self.getControl(self.C_MAIN_INCORRECT_SCORE).setLabel(str(self.gameType.wrongAnswers))
 
         label = self.getControl(self.C_MAIN_QUESTION_COUNT)
         label.setLabel(self.gameInstance.getStatsString())
@@ -643,8 +640,6 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
             self.close()
 
     def onClick(self, controlId):
-        print "GameOverDialog.onClick " + str(controlId)
-
         if controlId == self.C_GAMEOVER_RETRY:
             self.parentWindow.onNewGame()
             self.close()
