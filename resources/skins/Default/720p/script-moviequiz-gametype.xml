@@ -191,6 +191,22 @@
                     <aligny>center</aligny>
                     <label>$ADDON[script.moviequiz 30613]</label>
                 </control>
+
+                <control type="image">
+                    <posx>680</posx>
+                    <posy>0</posy>
+                    <width>30</width>
+                    <height>40</height>
+                    <texture>quiz-raquo.png</texture>
+                </control>
+                <control type="image">
+                    <posx>450</posx>
+                    <posy>0</posy>
+                    <width>30</width>
+                    <height>40</height>
+                    <texture>quiz-laquo.png</texture>
+                </control>
+
                 <control type="fixedlist" id="4100">
                     <posx>480</posx>
                     <posy>0</posy>
@@ -327,6 +343,22 @@
                     <aligny>center</aligny>
                     <label>$ADDON[script.moviequiz 30613]</label>
                 </control>
+
+                <control type="image">
+                    <posx>680</posx>
+                    <posy>40</posy>
+                    <width>30</width>
+                    <height>40</height>
+                    <texture>quiz-raquo.png</texture>
+                </control>
+                <control type="image">
+                    <posx>450</posx>
+                    <posy>40</posy>
+                    <width>30</width>
+                    <height>40</height>
+                    <texture>quiz-laquo.png</texture>
+                </control>
+
                 <control type="fixedlist" id="4200">
                     <posx>480</posx>
                     <posy>40</posy>

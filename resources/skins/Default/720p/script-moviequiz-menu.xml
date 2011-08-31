@@ -100,7 +100,6 @@
             <textcolor>ffffffff</textcolor>
             <scroll>true</scroll>
             <scrollsuffix>  *  </scrollsuffix>
-            <aligny>center</aligny>
         </control>
 
         <control type="label">
@@ -112,7 +111,21 @@
             <textcolor>ffffffff</textcolor>
             <font>font13</font>
             <align>center</align>
-            <label>[B]Choose player[/B]</label>
+            <label>[B]$ADDON[script.moviequiz 30014][/B]</label>
+        </control>
+        <control type="image">
+            <posx>740</posx>
+            <posy>620</posy>
+            <width>30</width>
+            <height>40</height>
+            <texture>quiz-raquo.png</texture>
+        </control>
+        <control type="image">
+            <posx>510</posx>
+            <posy>620</posy>
+            <width>30</width>
+            <height>40</height>
+            <texture>quiz-laquo.png</texture>
         </control>
         <control type="wraplist" id="6001">
             <posx>340</posx>

@@ -330,6 +330,12 @@ class QuizGui(xbmcgui.WindowXML):
         self.database = db.connect()
         self.player = player.TenSecondPlayer()
 
+        self.questionPointsThread = None
+        self.questionPoints = 0
+        self.question = None
+        self.previousQuestions = []
+        self.isLoading = False
+
     def onInit(self):
         if self.gameInstance.getType() == game.GAMETYPE_TVSHOW:
             self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(self.defaultBackground)
@@ -397,8 +403,6 @@ class QuizGui(xbmcgui.WindowXML):
             w = GameOverDialog(self, self.gameInstance)
             w.doModal()
             del w
-
-        self.close()
 
     def onNewQuestion(self):
         if self.gameInstance.isGameOver():

@@ -99,6 +99,13 @@
                 <onup>4003</onup>
                 <ondown>4001</ondown>
             </control>
+            <control type="image">
+                <posx>350</posx>
+                <posy>290</posy>
+                <width>30</width>
+                <height>40</height>
+                <texture>quiz-raquo.png</texture>
+            </control>
             <control type="button" id="4001">
                 <description>Global highscore</description>
                 <posx>20</posx>
@@ -115,6 +122,13 @@
                 <onup>4000</onup>
                 <ondown>4002</ondown>
                 <onright>8001</onright>
+            </control>
+            <control type="image">
+                <posx>350</posx>
+                <posy>340</posy>
+                <width>30</width>
+                <height>40</height>
+                <texture>quiz-raquo.png</texture>
             </control>
             <control type="button" id="4002">
                 <description>Local highscore</description>
