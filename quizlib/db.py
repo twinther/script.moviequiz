@@ -107,6 +107,31 @@ class Database(object):
         row = self.fetchone("SELECT COUNT(*) AS cnt FROM tvshowview")
         return int(row['cnt']) > 0
 
+    def getRandomMovies(self, maxResults, setId = None, genres = None, excludeMovieIds = None):
+        """
+        Retrieves random movies from XBMC's video library.
+        For each movie the following information is returned:
+        * idMovie
+        * idFile
+        * title
+        * genre
+        * strPath
+        * strFileName
+        * idSet
+
+        @param self: database instance
+        @type self: Database
+        @param maxResults: Retrieves this number of movies at most (actual number may be less than this)
+        @type maxResults: int
+        @param setId: Only retrieve movies included in this set
+        @type setId: int
+        @param genres: Only retrieve movies in this/these genres
+        @type genres: str
+        @param excludeMovieIds: Exclude the provided movie Ids from the list of movies candidiates
+        @type excludeMovieIds: array of int
+        """
+        pass
+
 #
 # SQLite
 #
