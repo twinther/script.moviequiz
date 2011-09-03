@@ -1,6 +1,7 @@
 import threading
 import os
 import re
+import time
 
 import xbmc
 import xbmcgui
@@ -327,7 +328,15 @@ class QuizGui(xbmcgui.WindowXML):
         else:
             self.defaultBackground = BACKGROUND_MOVIE
 
-        self.database = db.connect()
+        maxRating = None
+        if gameInstance.getType() == game.GAMETYPE_MOVIE and ADDON.getSetting('movie.rating.limit.enabled') == 'true':
+            maxRating = ADDON.getSetting('movie.rating.limit')
+        elif gameInstance.getType() == game.GAMETYPE_TVSHOW and ADDON.getSetting('tvshow.rating.limit.enabled') == 'true':
+            maxRating = ADDON.getSetting('tvshow.rating.limit')
+
+        onlyUsedWatched = ADDON.getSetting('only.watched.movies') == 'true'
+
+        self.database = db.connect(maxRating, onlyUsedWatched)
         self.player = player.TenSecondPlayer()
 
         self.questionPointsThread = None
@@ -335,6 +344,7 @@ class QuizGui(xbmcgui.WindowXML):
         self.question = None
         self.previousQuestions = []
         self.isLoading = False
+        self.lastClickTime = -1
 
     def onInit(self):
         if self.gameInstance.getType() == game.GAMETYPE_TVSHOW:
@@ -380,6 +390,12 @@ class QuizGui(xbmcgui.WindowXML):
 
 
     def onClick(self, controlId):
+        difference = time.time() - self.lastClickTime
+        self.lastClickTime = time.time()
+        if difference < 0.7:
+            xbmc.log("Ignoring key-repeat onClick")
+            return
+
         if not self.gameInstance.isInteractive():
             return # ignore
         elif controlId == self.C_MAIN_EXIT:
@@ -642,6 +658,7 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
     def onAction(self, action):
         if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
             self.close()
+            self.parentWindow.close()
 
     def onClick(self, controlId):
         if controlId == self.C_GAMEOVER_RETRY:

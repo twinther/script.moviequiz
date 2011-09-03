@@ -3,6 +3,8 @@ import random
 import os
 import urllib2
 import zlib
+import threading
+import time
 
 from strings import *
 
@@ -21,13 +23,10 @@ class Imdb(object):
     def __init__(self, listsPath):
         self.path = listsPath
 
+        self.actorNames = list()
         actorsPath = os.path.join(self.path, self.ACTORS_LIST)
         if os.path.exists(actorsPath):
-            f = open(actorsPath)
-            self.actorsData = f.read()
-            f.close()
-        else:
-            self.actorsData = None
+            ImdbLoader(self, actorsPath).start()
 
 
     def downloadFiles(self, progressCallback = None):
@@ -144,13 +143,28 @@ class Imdb(object):
             return None
 
     def isActor(self, name):
-        if self.actorsData is not None:
-            m = re.search('^%s$' % name, self.actorsData, re.MULTILINE)
-            return m is not None
+        if self.actorNames:
+            return name in self.actorNames
         else:
             # if we don't have data all actors are Female
             return False
 
+
+class ImdbLoader(threading.Thread):
+    def __init__(self, imdb, actorsPath):
+        super(ImdbLoader, self).__init__()
+        self.imdb = imdb
+        self.actorsPath = actorsPath
+
+    def run(self):
+        startTime = time.time()
+        f = open(self.actorsPath)
+        for actor in f:
+            self.imdb.actorNames.append(unicode(actor, errors='ignore').strip())
+        f.close()
+        xbmc.log("Loaded %d actor names in %d seconds" % (len(self.imdb.actorNames), (time.time() - startTime)))
+
+        
 
 if __name__ == '__main__':
     # this script is invoked from addon settings

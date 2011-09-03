@@ -1,12 +1,9 @@
 import datetime
-import xbmcaddon
 
 from strings import *
 
 GAMETYPE_MOVIE = "movie"
 GAMETYPE_TVSHOW = "tvshow"
-
-ADDON = xbmcaddon.Addon(id = 'script.moviequiz')
 
 class Game(object):
     def __init__(self, type, userId, interactive):
@@ -53,15 +50,6 @@ class Game(object):
 
     def getUserId(self):
         return self.userId
-
-    def onlyUseWatchedMovies(self):
-        return ADDON.getSetting('only.watched.movies') == 'true'
-
-    def getMaxRating(self):
-        if self.type == GAMETYPE_MOVIE and ADDON.getSetting('movie.rating.limit.enabled') == 'true':
-            return ADDON.getSetting('movie.rating.limit')
-        elif self.type == GAMETYPE_TVSHOW and ADDON.getSetting('tvshow.rating.limit.enabled') == 'true':
-            return ADDON.getSetting('tvshow.rating.limit')
 
     def isInteractive(self):
         return self.interactive

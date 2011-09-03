@@ -99,8 +99,8 @@ class LocalHighscoreDatabase(HighscoreDatabase):
         self.close()
 
     def close(self):
-        self.conn.close()
-
+        if hasattr(self, 'conn') and self.conn is not None:
+            self.conn.close()
         
     def addHighscore(self, game):
         if game.getPoints() <= 0:

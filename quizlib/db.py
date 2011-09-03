@@ -14,10 +14,19 @@ except ImportError:
 
 __author__ = 'twinther'
 
+MPAA_RATINGS = ['R', 'Rated R', 'PG-13', 'Rated PG-13', 'PG', 'Rated PG', 'G', 'Rated G']
+CONTENT_RATINGS = ['TV-MA', 'TV-14', 'TV-PG', 'TV-G', 'TV-Y7-FV', 'TV-Y7', 'TV-Y']
+
 class Database(object):
     """Base class for the various databases"""
-    def __init__(self):
+    def __init__(self, maxRating, onlyWatched):
         self.conn = None
+
+        self.defaultClause = ''
+        if maxRating:
+            self.defaultClause += " AND TRIM(c12) IN ('%s')" % '\',\''.join(maxRating)
+        if onlyWatched:
+            self.defaultClause += " AND mv.playCount IS NOT NULL"
 
     def __del__(self):
         self.close()
@@ -43,7 +52,9 @@ class Database(object):
         print "Database closed"
 
     def fetchall(self, sql, parameters = tuple()):
-        if not isinstance(parameters, tuple):
+        if isinstance(parameters, list):
+            parameters = tuple(parameters)
+        elif not isinstance(parameters, tuple):
             parameters = [parameters]
 
         parameters = self._prepareParameters(parameters)
@@ -61,6 +72,8 @@ class Database(object):
         return result
 
     def fetchone(self, sql, parameters = tuple()):
+        if isinstance(parameters, list):
+            parameters = tuple(parameters)
         if not isinstance(parameters, tuple):
             parameters = [parameters]
 
@@ -79,6 +92,8 @@ class Database(object):
         return result
 
     def execute(self, sql, parameters = tuple()):
+        if isinstance(parameters, list):
+            parameters = tuple(parameters)
         if not isinstance(parameters, tuple):
             parameters = [parameters]
 
@@ -107,7 +122,11 @@ class Database(object):
         row = self.fetchone("SELECT COUNT(*) AS cnt FROM tvshowview")
         return int(row['cnt']) > 0
 
-    def getRandomMovies(self, maxResults, setId = None, genres = None, excludeMovieIds = None):
+
+
+    def getRandomMovies(self, maxResults, setId = None, genres = None, excludeMovieIds = None, actorIdInMovie = None, actorIdNotInMovie = None,
+                        directorId = None, excludeDirectorId = None, studioId = None, minYear = None, maxYear = None, mustHaveTagline = False,
+                        minActorCount = None, mustHaveRuntime = False, maxRuntime = None):
         """
         Retrieves random movies from XBMC's video library.
         For each movie the following information is returned:
@@ -130,15 +149,177 @@ class Database(object):
         @param excludeMovieIds: Exclude the provided movie Ids from the list of movies candidiates
         @type excludeMovieIds: array of int
         """
-        pass
+        params = list()
+        query = """
+            SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.c03 AS tagline, mv.c07 AS year, mv.c11 AS runtime, mv.c14 AS genre, mv.strPath, mv.strFileName, slm.idSet
+            FROM movieview mv LEFT JOIN setlinkmovie slm ON mv.idMovie = slm.idMovie
+            WHERE mv.strFileName NOT LIKE '%%.nfo'
+            """ + self.defaultClause
+
+        if setId:
+            query += " AND slm.idSet = ?"
+            params.append(setId)
+
+        if genres:
+            query += " AND mv.c14 = ?"
+            params.append(genres)
+
+        if excludeMovieIds:
+            if isinstance(excludeMovieIds, list):
+                excludeMovieString = ','.join(map(str, excludeMovieIds))
+            else:
+                excludeMovieString = excludeMovieIds
+            query += " AND mv.idMovie NOT IN (%s)" % excludeMovieString
+            # different title
+            query += " AND mv.c00 NOT IN (SELECT c00 FROM movieview WHERE idMovie IN (%s))" % excludeMovieString
+
+        if actorIdNotInMovie:
+            query += " AND mv.idMovie NOT IN (SELECT alm.idMovie FROM actorlinkmovie alm WHERE alm.idActor = ?)"
+            params.append(actorIdInMovie)
+
+        if actorIdInMovie:
+            query += " AND mv.idMovie IN (SELECT alm.idMovie FROM actorlinkmovie alm WHERE alm.idActor = ?)"
+            params.append(actorIdInMovie)
+
+        if mustHaveTagline:
+            query += " AND TRIM(mv.c03) != ''"
+
+        if mustHaveRuntime:
+            query += " AND TRIM(mv.c11) != ''"
+
+        if maxRuntime:
+            query += " AND CAST(mv.c11 AS INTEGER) < ?"
+            params.append(maxRuntime)
+
+        if minYear:
+            query += " AND mv.c07 > ?"
+            params.append(minYear)
+
+        if maxYear:
+            query += " AND mv.c07 < ?"
+            params.append(maxYear)
+
+        if directorId:
+            query += " AND mv.idMovie IN (SELECT dlm.idMovie FROM directorlinkmovie dlm WHERE dlm.idDirector = ?)"
+            params.append(directorId)
+
+        if excludeDirectorId:
+            query += " AND mv.idMovie NOT IN (SELECT dlm.idMovie FROM directorlinkmovie dlm WHERE dlm.idDirector = ?)"
+            params.append(excludeDirectorId)
+
+        if studioId:
+            query += " AND mv.idMovie IN (SELECT slm.idMovie FROM studiolinkmovie slm WHERE slm.idStudio = ?)"
+            params.append(studioId)
+
+        if minActorCount:
+            query += "AND (SELECT COUNT(DISTINCT alm.idActor) FROM actorlinkmovie alm WHERE alm.idMovie = mv.idMovie) >= ?"
+            params.append(minActorCount)
+
+        query += " ORDER BY random()"
+        if maxResults:
+            query += " LIMIT " + str(maxResults)
+
+        return self.fetchall(query, params)
+
+
+    def getRandomActors(self, maxResults = None, minMovieCount = None, excludeActorId = None, selectDistinct = None,
+                        movieId = None, appendDefaultClause = True, mustHaveRole = False, excludeMovieIds = None):
+        params = []
+        if selectDistinct:
+            query = "SELECT DISTINCT "
+        else:
+            query = "SELECT "
+
+        query += """
+            a.idActor, a.strActor, alm.strRole
+            FROM movieview mv, actorlinkmovie alm, actors a
+            WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor AND mv.strFileName NOT LIKE '%%.nfo'
+            """
+        if appendDefaultClause:
+            query += self.defaultClause
+
+        if minMovieCount:
+            query += "GROUP BY alm.idActor HAVING count(mv.idMovie) >= ?"
+            params.append(minMovieCount)
+
+        if excludeActorId:
+            query += " AND alm.idActor != ?"
+            params.append(excludeActorId)
+
+        if mustHaveRole:
+            query += " AND alm.strRole != ''"
+
+        if movieId:
+            query += " AND mv.idMovie = ?"
+            params.append(movieId)
+
+        if excludeMovieIds:
+            if isinstance(excludeMovieIds, list):
+                excludeMovieString = ','.join(map(str, excludeMovieIds))
+            else:
+                excludeMovieString = excludeMovieIds
+            query += " AND mv.idMovie NOT IN (%s)" % excludeMovieString
+            # different title
+            query += " AND mv.c00 NOT IN (SELECT c00 FROM movieview WHERE idMovie IN (%s))" % excludeMovieString
+
+        query += " ORDER BY random()"
+        if maxResults:
+            query += " LIMIT " + str(maxResults)
+
+        return self.fetchall(query, params)
+
+
+    def getRandomDirectors(self, maxResults = None, minMovieCount = None, excludeDirectorId = None):
+        params = []
+        query = """
+            SELECT a.idActor, a.strActor
+            FROM movieview mv, directorlinkmovie dlm, actors a
+            WHERE mv.idMovie = dlm.idMovie AND dlm.idDirector = a.idActor AND mv.strFileName NOT LIKE '%%.nfo'
+            """ + self.defaultClause
+
+        if minMovieCount:
+            query += "GROUP BY dlm.idDirector HAVING count(mv.idMovie) >= ?"
+            params.append(minMovieCount)
+
+        if excludeDirectorId:
+            query += " AND dlm.idDirector != ?"
+            params.append(excludeDirectorId)
+
+
+        query += " ORDER BY random()"
+        if maxResults:
+            query += " LIMIT " + str(maxResults)
+
+        return self.fetchall(query, params)
+
+
+    def getRandomStudios(self, maxResults = None, excludeStudioId = None):
+        params = []
+        query = """
+            SELECT s.idStudio, s.strStudio
+            FROM movieview mv, studiolinkmovie slm, studio s
+            WHERE mv.idMovie = slm.idMovie AND slm.idStudio = s.idStudio AND mv.strFileName NOT LIKE '%%.nfo'
+            """ + self.defaultClause
+
+        if excludeStudioId:
+            query += " AND slm.idStudio != ?"
+            params.append(excludeStudioId)
+
+
+        query += " ORDER BY random()"
+        if maxResults:
+            query += " LIMIT " + str(maxResults)
+
+        return self.fetchall(query, params)
+
 
 #
 # SQLite
 #
 
 class SQLiteDatabase(Database):
-    def __init__(self, settings):
-        super(SQLiteDatabase, self).__init__()
+    def __init__(self, maxRating, onlyWatched, settings):
+        super(SQLiteDatabase, self).__init__(maxRating, onlyWatched)
         found = True
         db_file = None
 
@@ -195,14 +376,14 @@ class DbException(Exception):
         Exception.__init__(self, sql)
 
 
-def connect():
+def connect(maxRating = None, onlyUsedWatched = None):
     settings = _loadSettings()
     xbmc.log("Loaded DB settings: %s" % settings)
 
     if settings.has_key('type') and settings['type'] is not None and settings['type'].lower() == 'mysql':
         raise DbException('MySQL database is not supported')
     else:
-        return SQLiteDatabase(settings)
+        return SQLiteDatabase(maxRating, onlyUsedWatched, settings)
 
 
 def _loadSettings():
