@@ -1,3 +1,7 @@
+[B]Version 0.4.3 - 2011-09-XX[/B]
+- Please redownload IMDB support files, due to
+- serious speed-optimized IMDB lookups
+
 [B]Version 0.4.2 - 2011-08-31[/B]
 - Dropped support for MySQL for now (might add support again later with SQLAlchemy)
 - Fixed Retry option in Game Over screen
