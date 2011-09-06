@@ -313,6 +313,10 @@ class QuizGui(xbmcgui.WindowXML):
     C_MAIN_LOADING_VISIBILITY = 5005
     C_MAIN_REPLAY_BUTTON_VISIBILITY = 5007
 
+    STATE_LOADING = 1
+    STATE_PLAYING = 2
+    STATE_GAME_OVER = 3
+
     def __new__(cls, gameInstance):
         return super(QuizGui, cls).__new__(cls, 'script-moviequiz-main.xml', ADDON.getAddonInfo('path'))
 
@@ -349,8 +353,9 @@ class QuizGui(xbmcgui.WindowXML):
         self.questionPoints = 0
         self.question = None
         self.previousQuestions = []
-        self.isLoading = False
         self.lastClickTime = -1
+
+        self.uiState = self.STATE_LOADING
 
     def onInit(self):
         if self.gameInstance.getType() == game.GAMETYPE_TVSHOW:
@@ -365,7 +370,7 @@ class QuizGui(xbmcgui.WindowXML):
         self.questionPoints = 0
         self.question = None
         self.previousQuestions = []
-        self.isLoading = False
+        self.uiState = self.STATE_LOADING
 
         self.onNewQuestion()
 
@@ -379,7 +384,7 @@ class QuizGui(xbmcgui.WindowXML):
         if action.getId() == ACTION_PARENT_DIR or action.getId() == ACTION_PREVIOUS_MENU:
             self.onGameOver()
 
-        if self.isLoading:
+        if self.uiState == self.STATE_LOADING:
             return
         elif action.getId() == REMOTE_1:
             self.setFocusId(self.C_MAIN_FIRST_ANSWER)
@@ -406,7 +411,7 @@ class QuizGui(xbmcgui.WindowXML):
             return # ignore
         elif controlId == self.C_MAIN_EXIT:
             self.onGameOver()
-        elif self.isLoading:
+        elif self.uiState == self.STATE_LOADING:
             return # ignore the rest while we are loading
         elif self.question and (controlId >= self.C_MAIN_FIRST_ANSWER and controlId <= self.C_MAIN_LAST_ANSWER):
             answer = self.question.getAnswer(controlId - self.C_MAIN_FIRST_ANSWER)
@@ -418,6 +423,10 @@ class QuizGui(xbmcgui.WindowXML):
         self.onThumbChanged(controlId)
 
     def onGameOver(self):
+        if self.uiState == self.STATE_GAME_OVER:
+            return # ignore multiple invocations
+        self.uiState = self.STATE_GAME_OVER
+
         if self.questionPointsThread is not None:
            self.questionPointsThread.cancel()
 
@@ -431,7 +440,7 @@ class QuizGui(xbmcgui.WindowXML):
             self.onGameOver()
             return
 
-        self.isLoading = True
+        self.uiState = self.STATE_LOADING
         self.getControl(self.C_MAIN_LOADING_VISIBILITY).setVisible(True)
         self.question = self._getNewQuestion()
         self.getControl(self.C_MAIN_QUESTION_LABEL).setLabel(self.question.getText())
@@ -489,7 +498,7 @@ class QuizGui(xbmcgui.WindowXML):
             # answers correctly in ten seconds
             threading.Timer(10.0, self._answer_correctly).start()
 
-        self.isLoading = False
+        self.uiState = self.STATE_PLAYING
         self.getControl(self.C_MAIN_LOADING_VISIBILITY).setVisible(False)
 
         self.questionPoints = None
