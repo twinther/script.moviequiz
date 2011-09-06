@@ -14,19 +14,19 @@ except ImportError:
 
 __author__ = 'twinther'
 
-MPAA_RATINGS = ['R', 'Rated R', 'PG-13', 'Rated PG-13', 'PG', 'Rated PG', 'G', 'Rated G']
-CONTENT_RATINGS = ['TV-MA', 'TV-14', 'TV-PG', 'TV-G', 'TV-Y7-FV', 'TV-Y7', 'TV-Y']
-
 class Database(object):
     """Base class for the various databases"""
-    def __init__(self, maxRating, onlyWatched):
+    def __init__(self, allowedRatings, onlyWatched):
         self.conn = None
 
-        self.defaultClause = ''
-        if maxRating:
-            self.defaultClause += " AND TRIM(c12) IN ('%s')" % '\',\''.join(maxRating)
+        self.defaultMovieViewClause = ''
+        self.defaultTVShowViewClause = ''
+        if allowedRatings:
+            self.defaultMovieViewClause += " AND TRIM(c12) IN ('%s')" % '\',\''.join(allowedRatings)
+            self.defaultTVShowViewClause += " AND TRIM(tv.c13) IN ('%s')" % '\',\''.join(allowedRatings)
         if onlyWatched:
-            self.defaultClause += " AND mv.playCount IS NOT NULL"
+            self.defaultMovieViewClause += " AND mv.playCount IS NOT NULL"
+            self.defaultTVShowViewClause += " AND ev.playCount IS NOT NULL"
 
     def __del__(self):
         self.close()
@@ -154,7 +154,7 @@ class Database(object):
             SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.c03 AS tagline, mv.c07 AS year, mv.c11 AS runtime, mv.c14 AS genre, mv.strPath, mv.strFileName, slm.idSet
             FROM movieview mv LEFT JOIN setlinkmovie slm ON mv.idMovie = slm.idMovie
             WHERE mv.strFileName NOT LIKE '%%.nfo'
-            """ + self.defaultClause
+            """ + self.defaultMovieViewClause
 
         if setId:
             query += " AND slm.idSet = ?"
@@ -236,7 +236,7 @@ class Database(object):
             WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor AND mv.strFileName NOT LIKE '%%.nfo'
             """
         if appendDefaultClause:
-            query += self.defaultClause
+            query += self.defaultMovieViewClause
 
         if minMovieCount:
             query += "GROUP BY alm.idActor HAVING count(mv.idMovie) >= ?"
@@ -275,7 +275,7 @@ class Database(object):
             SELECT a.idActor, a.strActor
             FROM movieview mv, directorlinkmovie dlm, actors a
             WHERE mv.idMovie = dlm.idMovie AND dlm.idDirector = a.idActor AND mv.strFileName NOT LIKE '%%.nfo'
-            """ + self.defaultClause
+            """ + self.defaultMovieViewClause
 
         if minMovieCount:
             query += "GROUP BY dlm.idDirector HAVING count(mv.idMovie) >= ?"
@@ -299,12 +299,147 @@ class Database(object):
             SELECT s.idStudio, s.strStudio
             FROM movieview mv, studiolinkmovie slm, studio s
             WHERE mv.idMovie = slm.idMovie AND slm.idStudio = s.idStudio AND mv.strFileName NOT LIKE '%%.nfo'
-            """ + self.defaultClause
+            """ + self.defaultMovieViewClause
 
         if excludeStudioId:
             query += " AND slm.idStudio != ?"
             params.append(excludeStudioId)
 
+        query += " ORDER BY random()"
+        if maxResults:
+            query += " LIMIT " + str(maxResults)
+
+        return self.fetchall(query, params)
+
+
+    def getRandomTVShows(self, maxResults = None, excludeTVShowId = None, excludeSpecials = False, episode = None, mustHaveFirstAired = False):
+        params = []
+        query = """
+            SELECT ev.idFile, tv.c00 AS title, ev.c05 AS firstAired, ev.c12 AS season, ev.c13 AS episode, ev.idShow, ev.strPath, ev.strFileName, tv.strPath AS tvShowPath
+            FROM episodeview ev, tvshowview tv
+            WHERE ev.idShow=tv.idShow AND ev.strFileName NOT LIKE '%%.nfo'
+            """ + self.defaultTVShowViewClause
+
+        if excludeTVShowId:
+            query += " AND tv.idShow != ?"
+            params.append(excludeTVShowId)
+
+        if excludeSpecials:
+            query += " AND ev.c12 != 0"
+
+        if episode:
+            query += " AND ev.c13 = ?"
+            params.append(episode)
+
+        if mustHaveFirstAired:
+            query += " AND ev.c05 != ''"
+
+        query += " ORDER BY random()"
+        if maxResults:
+            query += " LIMIT " + str(maxResults)
+
+        return self.fetchall(query, params)
+
+
+    def getRandomSeasons(self, maxResults = None, minSeasonCount = None, showId = None, excludeSeason = None, onlySelectSeason = False):
+        params = []
+        if onlySelectSeason:
+            query = "SELECT DISTINCT ev.c12 AS season"
+        else:
+            query = """
+                SELECT ev.idFile, ev.c12 AS season, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName, tv.strPath AS tvShowPath,
+                (SELECT COUNT(DISTINCT c12) FROM episodeview WHERE idShow=ev.idShow) AS seasons
+                """
+
+        query += """
+            FROM episodeview ev, tvshowview tv
+            WHERE ev.idShow=tv.idShow AND ev.strFileName NOT LIKE '%%.nfo'
+            """
+
+        if minSeasonCount:
+            query += " AND seasons >= ?"
+            params.append(minSeasonCount)
+
+        if showId:
+            query += " AND ev.idShow = ?"
+            params.append(showId)
+
+        if excludeSeason:
+            query += " AND ev.c12 != ?"
+            params.append(excludeSeason)
+
+        query += " ORDER BY random()"
+        if maxResults:
+            query += " LIMIT " + str(maxResults)
+
+        return self.fetchall(query, params)
+
+    def getRandomEpisodes(self, maxResults = None, minEpisodeCount = None, idShow = None, season = None, excludeEpisode = None):
+        params = []
+        query = """
+            SELECT ev.idFile, ev.c00 AS episodeTitle, ev.c12 AS season, ev.c13 AS episode, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName,
+                (SELECT COUNT(DISTINCT c13) FROM episodeview WHERE idShow=ev.idShow) AS episodes
+            FROM episodeview ev, tvshowview tv
+            WHERE ev.idShow=tv.idShow AND episodes > 2 AND ev.strFileName NOT LIKE '%%.nfo'
+            """
+
+        if minEpisodeCount:
+            query += " AND episodes >= ?"
+            params.append(minEpisodeCount)
+
+        if idShow:
+            query += " AND ev.idShow = ?"
+            params.append(idShow)
+
+        if season:
+            query += " AND ev.c12 = ?"
+            params.append(season)
+
+        if excludeEpisode:
+            query += " AND ev.c13 != ?"
+            params.append(excludeEpisode)
+
+
+        query += " ORDER BY random()"
+        if maxResults:
+            query += " LIMIT " + str(maxResults)
+
+        return self.fetchall(query, params)
+
+
+    def getRandomTVShowActors(self, maxResults = None, excludeActorId = None, selectDistinct = None,
+                        showId = None, appendDefaultClause = True, mustHaveRole = False, onlySelectActor = False):
+        params = []
+        if selectDistinct:
+            query = "SELECT DISTINCT "
+        else:
+            query = "SELECT "
+
+        if onlySelectActor:
+            query += """
+                alt.idActor, a.strActor, alt.strRole
+                FROM actorlinktvshow alt, actors a
+                WHERE alt.idActor=a.idActor
+                """
+        else:
+            query += """
+                alt.idActor, a.strActor, alt.strRole, tv.idShow, tv.c00 AS title, tv.strPath, tv.c08 AS genre
+                FROM tvshowview tv, actorlinktvshow alt, actors a, episodeview ev
+                WHERE tv.idShow = alt.idShow AND alt.idActor=a.idActor AND tv.idShow=ev.idShow AND ev.strFileName NOT LIKE '%%.nfo'
+                """
+        if appendDefaultClause:
+            query += self.defaultTVShowViewClause
+
+        if excludeActorId:
+            query += " AND alt.idActor != ?"
+            params.append(excludeActorId)
+
+        if mustHaveRole:
+            query += " AND alt.strRole != ''"
+
+        if showId:
+            query += " AND alt.idShow = ?"
+            params.append(showId)
 
         query += " ORDER BY random()"
         if maxResults:

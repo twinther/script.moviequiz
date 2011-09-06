@@ -30,6 +30,9 @@ BACKGROUND_MOVIE = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'qu
 BACKGROUND_TV = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz-background-tvshows.png')
 NO_PHOTO_IMAGE = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz-no-photo.png')
 
+MPAA_RATINGS = ['R', 'Rated R', 'PG-13', 'Rated PG-13', 'PG', 'Rated PG', 'G', 'Rated G']
+CONTENT_RATINGS = ['TV-MA', 'TV-14', 'TV-PG', 'TV-G', 'TV-Y7-FV', 'TV-Y7', 'TV-Y']
+
 class MenuGui(xbmcgui.WindowXML):
 
     C_MENU_MOVIE_QUIZ = 4001
@@ -328,15 +331,18 @@ class QuizGui(xbmcgui.WindowXML):
         else:
             self.defaultBackground = BACKGROUND_MOVIE
 
-        maxRating = None
+        ratings = None
         if gameInstance.getType() == game.GAMETYPE_MOVIE and ADDON.getSetting('movie.rating.limit.enabled') == 'true':
-            maxRating = ADDON.getSetting('movie.rating.limit')
+            idx = MPAA_RATINGS.index(ADDON.getSetting('movie.rating.limit'))
+            ratings = MPAA_RATINGS[idx:]
+
         elif gameInstance.getType() == game.GAMETYPE_TVSHOW and ADDON.getSetting('tvshow.rating.limit.enabled') == 'true':
-            maxRating = ADDON.getSetting('tvshow.rating.limit')
+            idx = CONTENT_RATINGS.index(ADDON.getSetting('tvshow.rating.limit'))
+            ratings = CONTENT_RATINGS[idx:]
 
         onlyUsedWatched = ADDON.getSetting('only.watched.movies') == 'true'
 
-        self.database = db.connect(maxRating, onlyUsedWatched)
+        self.database = db.connect(ratings, onlyUsedWatched)
         self.player = player.TenSecondPlayer()
 
         self.questionPointsThread = None

@@ -101,7 +101,7 @@ class Question(object):
         return self.displayType
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         raise
 
     def _get_movie_ids(self):
@@ -234,7 +234,7 @@ class WhatMovieIsThisQuestion(MovieQuestion):
         videoDisplayType.setVideoFile(correctAnswer['strPath'], correctAnswer['strFileName'])
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         return ADDON.getSetting('question.whatmovieisthis.enabled') == 'true'
 
 class ActorNotInMovieQuestion(MovieQuestion):
@@ -279,7 +279,7 @@ class ActorNotInMovieQuestion(MovieQuestion):
         photoDisplayType.setPhotoFile(photoFile)
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         return ADDON.getSetting('question.actornotinmovie.enabled') == 'true'
 
 
@@ -318,7 +318,7 @@ class WhatYearWasMovieReleasedQuestion(MovieQuestion):
         self.setFanartFile(row['strPath'], row['strFileName'])
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         return ADDON.getSetting('question.whatyearwasmoviereleased.enabled') == 'true'
 
 
@@ -348,7 +348,7 @@ class WhatTagLineBelongsToMovieQuestion(MovieQuestion):
         self.setFanartFile(row['strPath'], row['strFileName'])
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         return ADDON.getSetting('question.whattaglinebelongstomovie.enabled') == 'true'
 
 
@@ -376,7 +376,7 @@ class WhoDirectedThisMovieQuestion(MovieQuestion):
         self.setFanartFile(row['strPath'], row['strFileName'])
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         return ADDON.getSetting('question.whodirectedthismovie.enabled') == 'true'
 
 
@@ -404,7 +404,7 @@ class WhatStudioReleasedMovieQuestion(MovieQuestion):
         self.setFanartFile(row['strPath'], row['strFileName'])
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         return ADDON.getSetting('question.whatstudioreleasedmovie.enabled') == 'true'
 
 
@@ -450,7 +450,7 @@ class WhatActorIsThisQuestion(MovieQuestion):
         photoDisplayType.setPhotoFile(photoFile)
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         return ADDON.getSetting('question.whatactoristhis.enabled') == 'true'
 
 
@@ -488,7 +488,7 @@ class WhoPlayedRoleInMovieQuestion(MovieQuestion):
         self.setFanartFile(movie['strPath'], movie['strFileName'])
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         return ADDON.getSetting('question.whoplayedroleinmovie.enabled') == 'true'
 
 
@@ -528,8 +528,8 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
         self.text = strings(Q_WHAT_MOVIE_IS_THIS_QUOTE_FROM)
 
     @staticmethod
-    def isEnabledInSettings():
-        return ADDON.getSetting('question.whatmovieisthisquotefrom.enabled') == 'true'
+    def isEnabled():
+        return ADDON.getSetting('question.whatmovieisthisquotefrom.enabled') == 'true' and IMDB.isDataPresent()
 
 
 class WhatMovieIsNewestQuestion(MovieQuestion):
@@ -557,7 +557,7 @@ class WhatMovieIsNewestQuestion(MovieQuestion):
         self.text = strings(Q_WHAT_MOVIE_IS_THE_NEWEST)
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         return ADDON.getSetting('question.whatmovieisnewest.enabled') == 'true'
 
 
@@ -603,7 +603,7 @@ class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
         photoDisplayType.setPhotoFile(photoFile)
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         return ADDON.getSetting('question.whatmovieisnotdirectedby.enabled') == 'true'
 
 
@@ -633,7 +633,7 @@ class WhatActorIsInTheseMoviesQuestion(MovieQuestion):
         self.text = strings(Q_WHAT_ACTOR_IS_IN_THESE_MOVIES)
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         return ADDON.getSetting('question.whatactorisinthesemovies.enabled') == 'true'
 
 
@@ -659,7 +659,7 @@ class WhatActorIsInMovieBesidesOtherActorQuestion(MovieQuestion):
         self.setFanartFile(movie['strPath'], movie['strFileName'])
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         return ADDON.getSetting('question.whatactorisinmoviebesidesotheractor.enabled') == 'true'
 
 class WhatMovieHasTheLongestRuntimeQuestion(MovieQuestion):
@@ -684,7 +684,7 @@ class WhatMovieHasTheLongestRuntimeQuestion(MovieQuestion):
         self.text = strings(Q_WHAT_MOVIE_HAS_THE_LONGEST_RUNTIME)
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         return ADDON.getSetting('question.whatmoviehaslongestruntime.enabled') == 'true'
 
 #
@@ -731,27 +731,16 @@ class WhatTVShowIsThisQuestion(TVQuestion):
         videoDisplayType  = VideoDisplayType()
         super(WhatTVShowIsThisQuestion, self).__init__(database, maxRating, onlyWatchedMovies, videoDisplayType)
 
-        row = self.database.fetchone("""
-            SELECT ev.idFile, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName, tv.strPath AS showPath
-            FROM episodeview ev, tvshowview tv
-            WHERE ev.idShow=tv.idShow AND ev.strFileName NOT LIKE '%%.nfo'
-            %s %s
-            ORDER BY random() LIMIT 1
-            """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
+        row = self.database.getRandomTVShows(maxResults = 1)[0]
         a = CorrectAnswer(row['idShow'], row['title'], row['idFile'])
-        a.setCoverFile(thumb.getCachedTVShowThumb(row['showPath']))
+        a.setCoverFile(thumb.getCachedTVShowThumb(row['tvShowPath']))
         self.answers.append(a)
 
         # Fill with random episodes from other shows
-        shows = self.database.fetchall("""
-            SELECT tv.idShow, tv.c00 AS title, tv.strPath
-            FROM tvshowview tv
-            WHERE tv.idShow != ?
-            ORDER BY random() LIMIT 3
-            """, row['idShow'])
+        shows = self.database.getRandomTVShows(maxResults = 3, excludeTVShowId = row['idShow'])
         for show in shows:
             a = Answer(show['idShow'], show['title'])
-            a.setCoverFile(thumb.getCachedTVShowThumb(show['strPath']))
+            a.setCoverFile(thumb.getCachedTVShowThumb(show['tvShowPath']))
             self.answers.append(a)
 
         random.shuffle(self.answers)
@@ -759,7 +748,7 @@ class WhatTVShowIsThisQuestion(TVQuestion):
         videoDisplayType.setVideoFile(row['strPath'], row['strFileName'])
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         return ADDON.getSetting('question.whattvshowisthis.enabled') == 'true'
 
 
@@ -772,25 +761,13 @@ class WhatSeasonIsThisQuestion(TVQuestion):
         videoDisplayType  = VideoDisplayType()
         super(WhatSeasonIsThisQuestion, self).__init__(database, maxRating, onlyWatchedMovies, videoDisplayType)
 
-        row = self.database.fetchone("""
-            SELECT ev.idFile, ev.c12 AS season, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName, tv.strPath AS showPath,
-                (SELECT COUNT(DISTINCT c12) FROM episodeview WHERE idShow=ev.idShow) AS seasons
-            FROM episodeview ev, tvshowview tv
-            WHERE ev.idShow=tv.idShow AND seasons > 2 AND ev.strFileName NOT LIKE '%%.nfo'
-            %s %s
-            ORDER BY random() LIMIT 1
-            """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
+        row = self.database.getRandomSeasons(maxResults = 1, minSeasonCount = 3)[0]
         a = CorrectAnswer("%s-%s" % (row['idShow'], row['season']), self._get_season_title(row['season']), row['idFile'], sortWeight = row['season'])
         a.setCoverFile(thumb.getCachedSeasonThumb(row['strPath'], self._get_season_title(row['season'])))
         self.answers.append(a)
 
         # Fill with random seasons from this show
-        shows = self.database.fetchall("""
-            SELECT DISTINCT ev.c12 AS season
-            FROM episodeview ev
-            WHERE ev.idShow = ? AND ev.c12 != ? AND ev.strFileName NOT LIKE '%%.nfo'
-            ORDER BY random() LIMIT 3
-            """, (row['idShow'], row['season']))
+        shows = self.database.getRandomSeasons(maxResults = 3, onlySelectSeason = True, showId = row['idShow'], excludeSeason = row['season'])
         for show in shows:
             a = Answer("%s-%s" % (row['idShow'], show['season']), self._get_season_title(show['season']), sortWeight = show['season'])
             a.setCoverFile(thumb.getCachedSeasonThumb(row['strPath'], self._get_season_title(show['season'])))
@@ -802,7 +779,7 @@ class WhatSeasonIsThisQuestion(TVQuestion):
         videoDisplayType.setVideoFile(row['strPath'], row['strFileName'])
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         return ADDON.getSetting('question.whatseasonisthis.enabled') == 'true'
 
 
@@ -815,14 +792,7 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
         videoDisplayType  = VideoDisplayType()
         super(WhatEpisodeIsThisQuestion, self).__init__(database, maxRating, onlyWatchedMovies, videoDisplayType)
 
-        row = self.database.fetchone("""
-            SELECT ev.idFile, ev.c00 AS episodeTitle, ev.c12 AS season, ev.c13 AS episode, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName,
-                (SELECT COUNT(DISTINCT c13) FROM episodeview WHERE idShow=ev.idShow) AS episodes
-            FROM episodeview ev, tvshowview tv
-            WHERE ev.idShow=tv.idShow AND episodes > 2 AND ev.strFileName NOT LIKE '%%.nfo'
-            %s %s
-            ORDER BY random() LIMIT 1
-            """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
+        row = self.database.getRandomEpisodes(maxResults = 1, minEpisodeCount = 3)[0]
         answerText = self._get_episode_title(row['season'], row['episode'], row['episodeTitle'])
         id = "%s-%s-%s" % (row['idShow'], row['season'], row['episode'])
         a = CorrectAnswer(id, answerText, row['idFile'], sortWeight = row['episode'])
@@ -830,16 +800,11 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
         self.answers.append(a)
 
         # Fill with random episodes from this show
-        shows = self.database.fetchall("""
-            SELECT ev.c00 AS episodeTitle, ev.c12 AS season, ev.c13 AS episode
-            FROM episodeview ev
-            WHERE ev.idShow = ? AND ev.c12 = ? AND ev.c13 != ? AND ev.strFileName NOT LIKE '%%.nfo'
-            ORDER BY random() LIMIT 3
-            """, (row['idShow'], row['season'], row['episode']))
-        for show in shows:
-            answerText = self._get_episode_title(show['season'], show['episode'], show['episodeTitle'])
-            id = "%s-%s-%s" % (row['idShow'], row['season'], show['episode'])
-            a = Answer(id, answerText, sortWeight = show['episode'])
+        episodes = self.database.getRandomEpisodes(maxResults = 3, idShow = row['idShow'], season = row['season'], excludeEpisode = row['episode'])
+        for episode in episodes:
+            answerText = self._get_episode_title(episode['season'], episode['episode'], episode['episodeTitle'])
+            id = "%s-%s-%s" % (row['idShow'], row['season'], episode['episode'])
+            a = Answer(id, answerText, sortWeight = episode['episode'])
             a.setCoverFile(thumb.getCachedTVShowThumb(row['strPath']))
             self.answers.append(a)
 
@@ -849,7 +814,7 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
         videoDisplayType.setVideoFile(row['strPath'], row['strFileName'])
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         return ADDON.getSetting('question.whatepisodeisthis.enabled') == 'true'
 
 
@@ -861,14 +826,7 @@ class WhenWasTVShowFirstAiredQuestion(TVQuestion):
     def __init__(self, database, maxRating, onlyWatchedMovies):
         super(WhenWasTVShowFirstAiredQuestion, self).__init__(database, maxRating, onlyWatchedMovies, displayType = None)
 
-        row = self.database.fetchone("""
-            SELECT ev.idFile, ev.c12 AS season, ev.c13 AS episode, ev.c05 AS firstAired, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName
-            FROM episodeview ev, tvshowview tv
-            WHERE ev.idShow=tv.idShow AND ev.c12 != 0 AND ev.c13 = 1 AND ev.c05 != '' AND ev.strFileName NOT LIKE '%%.nfo'
-            %s %s
-            ORDER BY random() LIMIT 1
-            """ % (self._get_watched_episodes_clause(), self._get_max_rating_clause()))
-
+        row = self.database.getRandomTVShows(maxResults = 1, excludeSpecials = True, episode = 1, mustHaveFirstAired = True)[0]
         row['year'] = time.strptime(row['firstAired'], '%Y-%m-%d').tm_year
 
         skew = random.randint(0, 10)
@@ -898,7 +856,7 @@ class WhenWasTVShowFirstAiredQuestion(TVQuestion):
         self.setFanartFile(row['strPath'])
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         return ADDON.getSetting('question.whenwastvshowfirstaired.enabled') == 'true'
 
 
@@ -911,13 +869,7 @@ class WhoPlayedRoleInTVShowQuestion(TVQuestion):
         photoDisplayType = PhotoDisplayType()
         super(WhoPlayedRoleInTVShowQuestion, self).__init__(database, maxRating, onlyWatchedMovies, photoDisplayType)
 
-        row = self.database.fetchone("""
-            SELECT DISTINCT alt.idActor, a.strActor, alt.strRole, tv.idShow, tv.c00 AS title, tv.strPath, tv.c08 AS genre
-            FROM tvshowview tv, actorlinktvshow alt, actors a, episodeview ev
-            WHERE tv.idShow = alt.idShow AND alt.idActor=a.idActor AND tv.idShow=ev.idShow AND alt.strRole != '' AND ev.strFileName NOT LIKE '%%.nfo'
-            %s
-            ORDER BY random() LIMIT 1
-            """ % self._get_watched_episodes_clause())
+        row = self.database.getRandomTVShowActors(maxResults = 1, mustHaveRole = True)[0]
         role = row['strRole']
         if re.search('[|/]', role):
             roles = re.split('[|/]', role)
@@ -928,15 +880,11 @@ class WhoPlayedRoleInTVShowQuestion(TVQuestion):
         a.setCoverFile(thumb.getCachedActorThumb(row['strActor']))
         self.answers.append(a)
 
-        shows = self.database.fetchall("""
-            SELECT alt.idActor, a.strActor, alt.strRole
-            FROM actorlinktvshow alt, actors a
-            WHERE alt.idActor=a.idActor AND alt.idShow = ?  AND alt.idActor != ?
-            ORDER BY random() LIMIT 3
-            """, (row['idShow'], row['idActor']))
-        for show in shows:
-            a = Answer(show['idActor'], show['strActor'])
-            a.setCoverFile(thumb.getCachedActorThumb(show['strActor']))
+
+        actors = self.database.getRandomTVShowActors(maxResults = 3, onlySelectActor = True, showId = row['idShow'], excludeActorId = row['idActor'])
+        for actor in actors:
+            a = Answer(actor['idActor'], actor['strActor'])
+            a.setCoverFile(thumb.getCachedActorThumb(actor['strActor']))
             self.answers.append(a)
 
         random.shuffle(self.answers)
@@ -948,7 +896,7 @@ class WhoPlayedRoleInTVShowQuestion(TVQuestion):
         photoDisplayType.setPhotoFile(thumb.getCachedTVShowThumb(row['strPath']))
 
     @staticmethod
-    def isEnabledInSettings():
+    def isEnabled():
         return ADDON.getSetting('question.whoplayedroleintvshow.enabled') == 'true'
         
 
@@ -968,7 +916,7 @@ def getRandomQuestion(gameInstance, database):
         #noinspection PyUnresolvedReferences
         subclasses = TVQuestion.__subclasses__()
 
-    subclasses  = [ subclass for subclass in subclasses if subclass.isEnabledInSettings() ]
+    subclasses  = [ subclass for subclass in subclasses if subclass.isEnabled() ]
     random.shuffle(subclasses)
 
     for subclass in subclasses:
@@ -984,11 +932,11 @@ def getRandomQuestion(gameInstance, database):
 def isAnyMovieQuestionsEnabled():
     #noinspection PyUnresolvedReferences
     subclasses = MovieQuestion.__subclasses__()
-    subclasses  = [ subclass for subclass in subclasses if subclass.isEnabledInSettings() ]
+    subclasses  = [ subclass for subclass in subclasses if subclass.isEnabled() ]
     return subclasses
 
 def isAnyTVShowQuestionsEnabled():
     #noinspection PyUnresolvedReferences
     subclasses = TVQuestion.__subclasses__()
-    subclasses  = [ subclass for subclass in subclasses if subclass.isEnabledInSettings() ]
+    subclasses  = [ subclass for subclass in subclasses if subclass.isEnabled() ]
     return subclasses
