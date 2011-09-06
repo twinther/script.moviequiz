@@ -83,6 +83,7 @@
     <string id="30454">Hvornår blev [B]%s[/B] sendt første gang?</string><!-- %s is tvshow title -->
     <string id="30455">Hvem spiller [B]%s[/B] i [B]%s[/B]?</string><!-- 1st %s is role, 2nd %s is tvshow title -->
     <string id="30456">Hvem ligger stemme til [B]%s[/B] i [B]%s[/B]?</string><!-- 1st %s is role, 2nd %s is movie title -->
+    <string id="30457">Hvilken TV-serie er dette citat fra??</string>
 
     <!-- Settings strings -->
     <string id="30500">Generelt</string>
@@ -130,6 +131,7 @@
     <string id="30582">Hvilket afsnit er det?</string>
     <string id="30583">Hvornår blev TV-serien sendt først gang?</string>
     <string id="30584">Hvem spiller rollen i TV-serien?</string>
+    <string id="30585">Hvilken TV-serie er dette citat fra?</string>
 
     <!-- Game type strings -->
     <string id="30600">[B]Vælg Movie Quiz spil type[/B]</string>

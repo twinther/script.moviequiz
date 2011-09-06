@@ -312,13 +312,20 @@ class Database(object):
         return self.fetchall(query, params)
 
 
-    def getRandomTVShows(self, maxResults = None, excludeTVShowId = None, excludeSpecials = False, episode = None, mustHaveFirstAired = False):
+    def getRandomTVShows(self, maxResults = None, excludeTVShowId = None, excludeSpecials = False, episode = None, mustHaveFirstAired = False, onlySelectTVShow = False):
         params = []
-        query = """
-            SELECT ev.idFile, tv.c00 AS title, ev.c05 AS firstAired, ev.c12 AS season, ev.c13 AS episode, ev.idShow, ev.strPath, ev.strFileName, tv.strPath AS tvShowPath
-            FROM episodeview ev, tvshowview tv
-            WHERE ev.idShow=tv.idShow AND ev.strFileName NOT LIKE '%%.nfo'
-            """ + self.defaultTVShowViewClause
+        if onlySelectTVShow:
+            query = """
+                SELECT tv.idShow, tv.c00 AS title, tv.strPath AS tvShowPath
+                FROM tvshowview tv
+                WHERE 1=1
+                """
+        else:
+            query = """
+                SELECT ev.idFile, tv.c00 AS title, ev.c05 AS firstAired, ev.c12 AS season, ev.c13 AS episode, ev.idShow, ev.strPath, ev.strFileName, tv.strPath AS tvShowPath
+                FROM episodeview ev, tvshowview tv
+                WHERE ev.idShow=tv.idShow AND ev.strFileName NOT LIKE '%%.nfo'
+                """ + self.defaultTVShowViewClause
 
         if excludeTVShowId:
             query += " AND tv.idShow != ?"

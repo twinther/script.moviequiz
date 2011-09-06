@@ -40,18 +40,18 @@ class Imdb(object):
         self._downloadGzipFile(self.ACTORS_URL, self.actorsPath, progressCallback, self._postprocessActorNames)
 
 
-    def getRandomQuote(self, movie, maxLength = None):
-        quotes = self._loadQuotesForMovie(movie)
+    def getRandomQuote(self, name, season = None, episode = None, maxLength = None):
+        quotes = self._loadQuotes(name, season, episode)
         if quotes is None:
             return None
 
         quote = None
-        retries = 0
-        while retries < 10:
-            retries += 1
+        for retries in range(0, 25):
             quote = quotes[random.randint(0, len(quotes)-1)]
+            print len(quote)
             if maxLength is None or len(quote) < maxLength:
                 break
+
 
         # filter and cleanup
         return re.sub('\n  ', ' ', quote)
@@ -164,17 +164,24 @@ class Imdb(object):
         file.close()
         response.close()
 
-    def _loadQuotesForMovie(self, movie):
+    def _loadQuotes(self, name, season, episode):
         """
         Loads quotes from QUOTES_LIST using the byte offsets in QUOTES_INDEX,
         so we only need to load a few kilobytes instead of a few 100 megabytes.
 
-        @param movie: the name of the movie
-        @type movie: str
-        @return a list containing the individual quotes from the movie
+        @param name: the name of the movie or tv show
+        @type name: str
+        @param season: the season of the tv show
+        @type season: str
+        @param episode: the episode of the tv show
+        @type episode: str
+        @return a list containing the individual quotes from the movie or tv show
         """
         # find position using index
-        pattern = '\n%s [^\t]+\t([0-9]+)\n[^\t]+\t([0-9]+)' % movie
+        if season is not None and episode is not None:
+            pattern = '\n"%s".*?\(\#%s.%s\)\}\t([0-9]+)\n[^\t]+\t([0-9]+)' % (name, season, episode)
+        else:
+            pattern = '\n%s [^\t]+\t([0-9]+)\n[^\t]+\t([0-9]+)' % name
         m = re.search(pattern, self.quotesIndex, re.DOTALL)
         if m is None:
             return None

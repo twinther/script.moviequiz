@@ -45,17 +45,13 @@ class CorrectAnswer(Answer):
  
 class Question(object):
 
-    def __init__(self, database, maxRating, onlyWatchedMovies, displayType):
+    def __init__(self, database, displayType):
         """
         Base class for Questions
 
         @param self: Question instance
         @param database: Database connection instance to use
         @type database: Database
-        @param maxRating: the maximum allowed MPAA/Content rating
-        @type maxRating: str
-        @param onlyWatchedMovies: whether to limit to questions about watched movies or not
-        @type onlyWatchedMovies: bool
         @param displayType:
         @type displayType: DisplayType
         @return:
@@ -64,10 +60,6 @@ class Question(object):
         self.answers = list()
         self.text = None
         self.fanartFile = None
-
-        # Maximum allowed MPAA rating
-        self.maxRating = maxRating
-        self.onlyWatchedMovies = onlyWatchedMovies
         self.displayType = displayType
 
     def getText(self):
@@ -104,18 +96,11 @@ class Question(object):
     def isEnabled():
         raise
 
-    def _get_movie_ids(self):
-        movieIds = list()
-        for movie in self.answers:
-            movieIds.append(movie.id)
-        return ','.join(map(str, movieIds))
-
     def _getMovieIds(self):
         movieIds = list()
         for movie in self.answers:
             movieIds.append(movie.id)
         return movieIds
-
 
     def _isAnimationGenre(self, genre):
         return genre.lower().find("animation") != -1
@@ -163,37 +148,16 @@ class QuoteDisplayType(object):
 #
 
 class MovieQuestion(Question):
-    MPAA_RATINGS = ['R', 'Rated R', 'PG-13', 'Rated PG-13', 'PG', 'Rated PG', 'G', 'Rated G']
-
-    def __init__(self, database, maxRating, onlyWatchedMovies, displayType):
-        print "MovieQuestion.__init_()"
-        super(MovieQuestion, self).__init__(database, maxRating, onlyWatchedMovies, displayType)
-
-    def _get_max_rating_clause(self):
-        if self.maxRating is None:
-            return ''
-
-        idx = self.MPAA_RATINGS.index(self.maxRating)
-        ratings = self.MPAA_RATINGS[idx:]
-
-        return ' AND TRIM(c12) IN (\'%s\')' % '\',\''.join(ratings)
-
-    def _get_watched_movies_clause(self):
-        if self.onlyWatchedMovies:
-            return ' AND mv.playCount IS NOT NULL'
-        else:
-            return ''
-
-
+    pass
 
 class WhatMovieIsThisQuestion(MovieQuestion):
     """
         WhatMovieIsThisQuestion
     """
 
-    def __init__(self, database, maxRating, onlyWatchedMovies):
+    def __init__(self, database):
         videoDisplayType = VideoDisplayType()
-        super(WhatMovieIsThisQuestion, self).__init__(database, maxRating, onlyWatchedMovies, videoDisplayType)
+        super(WhatMovieIsThisQuestion, self).__init__(database, videoDisplayType)
 
         correctAnswer = self.database.getRandomMovies(maxResults = 1)[0]
 
@@ -227,7 +191,6 @@ class WhatMovieIsThisQuestion(MovieQuestion):
                 a = Answer(movie['idMovie'], movie['title'], movie['idFile'])
                 a.setCoverFile(movie['strPath'], movie['strFileName'])
                 self.answers.append(a)
-            print self._get_movie_ids()
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_MOVIE_IS_THIS)
@@ -241,9 +204,9 @@ class ActorNotInMovieQuestion(MovieQuestion):
     """
         ActorNotInMovieQuestion
     """
-    def __init__(self, database, maxRating, onlyWatchedMovies):
+    def __init__(self, database):
         photoDisplayType = PhotoDisplayType()
-        super(ActorNotInMovieQuestion, self).__init__(database, maxRating, onlyWatchedMovies, photoDisplayType)
+        super(ActorNotInMovieQuestion, self).__init__(database, photoDisplayType)
 
         rows = self.database.getRandomActors(maxResults = 10, minMovieCount = 3)
         actor = None
@@ -287,8 +250,8 @@ class WhatYearWasMovieReleasedQuestion(MovieQuestion):
     """
         WhatYearWasMovieReleasedQuestion
     """
-    def __init__(self, database, maxRating, onlyWatchedMovies):
-        super(WhatYearWasMovieReleasedQuestion, self).__init__(database, maxRating, onlyWatchedMovies, displayType = None)
+    def __init__(self, database):
+        super(WhatYearWasMovieReleasedQuestion, self).__init__(database, displayType = None)
 
         row = self.database.getRandomMovies(maxResults = 1, minYear = 1900)[0]
         skew = random.randint(0, 10)
@@ -326,8 +289,8 @@ class WhatTagLineBelongsToMovieQuestion(MovieQuestion):
     """
         WhatTagLineBelongsToMovieQuestion
     """
-    def __init__(self, database, maxRating, onlyWatchedMovies):
-        super(WhatTagLineBelongsToMovieQuestion, self).__init__(database, maxRating, onlyWatchedMovies, displayType = None)
+    def __init__(self, database):
+        super(WhatTagLineBelongsToMovieQuestion, self).__init__(database, displayType = None)
 
         row = self.database.getRandomMovies(maxResults = 1, mustHaveTagline = True)[0]
         a = CorrectAnswer(row['idMovie'], row['tagline'], row['idFile'])
@@ -356,8 +319,8 @@ class WhoDirectedThisMovieQuestion(MovieQuestion):
     """
         WhoDirectedThisMovieQuestion
     """
-    def __init__(self, database, maxRating, onlyWatchedMovies):
-        super(WhoDirectedThisMovieQuestion, self).__init__(database, maxRating, onlyWatchedMovies, displayType = None)
+    def __init__(self, database):
+        super(WhoDirectedThisMovieQuestion, self).__init__(database, displayType = None)
 
         director = self.database.getRandomDirectors(maxResults = 1, minMovieCount = 1)[0]
         row = self.database.getRandomMovies(maxResults = 1, directorId = director['idActor'])[0]
@@ -384,8 +347,8 @@ class WhatStudioReleasedMovieQuestion(MovieQuestion):
     """
         WhatStudioReleasedMovieQuestion
     """
-    def __init__(self, database, maxRating, onlyWatchedMovies):
-        super(WhatStudioReleasedMovieQuestion, self).__init__(database, maxRating, onlyWatchedMovies, displayType = None)
+    def __init__(self, database):
+        super(WhatStudioReleasedMovieQuestion, self).__init__(database, displayType = None)
 
         studio = self.database.getRandomStudios(maxResults = 1)[0]
         row = self.database.getRandomMovies(maxResults = 1, studioId = studio['idStudio'])[0]
@@ -412,9 +375,9 @@ class WhatActorIsThisQuestion(MovieQuestion):
     """
         WhatActorIsThisQuestion
     """
-    def __init__(self, database, maxRating, onlyWatchedMovies):
+    def __init__(self, database):
         photoDisplayType = PhotoDisplayType()
-        super(WhatActorIsThisQuestion, self).__init__(database, maxRating, onlyWatchedMovies, photoDisplayType)
+        super(WhatActorIsThisQuestion, self).__init__(database, photoDisplayType)
 
         actor = None
         photoFile = None
@@ -458,8 +421,8 @@ class WhoPlayedRoleInMovieQuestion(MovieQuestion):
     """
         WhoPlayedRoleInMovieQuestion
     """
-    def __init__(self, database, maxRating, onlyWatchedMovies):
-        super(WhoPlayedRoleInMovieQuestion, self).__init__(database, maxRating, onlyWatchedMovies, displayType = None)
+    def __init__(self, database):
+        super(WhoPlayedRoleInMovieQuestion, self).__init__(database, displayType = None)
 
         actor = self.database.getRandomActors(maxResults = 1, mustHaveRole = True)[0]
         movie = self.database.getRandomMovies(maxResults = 1, actorIdInMovie = actor['idActor'])[0]
@@ -496,9 +459,9 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
     """
         WhatQuoteIsThisFrom
     """
-    def __init__(self, database, maxRating, onlyWatchedMovies):
+    def __init__(self, database):
         quoteDisplayType = QuoteDisplayType()
-        super(WhatMovieIsThisQuoteFrom, self).__init__(database, maxRating, onlyWatchedMovies, quoteDisplayType)
+        super(WhatMovieIsThisQuoteFrom, self).__init__(database, quoteDisplayType)
 
         rows = self.database.getRandomMovies(maxResults = 10, minYear = 1900)
         quoteText = None
@@ -536,8 +499,8 @@ class WhatMovieIsNewestQuestion(MovieQuestion):
     """
         WhatMovieIsNewestQuestion
     """
-    def __init__(self, database, maxRating, onlyWatchedMovies):
-        super(WhatMovieIsNewestQuestion, self).__init__(database, maxRating, onlyWatchedMovies, displayType = None)
+    def __init__(self, database):
+        super(WhatMovieIsNewestQuestion, self).__init__(database, displayType = None)
 
         row = self.database.getRandomMovies(maxResults = 1, minYear = 1900)[0]
         a = CorrectAnswer(row['idMovie'], row['title'], row['idFile'])
@@ -565,9 +528,9 @@ class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
     """
         WhatMovieIsNotDirectedByQuestion
     """
-    def __init__(self, database, maxRating, onlyWatchedMovies):
+    def __init__(self, database):
         photoDisplayType = PhotoDisplayType()
-        super(WhatMovieIsNotDirectedByQuestion, self).__init__(database, maxRating, onlyWatchedMovies, photoDisplayType)
+        super(WhatMovieIsNotDirectedByQuestion, self).__init__(database, photoDisplayType)
 
         rows = self.database.getRandomDirectors(maxResults = 10, minMovieCount = 3)
 
@@ -608,9 +571,9 @@ class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
 
 
 class WhatActorIsInTheseMoviesQuestion(MovieQuestion):
-    def __init__(self, database, maxRating, onlyWatchedMovies):
+    def __init__(self, database):
         threePhotoDisplayType = ThreePhotoDisplayType()
-        super(WhatActorIsInTheseMoviesQuestion, self).__init__(database, maxRating, onlyWatchedMovies, threePhotoDisplayType)
+        super(WhatActorIsInTheseMoviesQuestion, self).__init__(database, threePhotoDisplayType)
 
         actor = self.database.getRandomActors(maxResults = 1, minMovieCount = 3)[0]
         a = CorrectAnswer(actor['idActor'], actor['strActor'])
@@ -638,8 +601,8 @@ class WhatActorIsInTheseMoviesQuestion(MovieQuestion):
 
 
 class WhatActorIsInMovieBesidesOtherActorQuestion(MovieQuestion):
-    def __init__(self, database, maxRating, onlyWatchedMovies):
-        super(WhatActorIsInMovieBesidesOtherActorQuestion, self).__init__(database, maxRating, onlyWatchedMovies, displayType = None)
+    def __init__(self, database):
+        super(WhatActorIsInMovieBesidesOtherActorQuestion, self).__init__(database, displayType = None)
 
         movie = self.database.getRandomMovies(maxResults = 1, minActorCount = 3)[0]
         actors = self.database.getRandomActors(maxResults = 2, movieId = movie['idMovie'])
@@ -663,8 +626,8 @@ class WhatActorIsInMovieBesidesOtherActorQuestion(MovieQuestion):
         return ADDON.getSetting('question.whatactorisinmoviebesidesotheractor.enabled') == 'true'
 
 class WhatMovieHasTheLongestRuntimeQuestion(MovieQuestion):
-    def __init__(self, database, maxRating, onlyWatchedMovies):
-        super(WhatMovieHasTheLongestRuntimeQuestion, self).__init__(database, maxRating, onlyWatchedMovies, displayType = None)
+    def __init__(self, database):
+        super(WhatMovieHasTheLongestRuntimeQuestion, self).__init__(database, displayType = None)
 
         correctAnswer = self.database.getRandomMovies(maxResults = 1, mustHaveRuntime = True)[0]
         a = CorrectAnswer(correctAnswer['idMovie'], correctAnswer['title'], correctAnswer['idFile'])
@@ -692,25 +655,8 @@ class WhatMovieHasTheLongestRuntimeQuestion(MovieQuestion):
 #
 
 class TVQuestion(Question):
-    CONTENT_RATINGS = ['TV-MA', 'TV-14', 'TV-PG', 'TV-G', 'TV-Y7-FV', 'TV-Y7', 'TV-Y']
-    
-    def __init__(self, database, maxRating, onlyWatchedMovies, displayType):
-        super(TVQuestion, self).__init__(database, maxRating, onlyWatchedMovies, displayType)
-
-    def _get_watched_episodes_clause(self):
-        if self.onlyWatchedMovies:
-            return ' AND ev.playCount IS NOT NULL'
-        else:
-            return ''
-
-    def _get_max_rating_clause(self):
-        if self.maxRating is None:
-            return ''
-
-        idx = self.CONTENT_RATINGS.index(self.maxRating)
-        ratings = self.CONTENT_RATINGS[idx:]
-
-        return ' AND TRIM(tv.c13) IN (\'%s\')' % '\',\''.join(ratings)
+    def __init__(self, database, displayType):
+        super(TVQuestion, self).__init__(database, displayType)
 
     def _get_season_title(self, season):
         if not int(season):
@@ -727,9 +673,9 @@ class WhatTVShowIsThisQuestion(TVQuestion):
         WhatTVShowIsThisQuestion
     """
 
-    def __init__(self, database, maxRating, onlyWatchedMovies):
+    def __init__(self, database):
         videoDisplayType  = VideoDisplayType()
-        super(WhatTVShowIsThisQuestion, self).__init__(database, maxRating, onlyWatchedMovies, videoDisplayType)
+        super(WhatTVShowIsThisQuestion, self).__init__(database, videoDisplayType)
 
         row = self.database.getRandomTVShows(maxResults = 1)[0]
         a = CorrectAnswer(row['idShow'], row['title'], row['idFile'])
@@ -737,7 +683,7 @@ class WhatTVShowIsThisQuestion(TVQuestion):
         self.answers.append(a)
 
         # Fill with random episodes from other shows
-        shows = self.database.getRandomTVShows(maxResults = 3, excludeTVShowId = row['idShow'])
+        shows = self.database.getRandomTVShows(maxResults = 3, excludeTVShowId = row['idShow'], onlySelectTVShow = True)
         for show in shows:
             a = Answer(show['idShow'], show['title'])
             a.setCoverFile(thumb.getCachedTVShowThumb(show['tvShowPath']))
@@ -757,9 +703,9 @@ class WhatSeasonIsThisQuestion(TVQuestion):
         WhatSeasonIsThisQuestion
     """
 
-    def __init__(self, database, maxRating, onlyWatchedMovies):
+    def __init__(self, database):
         videoDisplayType  = VideoDisplayType()
-        super(WhatSeasonIsThisQuestion, self).__init__(database, maxRating, onlyWatchedMovies, videoDisplayType)
+        super(WhatSeasonIsThisQuestion, self).__init__(database, videoDisplayType)
 
         row = self.database.getRandomSeasons(maxResults = 1, minSeasonCount = 3)[0]
         a = CorrectAnswer("%s-%s" % (row['idShow'], row['season']), self._get_season_title(row['season']), row['idFile'], sortWeight = row['season'])
@@ -788,9 +734,9 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
         WhatEpisodeIsThisQuestion
     """
 
-    def __init__(self, database, maxRating, onlyWatchedMovies):
+    def __init__(self, database):
         videoDisplayType  = VideoDisplayType()
-        super(WhatEpisodeIsThisQuestion, self).__init__(database, maxRating, onlyWatchedMovies, videoDisplayType)
+        super(WhatEpisodeIsThisQuestion, self).__init__(database, videoDisplayType)
 
         row = self.database.getRandomEpisodes(maxResults = 1, minEpisodeCount = 3)[0]
         answerText = self._get_episode_title(row['season'], row['episode'], row['episodeTitle'])
@@ -823,8 +769,8 @@ class WhenWasTVShowFirstAiredQuestion(TVQuestion):
         WhenWasEpisodeFirstAiredQuestion
     """
 
-    def __init__(self, database, maxRating, onlyWatchedMovies):
-        super(WhenWasTVShowFirstAiredQuestion, self).__init__(database, maxRating, onlyWatchedMovies, displayType = None)
+    def __init__(self, database):
+        super(WhenWasTVShowFirstAiredQuestion, self).__init__(database, displayType = None)
 
         row = self.database.getRandomTVShows(maxResults = 1, excludeSpecials = True, episode = 1, mustHaveFirstAired = True)[0]
         row['year'] = time.strptime(row['firstAired'], '%Y-%m-%d').tm_year
@@ -865,9 +811,9 @@ class WhoPlayedRoleInTVShowQuestion(TVQuestion):
         WhoPlayedRoleInTVShowQuestion
     """
 
-    def __init__(self, database, maxRating, onlyWatchedMovies):
+    def __init__(self, database):
         photoDisplayType = PhotoDisplayType()
-        super(WhoPlayedRoleInTVShowQuestion, self).__init__(database, maxRating, onlyWatchedMovies, photoDisplayType)
+        super(WhoPlayedRoleInTVShowQuestion, self).__init__(database, photoDisplayType)
 
         row = self.database.getRandomTVShowActors(maxResults = 1, mustHaveRole = True)[0]
         role = row['strRole']
@@ -898,7 +844,40 @@ class WhoPlayedRoleInTVShowQuestion(TVQuestion):
     @staticmethod
     def isEnabled():
         return ADDON.getSetting('question.whoplayedroleintvshow.enabled') == 'true'
-        
+
+class WhatTVShowIsThisQuoteFrom(TVQuestion):
+    """
+        WhatTVShowIsThisFrom
+    """
+    def __init__(self, database):
+        quoteDisplayType = QuoteDisplayType()
+        super(WhatTVShowIsThisQuoteFrom, self).__init__(database, quoteDisplayType)
+
+        row = self.database.getRandomTVShows(maxResults = 1)[0]
+        quoteText = IMDB.getRandomQuote(row['title'], season = row['season'], episode = row['episode'], maxLength = 128)
+        if quoteText is None:
+            raise QuestionException('Did not find any quotes')
+
+        a = CorrectAnswer(row['idShow'], row['title'], row['idFile'])
+        a.setCoverFile(thumb.getCachedTVShowThumb(row['tvShowPath']))
+        self.answers.append(a)
+
+        # Fill with random episodes from other shows
+        shows = self.database.getRandomTVShows(maxResults = 3, excludeTVShowId = row['idShow'], onlySelectTVShow = True)
+        for show in shows:
+            a = Answer(show['idShow'], show['title'])
+            a.setCoverFile(thumb.getCachedTVShowThumb(show['tvShowPath']))
+            self.answers.append(a)
+
+        random.shuffle(self.answers)
+        quoteDisplayType.setQuoteText(quoteText)
+        self.text = strings(Q_WHAT_TVSHOW_IS_THIS_QUOTE_FROM)
+
+    @staticmethod
+    def isEnabled():
+        return ADDON.getSetting('question.whattvshowisthisquotefrom.enabled') == 'true' and IMDB.isDataPresent()
+
+
 
 class QuestionException(Exception):
     pass
@@ -921,7 +900,7 @@ def getRandomQuestion(gameInstance, database):
 
     for subclass in subclasses:
         try:
-            return subclass(database, None, None)
+            return subclass(database)
         except QuestionException, ex:
             print "QuestionException in %s: %s" % (subclass, ex)
         except db.DbException, ex:
