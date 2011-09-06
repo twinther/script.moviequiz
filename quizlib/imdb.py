@@ -22,10 +22,9 @@ class Imdb(object):
     ACTORS_URL = 'http://ftp.sunet.se/pub/tv+movies/imdb/actors.list.gz' 
 
     def __init__(self, listsPath, preloadData = True):
-        self.path = listsPath
-        self.actorsPath = os.path.join(self.path, self.ACTORS_LIST)
-        self.quotesIndexPath = os.path.join(self.path, self.QUOTES_INDEX)
-        self.quotesListPath = os.path.join(self.path, self.QUOTES_LIST)
+        self.actorsPath = os.path.join(listsPath, self.ACTORS_LIST)
+        self.quotesIndexPath = os.path.join(listsPath, self.QUOTES_INDEX)
+        self.quotesListPath = os.path.join(listsPath, self.QUOTES_LIST)
 
         self.actorNames = None
         self.quotesIndex = None
@@ -33,16 +32,47 @@ class Imdb(object):
         if preloadData:
             ImdbLoader(self).start()
 
-    def __del__(self):
-        self.actorNames = None
-        self.quotes = None
-
+    def isDataPresent(self):
+        return os.path.exists(self.actorsPath) and os.path.exists(self.quotesIndexPath) and os.path.exists(self.quotesListPath)
 
     def downloadFiles(self, progressCallback = None):
-        self._downloadGzipFile(self.QUOTES_URL, self.QUOTES_LIST, progressCallback, self._createQuotesIndex)
-        self._downloadGzipFile(self.ACTORS_URL, self.ACTORS_LIST, progressCallback, self._postprocessActorNames)
+        self._downloadGzipFile(self.QUOTES_URL, self.quotesListPath, progressCallback, self._createQuotesIndex)
+        self._downloadGzipFile(self.ACTORS_URL, self.actorsPath, progressCallback, self._postprocessActorNames)
+
+
+    def getRandomQuote(self, movie, maxLength = None):
+        quotes = self._loadQuotesForMovie(movie)
+        if quotes is None:
+            return None
+
+        quote = None
+        retries = 0
+        while retries < 10:
+            retries += 1
+            quote = quotes[random.randint(0, len(quotes)-1)]
+            if maxLength is None or len(quote) < maxLength:
+                break
+
+        # filter and cleanup
+        return re.sub('\n  ', ' ', quote)
+
+    def isActor(self, name):
+        if self.actorNames:
+            #m = re.search('^%s$' % name, self.actorNames, re.MULTILINE)
+            return name in self.actorNames
+        else:
+            xbmc.log("%s does not exists, has it been downloaded yet?" % self.ACTORS_LIST)
+            return None
+
 
     def _postprocessActorNames(self, line):
+        """
+        Changes author names from Lastname, Firstname into Firstname Lastname line by line
+        and removes duplicate lines. It is assumed the lines are provided sorted.
+
+        @param line: a line from ACTORS_LIST
+        @type line: str
+        """
         if not hasattr(self, 'previousLastnameFirstname'):
             self.previousLastnameFirstname = None
 
@@ -60,9 +90,17 @@ class Imdb(object):
         return ''
 
     def _createQuotesIndex(self, line):
+        """
+        Creates an index file of the QUOTES_LIST file. The index contains
+        byte offsets of each movie title to make it possible to load just 
+        part of the QUOTES_LIST file.
+
+        @param line: a line from QUOTES_LIST
+        @type line: str
+        """
         if not hasattr(self, 'indexFile'):
             self.bytesProcessed = 0
-            self.indexFile = open(os.path.join(self.path, 'quotes.index'), 'w')
+            self.indexFile = open(self.quotesIndexPath, 'w')
 
         if line.startswith('#'):
             self.indexFile.write(line[2:].strip() + "\t" + str(self.bytesProcessed) + "\n")
@@ -74,14 +112,18 @@ class Imdb(object):
     def _downloadGzipFile(self, url, destination, progressCallback = None, postprocessLineCallback = None):
         """
         Downloads a gzip compressed file and extracts it on the fly.
+        Optionally providing progress via the progressCallback and postprocessing on a line level
+        via the postprocessLineCallback.
 
-        Keyword parameters:
-        url -- The full url of the gzip file
-        destination -- the full path of the destination file
-        progressCallback -- a callback function which is invoked periodically with progress information
+        @param url: the full url of the gzip file
+        @type url: str
+        @param destination: the full path of the destination file
+        @type destination: str
+        @param progressCallback: a callback function which is invoked periodically with progress information
+        @type progressCallback: method
         """
         response = urllib2.urlopen(url)
-        file = open(os.path.join(self.path, destination), 'wb')
+        file = open(destination, 'wb')
         decompressor = zlib.decompressobj(16+zlib.MAX_WBITS)
 
         partialLine = None
@@ -122,23 +164,15 @@ class Imdb(object):
         file.close()
         response.close()
 
-    def getRandomQuote(self, movie, maxLength = None):
-        quotes = self._loadQuotesForMovie(movie)
-        if quotes is None:
-            return None
-
-        quote = None
-        retries = 0
-        while retries < 10:
-            retries += 1
-            quote = quotes[random.randint(0, len(quotes)-1)]
-            if maxLength is None or len(quote) < maxLength:
-                break
-
-        # filter and cleanup
-        return re.sub('\n  ', ' ', quote)
-
     def _loadQuotesForMovie(self, movie):
+        """
+        Loads quotes from QUOTES_LIST using the byte offsets in QUOTES_INDEX,
+        so we only need to load a few kilobytes instead of a few 100 megabytes.
+
+        @param movie: the name of the movie
+        @type movie: str
+        @return a list containing the individual quotes from the movie
+        """
         # find position using index
         pattern = '\n%s [^\t]+\t([0-9]+)\n[^\t]+\t([0-9]+)' % movie
         m = re.search(pattern, self.quotesIndex, re.DOTALL)
@@ -146,7 +180,7 @@ class Imdb(object):
             return None
 
         # load quotes based on position
-        f = open(os.path.join(self.path, self.QUOTES_LIST))
+        f = open(self.quotesListPath)
         f.seek(int(m.group(1)))
         quotes = f.read(int(m.group(2)) - int(m.group(1)))
         f.close()
@@ -154,15 +188,11 @@ class Imdb(object):
         # remove first line and split on double new lines
         return quotes[quotes.find('\n')+1:-2].split('\n\n')
 
-    def isActor(self, name):
-        if self.actorNames:
-            #m = re.search('^%s$' % name, self.actorNames, re.MULTILINE)
-            return name in self.actorNames
-        else:
-            xbmc.log("%s does not exists, has it been downloaded yet?" % self.ACTORS_LIST)
-            return None
-
 class ImdbLoader(threading.Thread):
+    """
+    ImdbLoader handles background loading of Imdb data
+    to make the start-up feel quicker.
+    """
     def __init__(self, imdb):
         super(ImdbLoader, self).__init__()
         self.imdb = imdb
@@ -193,8 +223,8 @@ if __name__ == '__main__':
         return not d.iscanceled()
 
 
-    addon = xbmcaddon.Addon(id = 'script.moviequiz')
-    path = xbmc.translatePath(addon.getAddonInfo('profile'))
+    ADDON = xbmcaddon.Addon(id = 'script.moviequiz')
+    path = xbmc.translatePath(ADDON.getAddonInfo('profile'))
     if not os.path.exists(path):
         os.mkdir(path)
     i = Imdb(path, preloadData = False)
