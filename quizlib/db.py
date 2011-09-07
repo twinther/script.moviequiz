@@ -3,6 +3,7 @@ from xml.parsers.expat import ExpatError
 
 import os
 import xbmc
+import mysql.connector
 import glob
 
 try:
@@ -16,6 +17,9 @@ __author__ = 'twinther'
 
 class Database(object):
     """Base class for the various databases"""
+    FUNC_RANDOM = None
+    CURSOR_CLASS = None
+
     def __init__(self, allowedRatings, onlyWatched):
         self.conn = None
 
@@ -33,6 +37,48 @@ class Database(object):
 
     def postInit(self):
         self._fixMissingTVShowView()
+
+    @staticmethod
+    def connect(maxRating = None, onlyUsedWatched = None):
+        settings = _loadSettings()
+        xbmc.log("Loaded DB settings: %s" % settings)
+
+        if settings.has_key('type') and settings['type'] is not None and settings['type'].lower() == 'mysql':
+            return MySQLDatabase(maxRating, onlyUsedWatched, settings)
+        else:
+            return SQLiteDatabase(maxRating, onlyUsedWatched, settings)
+
+
+    def _loadSettings():
+        settings = {
+            'type' : 'sqlite3',
+            'host' : xbmc.translatePath('special://database/')
+        }
+
+        advancedSettings = xbmc.translatePath('special://userdata/advancedsettings.xml')
+        if os.path.exists(advancedSettings):
+            f = open(advancedSettings)
+            xml = f.read()
+            f.close()
+            try:
+                doc = ElementTree.fromstring(xml)
+
+                if doc.findtext('videodatabase/type') is not None:
+                    settings['type'] = doc.findtext('videodatabase/type')
+                if doc.findtext('videodatabase/host') is not None:
+                    settings['host'] = doc.findtext('videodatabase/host')
+                if doc.findtext('videodatabase/name') is not None:
+                    settings['name'] = doc.findtext('videodatabase/name')
+                if doc.findtext('videodatabase/user') is not None:
+                    settings['user'] = doc.findtext('videodatabase/user')
+                if doc.findtext('videodatabase/pass') is not None:
+                    settings['pass'] = doc.findtext('videodatabase/pass')
+            except ExpatError:
+               xbmc.log("Unable to parse advancedsettings.xml")
+
+        return settings
+
+
 
     def _fixMissingTVShowView(self):
         self.conn.execute("""
@@ -58,11 +104,9 @@ class Database(object):
             parameters = [parameters]
 
         parameters = self._prepareParameters(parameters)
-        sql = self._prepareSql(sql)
-
         xbmc.log("Executing fetchall SQL [%s]" % sql)
 
-        c = self._createCursor()
+        c = self.conn.cursor(cursor_class = self.CURSOR_CLASS)
         c.execute(sql, parameters)
         result = c.fetchall()
 
@@ -78,11 +122,9 @@ class Database(object):
             parameters = [parameters]
 
         parameters = self._prepareParameters(parameters)
-        sql = self._prepareSql(sql)
-
         xbmc.log("Executing fetchone SQL [%s]" % sql)
 
-        c = self._createCursor()
+        c = self.conn.cursor(cursor_class = self.CURSOR_CLASS)
         c.execute(sql, parameters)
         result = c.fetchone()
 
@@ -98,9 +140,7 @@ class Database(object):
             parameters = [parameters]
 
         parameters = self._prepareParameters(parameters)
-        sql = self._prepareSql(sql)
-
-        c = self._createCursor()
+        c = self.conn.cursor(cursor_class = self.CURSOR_CLASS)
         c.execute(sql, parameters)
         self.conn.commit()
         c.close()
@@ -108,21 +148,19 @@ class Database(object):
     def _prepareParameters(self, parameters):
         return parameters
 
-    def _prepareSql(self, sql):
-        return sql
-
-    def _createCursor(self):
-        return self.conn.cursor()
-
     def hasMovies(self):
-        row = self.fetchone("SELECT COUNT(*) AS cnt FROM movieview")
-        return int(row['cnt']) > 0
+        try:
+            row = self.fetchone("SELECT COUNT(*) AS cnt FROM movieview")
+            return int(row['cnt']) > 0
+        except DbException:
+            return False
 
     def hasTVShows(self):
-        row = self.fetchone("SELECT COUNT(*) AS cnt FROM tvshowview")
-        return int(row['cnt']) > 0
-
-
+        try:
+            row = self.fetchone("SELECT COUNT(*) AS cnt FROM tvshowview")
+            return int(row['cnt']) > 0
+        except DbException:
+            return False
 
     def getRandomMovies(self, maxResults, setId = None, genres = None, excludeMovieIds = None, actorIdInMovie = None, actorIdNotInMovie = None,
                         directorId = None, excludeDirectorId = None, studioId = None, minYear = None, maxYear = None, mustHaveTagline = False,
@@ -133,6 +171,9 @@ class Database(object):
         * idMovie
         * idFile
         * title
+        * tagline
+        * year
+        * runtime
         * genre
         * strPath
         * strFileName
@@ -146,14 +187,36 @@ class Database(object):
         @type setId: int
         @param genres: Only retrieve movies in this/these genres
         @type genres: str
-        @param excludeMovieIds: Exclude the provided movie Ids from the list of movies candidiates
+        @param excludeMovieIds: Exclude the provided movie Ids from the list of movie candidiates
         @type excludeMovieIds: array of int
+        @param actorIdInMovie: Only retrieve movies with this actor
+        @type actorIdInMovie: int
+        @param actorIdNotInMovie: Exclude movies with this actor from the list of movie candidiates
+        @type actorIdNotInMovie: int
+        @param directorId: Only retrieve movies with this director
+        @type directorId: int
+        @param excludeDirectorId: Exclude movies with this director from the list of movie candidates
+        @type excludeDirectorId: int
+        @param studioId: Only retrieve movies with this studio
+        @type studioId: int
+        @param minYear: Exclude movies with year less than this from the list of movie candidates
+        @type minYear: int
+        @param maxYear: Exclude movies with year more than this from the list of movie candidates
+        @type maxYear: int
+        @param mustHaveTagline: Exclude movies without a tagline from the list of movie candidates
+        @type mustHaveTagline: bool
+        @param minActorCount: Only retrieve movies with this or more actors
+        @type minActorCount: int
+        @param mustHaveRuntime: Exclude movies without a runtime from the list of movie candidates
+        @type mustHaveRuntime: bool
+        @param maxRuntime: Only retrieve movies with less than this runtime
+        @type maxRuntime: int
         """
         params = list()
         query = """
             SELECT mv.idMovie, mv.idFile, mv.c00 AS title, mv.c03 AS tagline, mv.c07 AS year, mv.c11 AS runtime, mv.c14 AS genre, mv.strPath, mv.strFileName, slm.idSet
             FROM movieview mv LEFT JOIN setlinkmovie slm ON mv.idMovie = slm.idMovie
-            WHERE mv.strFileName NOT LIKE '%%.nfo'
+            WHERE mv.strFileName NOT LIKE '%.nfo'
             """ + self.defaultMovieViewClause
 
         if setId:
@@ -215,7 +278,7 @@ class Database(object):
             query += "AND (SELECT COUNT(DISTINCT alm.idActor) FROM actorlinkmovie alm WHERE alm.idMovie = mv.idMovie) >= ?"
             params.append(minActorCount)
 
-        query += " ORDER BY random()"
+        query += " ORDER BY " + self.FUNC_RANDOM
         if maxResults:
             query += " LIMIT " + str(maxResults)
 
@@ -233,7 +296,7 @@ class Database(object):
         query += """
             a.idActor, a.strActor, alm.strRole
             FROM movieview mv, actorlinkmovie alm, actors a
-            WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor AND mv.strFileName NOT LIKE '%%.nfo'
+            WHERE mv.idMovie = alm.idMovie AND alm.idActor = a.idActor AND mv.strFileName NOT LIKE '%.nfo'
             """
         if appendDefaultClause:
             query += self.defaultMovieViewClause
@@ -262,7 +325,7 @@ class Database(object):
             # different title
             query += " AND mv.c00 NOT IN (SELECT c00 FROM movieview WHERE idMovie IN (%s))" % excludeMovieString
 
-        query += " ORDER BY random()"
+        query += " ORDER BY " + self.FUNC_RANDOM
         if maxResults:
             query += " LIMIT " + str(maxResults)
 
@@ -274,7 +337,7 @@ class Database(object):
         query = """
             SELECT a.idActor, a.strActor
             FROM movieview mv, directorlinkmovie dlm, actors a
-            WHERE mv.idMovie = dlm.idMovie AND dlm.idDirector = a.idActor AND mv.strFileName NOT LIKE '%%.nfo'
+            WHERE mv.idMovie = dlm.idMovie AND dlm.idDirector = a.idActor AND mv.strFileName NOT LIKE '%.nfo'
             """ + self.defaultMovieViewClause
 
         if minMovieCount:
@@ -286,7 +349,7 @@ class Database(object):
             params.append(excludeDirectorId)
 
 
-        query += " ORDER BY random()"
+        query += " ORDER BY " + self.FUNC_RANDOM
         if maxResults:
             query += " LIMIT " + str(maxResults)
 
@@ -298,14 +361,14 @@ class Database(object):
         query = """
             SELECT s.idStudio, s.strStudio
             FROM movieview mv, studiolinkmovie slm, studio s
-            WHERE mv.idMovie = slm.idMovie AND slm.idStudio = s.idStudio AND mv.strFileName NOT LIKE '%%.nfo'
+            WHERE mv.idMovie = slm.idMovie AND slm.idStudio = s.idStudio AND mv.strFileName NOT LIKE '%.nfo'
             """ + self.defaultMovieViewClause
 
         if excludeStudioId:
             query += " AND slm.idStudio != ?"
             params.append(excludeStudioId)
 
-        query += " ORDER BY random()"
+        query += " ORDER BY " + self.FUNC_RANDOM
         if maxResults:
             query += " LIMIT " + str(maxResults)
 
@@ -324,7 +387,7 @@ class Database(object):
             query = """
                 SELECT ev.idFile, tv.c00 AS title, ev.c05 AS firstAired, ev.c12 AS season, ev.c13 AS episode, ev.idShow, ev.strPath, ev.strFileName, tv.strPath AS tvShowPath
                 FROM episodeview ev, tvshowview tv
-                WHERE ev.idShow=tv.idShow AND ev.strFileName NOT LIKE '%%.nfo'
+                WHERE ev.idShow=tv.idShow AND ev.strFileName NOT LIKE '%.nfo'
                 """ + self.defaultTVShowViewClause
 
         if excludeTVShowId:
@@ -341,7 +404,7 @@ class Database(object):
         if mustHaveFirstAired:
             query += " AND ev.c05 != ''"
 
-        query += " ORDER BY random()"
+        query += " ORDER BY " + self.FUNC_RANDOM
         if maxResults:
             query += " LIMIT " + str(maxResults)
 
@@ -360,7 +423,7 @@ class Database(object):
 
         query += """
             FROM episodeview ev, tvshowview tv
-            WHERE ev.idShow=tv.idShow AND ev.strFileName NOT LIKE '%%.nfo'
+            WHERE ev.idShow=tv.idShow AND ev.strFileName NOT LIKE '%.nfo'
             """
 
         if minSeasonCount:
@@ -375,7 +438,7 @@ class Database(object):
             query += " AND ev.c12 != ?"
             params.append(excludeSeason)
 
-        query += " ORDER BY random()"
+        query += " ORDER BY " + self.FUNC_RANDOM
         if maxResults:
             query += " LIMIT " + str(maxResults)
 
@@ -387,7 +450,7 @@ class Database(object):
             SELECT ev.idFile, ev.c00 AS episodeTitle, ev.c12 AS season, ev.c13 AS episode, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName,
                 (SELECT COUNT(DISTINCT c13) FROM episodeview WHERE idShow=ev.idShow) AS episodes
             FROM episodeview ev, tvshowview tv
-            WHERE ev.idShow=tv.idShow AND episodes > 2 AND ev.strFileName NOT LIKE '%%.nfo'
+            WHERE ev.idShow=tv.idShow AND episodes > 2 AND ev.strFileName NOT LIKE '%.nfo'
             """
 
         if minEpisodeCount:
@@ -407,7 +470,7 @@ class Database(object):
             params.append(excludeEpisode)
 
 
-        query += " ORDER BY random()"
+        query += " ORDER BY " + self.FUNC_RANDOM
         if maxResults:
             query += " LIMIT " + str(maxResults)
 
@@ -432,7 +495,7 @@ class Database(object):
             query += """
                 alt.idActor, a.strActor, alt.strRole, tv.idShow, tv.c00 AS title, tv.strPath, tv.c08 AS genre
                 FROM tvshowview tv, actorlinktvshow alt, actors a, episodeview ev
-                WHERE tv.idShow = alt.idShow AND alt.idActor=a.idActor AND tv.idShow=ev.idShow AND ev.strFileName NOT LIKE '%%.nfo'
+                WHERE tv.idShow = alt.idShow AND alt.idActor=a.idActor AND tv.idShow=ev.idShow AND ev.strFileName NOT LIKE '%.nfo'
                 """
         if appendDefaultClause:
             query += self.defaultTVShowViewClause
@@ -448,7 +511,7 @@ class Database(object):
             query += " AND alt.idShow = ?"
             params.append(showId)
 
-        query += " ORDER BY random()"
+        query += " ORDER BY " + self.FUNC_RANDOM
         if maxResults:
             query += " LIMIT " + str(maxResults)
 
@@ -460,6 +523,9 @@ class Database(object):
 #
 
 class SQLiteDatabase(Database):
+    FUNC_RANDOM = "random()"
+    CURSOR_CLASS = sqlite3.Cursor
+
     def __init__(self, maxRating, onlyWatched, settings):
         super(SQLiteDatabase, self).__init__(maxRating, onlyWatched)
         found = True
@@ -488,19 +554,19 @@ class SQLiteDatabase(Database):
 
         super(SQLiteDatabase, self).postInit()
 
-    def hasMovies(self):
-        row = self.fetchone("SELECT COUNT(*) AS cnt FROM sqlite_master WHERE name='movieview'")
-        if int(row['cnt']) > 0:
-            return Database.hasMovies(self)
-        else:
-            return False
+#    def hasMovies(self):
+#        row = self.fetchone("SELECT COUNT(*) AS cnt FROM sqlite_master WHERE name='movieview'")
+#        if int(row['cnt']) > 0:
+#            return super(SQLiteDatabase, self).hasMovies()
+#        else:
+#            return False
 
-    def hasTVShows(self):
-        row = self.fetchone("SELECT COUNT(*) AS cnt FROM sqlite_master WHERE name='tvshowview'")
-        if int(row['cnt']) > 0:
-            return Database.hasTVShows(self)
-        else:
-            return False
+#    def hasTVShows(self):
+#        row = self.fetchone("SELECT COUNT(*) AS cnt FROM sqlite_master WHERE name='tvshowview'")
+#        if int(row['cnt']) > 0:
+#            return super(SQLiteDatabase, self).hasTVShows()
+#        else:
+#            return False
 
 def _sqlite_dict_factory(cursor, row):
     d = {}
@@ -513,49 +579,67 @@ def _sqlite_dict_factory(cursor, row):
     return d
 
 
+#
+# MySQL
+#
+
+class MySQLDatabase(Database):
+    FUNC_RANDOM = "rand()"
+    CURSOR_CLASS = MySQLCursorDict
+
+    def __init__(self, settings):
+        super(MySQLDatabase, self).__init__()
+        self.conn = mysql.connector.connect(
+            host = settings['host'],
+            user = settings['user'],
+            passwd = settings['pass'],
+            db = settings['name']
+            )
+
+        xbmc.log("MySQLDatabase opened")
+        super(MySQLDatabase, self).postInit()
+
+#    def hasMovies(self):
+#        row = self.fetchone("SELECT COUNT(table_name) AS cnt FROM information_schema.tables WHERE table_name='movieview'")
+#        if int(row['cnt']) > 0:
+#            return super(MySQLDatabase, self).hasMovies()
+#        else:
+#            return False
+
+#    def hasTVShows(self):
+#        row = self.fetchone("SELECT COUNT(table_name) AS cnt FROM information_schema.tables WHERE table_name='tvshowview'")
+#        if int(row['cnt']) > 0:
+#            return super(MySQLDatabase, self).hasTVShows()
+#        else:
+#            return False
+
+#    def _prepareParameters(self, parameters):
+#        return map(str, parameters)
+
+class MySQLCursorDict(mysql.connector.cursor.MySQLCursor):
+    def fetchone(self):
+        row = self._fetch_row()
+        if row:
+            return dict(zip(self.column_names, self._row_to_python(row)))
+        return None
+
+    def fetchall(self):
+        if self._have_result is False:
+            raise DbException("No result set to fetch from.")
+        res = []
+        (rows, eof) = self.db().protocol.get_rows()
+        self.rowcount = len(rows)
+        for i in xrange(0,self.rowcount):
+            res.append(dict(zip(self.column_names, self._row_to_python(rows[i]))))
+        self._handle_eof(eof)
+        return res
+
+
+
 class DbException(Exception):
     def __init__(self, sql):
         Exception.__init__(self, sql)
 
-
-def connect(maxRating = None, onlyUsedWatched = None):
-    settings = _loadSettings()
-    xbmc.log("Loaded DB settings: %s" % settings)
-
-    if settings.has_key('type') and settings['type'] is not None and settings['type'].lower() == 'mysql':
-        raise DbException('MySQL database is not supported')
-    else:
-        return SQLiteDatabase(maxRating, onlyUsedWatched, settings)
-
-
-def _loadSettings():
-    settings = {
-        'type' : 'sqlite3',
-        'host' : xbmc.translatePath('special://database/')
-    }
-
-    advancedSettings = xbmc.translatePath('special://userdata/advancedsettings.xml')
-    if os.path.exists(advancedSettings):
-        f = open(advancedSettings)
-        xml = f.read()
-        f.close()
-        try:
-            doc = ElementTree.fromstring(xml)
-
-            if doc.findtext('videodatabase/type') is not None:
-                settings['type'] = doc.findtext('videodatabase/type')
-            if doc.findtext('videodatabase/host') is not None:
-                settings['host'] = doc.findtext('videodatabase/host')
-            if doc.findtext('videodatabase/name') is not None:
-                settings['name'] = doc.findtext('videodatabase/name')
-            if doc.findtext('videodatabase/user') is not None:
-                settings['user'] = doc.findtext('videodatabase/user')
-            if doc.findtext('videodatabase/pass') is not None:
-                settings['pass'] = doc.findtext('videodatabase/pass')
-        except ExpatError:
-           xbmc.log("Unable to parse advancedsettings.xml")
-
-    return settings
 
 
 
