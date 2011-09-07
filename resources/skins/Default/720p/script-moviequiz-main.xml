@@ -427,13 +427,14 @@
                 <description>Answer 1</description>
                 <posx>0</posx>
                 <posy>40</posy>
-                <width>860</width>
+                <width>1020</width>
                 <height>40</height>
                 <textoffsetx>55</textoffsetx>
                 <textcolor>ffffffff</textcolor>
                 <font>font13</font>
                 <texturefocus>quiz-button-background.png</texturefocus>
                 <texturenofocus />
+                <scroll>true</scroll>
                 <onup>4003</onup>
                 <ondown>4001</ondown>
                 <onleft>4011</onleft>
@@ -451,11 +452,12 @@
                 <description>Answer 2</description>
                 <posx>0</posx>
                 <posy>80</posy>
-                <width>860</width>
+                <width>1020</width>
                 <height>40</height>
                 <textoffsetx>55</textoffsetx>
                 <textcolor>ffffffff</textcolor>
                 <font>font13</font>
+                <scroll>true</scroll>
                 <texturefocus>quiz-button-background.png</texturefocus>
                 <texturenofocus />
                 <onup>4000</onup>
@@ -475,11 +477,12 @@
                 <description>Answer 3</description>
                 <posx>0</posx>
                 <posy>120</posy>
-                <width>860</width>
+                <width>1020</width>
                 <height>40</height>
                 <textoffsetx>55</textoffsetx>
                 <textcolor>ffffffff</textcolor>
                 <font>font13</font>
+                <scroll>true</scroll>
                 <texturefocus>quiz-button-background.png</texturefocus>
                 <texturenofocus />
                 <onup>4001</onup>
@@ -499,11 +502,12 @@
                 <description>Answer 4</description>
                 <posx>0</posx>
                 <posy>160</posy>
-                <width>860</width>
+                <width>1020</width>
                 <height>40</height>
                 <textoffsetx>55</textoffsetx>
                 <textcolor>ffffffff</textcolor>
                 <font>font13</font>
+                <scroll>true</scroll>
                 <texturefocus>quiz-button-background.png</texturefocus>
                 <texturenofocus />
                 <onup>4002</onup>
