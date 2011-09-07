@@ -51,7 +51,7 @@ class MenuGui(xbmcgui.WindowXML):
     def onInit(self):
         trivia = [strings(M_DEVELOPED_BY), strings(M_TRANSLATED_BY)]
 
-        database = db.connect()
+        database = db.Database.connect()
 
         if not database.hasMovies():
             self.getControl(self.C_MENU_MOVIE_QUIZ).setEnabled(False)
@@ -346,7 +346,7 @@ class QuizGui(xbmcgui.WindowXML):
 
         onlyUsedWatched = ADDON.getSetting('only.watched.movies') == 'true'
 
-        self.database = db.connect(ratings, onlyUsedWatched)
+        self.database = db.Database.connect(ratings, onlyUsedWatched)
         self.player = player.TenSecondPlayer()
 
         self.questionPointsThread = None

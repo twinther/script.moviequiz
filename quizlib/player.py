@@ -16,7 +16,7 @@ class TenSecondPlayer(xbmc.Player):
         xbmc.log(">> TenSecondPlayer.__init__()")
         self.tenSecondTimer = None
 
-        self.database = db.connect()
+        self.database = db.Database.connect()
         self.bookmark = None
         self.startingPlayback = False
 
