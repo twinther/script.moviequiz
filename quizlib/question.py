@@ -23,7 +23,7 @@ class Answer(object):
         self.coverFile = None
         self.sortWeight = sortWeight
 
-       
+
     def setCoverFile(self, path, filename = None):
         if filename is None:
             self.coverFile = path
@@ -42,21 +42,15 @@ class CorrectAnswer(Answer):
         return "<CorrectAnswer(id=%s, text=%s)>" % (self.id, self.text)
 
 
- 
-class Question(object):
 
-    def __init__(self, database, displayType):
+class Question(object):
+    def __init__(self, displayType = None):
         """
         Base class for Questions
 
-        @param self: Question instance
-        @param database: Database connection instance to use
-        @type database: Database
-        @param displayType:
         @type displayType: DisplayType
-        @return:
+        @param displayType:
         """
-        self.database = database
         self.answers = list()
         self.text = None
         self.fanartFile = None
@@ -109,7 +103,10 @@ class Question(object):
 # DISPLAY TYPES
 #
 
-class VideoDisplayType(object):
+class DisplayType(object):
+    pass
+
+class VideoDisplayType(DisplayType):
     def setVideoFile(self, path, filename):
         if filename[0:8] == 'stack://':
             self.videoFile = filename
@@ -119,14 +116,14 @@ class VideoDisplayType(object):
     def getVideoFile(self):
         return self.videoFile
 
-class PhotoDisplayType(object):
+class PhotoDisplayType(DisplayType):
     def setPhotoFile(self, photoFile):
         self.photoFile = photoFile
 
     def getPhotoFile(self):
         return self.photoFile
 
-class ThreePhotoDisplayType(object):
+class ThreePhotoDisplayType(DisplayType):
     def addPhoto(self, photo):
         if not hasattr(self, 'photos'):
             self.photos = list()
@@ -136,7 +133,7 @@ class ThreePhotoDisplayType(object):
     def getPhotoFile(self, index = 0):
         return self.photos[index]
 
-class QuoteDisplayType(object):
+class QuoteDisplayType(DisplayType):
     def setQuoteText(self, quoteText):
         self.quoteText = quoteText
 
@@ -151,15 +148,17 @@ class MovieQuestion(Question):
     pass
 
 class WhatMovieIsThisQuestion(MovieQuestion):
-    """
-        WhatMovieIsThisQuestion
-    """
-
     def __init__(self, database):
-        videoDisplayType = VideoDisplayType()
-        super(WhatMovieIsThisQuestion, self).__init__(database, videoDisplayType)
+        """
+        What movie is this?
 
-        correctAnswer = self.database.getRandomMovies(maxResults = 1)[0]
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        videoDisplayType = VideoDisplayType()
+        super(WhatMovieIsThisQuestion, self).__init__(videoDisplayType)
+
+        correctAnswer = database.getRandomMovies(maxResults = 1)[0]
 
         a = CorrectAnswer(correctAnswer['idMovie'], correctAnswer['title'], correctAnswer['idFile'])
         a.setCoverFile(correctAnswer['strPath'], correctAnswer['strFileName'])
@@ -167,7 +166,7 @@ class WhatMovieIsThisQuestion(MovieQuestion):
 
         # Find other movies in set
         if correctAnswer['idSet'] is not None:
-            otherMoviesInSet = self.database.getRandomMovies(3, setId = correctAnswer['idSet'], excludeMovieIds = self._getMovieIds())
+            otherMoviesInSet = database.getRandomMovies(3, setId = correctAnswer['idSet'], excludeMovieIds = self._getMovieIds())
             for movie in otherMoviesInSet:
                 a = Answer(movie['idMovie'], movie['title'], movie['idFile'])
                 a.setCoverFile(movie['strPath'], movie['strFileName'])
@@ -176,7 +175,7 @@ class WhatMovieIsThisQuestion(MovieQuestion):
         # Find other movies in genre
         if len(self.answers) < 4:
             try:
-                otherMoviesInGenre = self.database.getRandomMovies(maxResults = 4 - len(self.answers), genres = correctAnswer['genre'], excludeMovieIds = self._getMovieIds())
+                otherMoviesInGenre = database.getRandomMovies(maxResults = 4 - len(self.answers), genres = correctAnswer['genre'], excludeMovieIds = self._getMovieIds())
                 for movie in otherMoviesInGenre:
                     a = Answer(movie['idMovie'], movie['title'], movie['idFile'])
                     a.setCoverFile(movie['strPath'], movie['strFileName'])
@@ -186,7 +185,7 @@ class WhatMovieIsThisQuestion(MovieQuestion):
 
         # Fill with random movies
         if len(self.answers) < 4:
-            theRest = self.database.getRandomMovies(maxResults = 4 - len(self.answers), excludeMovieIds = self._getMovieIds())
+            theRest = database.getRandomMovies(maxResults = 4 - len(self.answers), excludeMovieIds = self._getMovieIds())
             for movie in theRest:
                 a = Answer(movie['idMovie'], movie['title'], movie['idFile'])
                 a.setCoverFile(movie['strPath'], movie['strFileName'])
@@ -201,14 +200,17 @@ class WhatMovieIsThisQuestion(MovieQuestion):
         return ADDON.getSetting('question.whatmovieisthis.enabled') == 'true'
 
 class ActorNotInMovieQuestion(MovieQuestion):
-    """
-        ActorNotInMovieQuestion
-    """
     def __init__(self, database):
-        photoDisplayType = PhotoDisplayType()
-        super(ActorNotInMovieQuestion, self).__init__(database, photoDisplayType)
+        """
+        Actor not in movie?
 
-        rows = self.database.getRandomActors(maxResults = 10, minMovieCount = 3)
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        photoDisplayType = PhotoDisplayType()
+        super(ActorNotInMovieQuestion, self).__init__(photoDisplayType)
+
+        rows = database.getRandomActors(maxResults = 10, minMovieCount = 3)
         actor = None
         photoFile = None
         # try to find an actor with a cached photo (if non are found we bail out)
@@ -225,13 +227,13 @@ class ActorNotInMovieQuestion(MovieQuestion):
             raise QuestionException("Didn't find any actors with photoFile")
 
         # Movies actor is not in
-        row = self.database.getRandomMovies(maxResults = 1, actorIdNotInMovie = actor['idActor'])[0]
+        row = database.getRandomMovies(maxResults = 1, actorIdNotInMovie = actor['idActor'])[0]
         a = CorrectAnswer(actor['idActor'], row['title'])
         a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
         # Movie actor is in
-        movies = self.database.getRandomMovies(maxResults = 3, actorIdInMovie = actor['idActor'])
+        movies = database.getRandomMovies(maxResults = 3, actorIdInMovie = actor['idActor'])
         for movie in movies:
             a = Answer(-1, movie['title'])
             a.setCoverFile(movie['strPath'], movie['strFileName'])
@@ -247,13 +249,16 @@ class ActorNotInMovieQuestion(MovieQuestion):
 
 
 class WhatYearWasMovieReleasedQuestion(MovieQuestion):
-    """
-        WhatYearWasMovieReleasedQuestion
-    """
     def __init__(self, database):
-        super(WhatYearWasMovieReleasedQuestion, self).__init__(database, displayType = None)
+        """
+        WhatYearWasMovieReleasedQuestion
 
-        row = self.database.getRandomMovies(maxResults = 1, minYear = 1900)[0]
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        super(WhatYearWasMovieReleasedQuestion, self).__init__()
+
+        row = database.getRandomMovies(maxResults = 1, minYear = 1900)[0]
         skew = random.randint(0, 10)
         minYear = int(row['year']) - skew
         maxYear = int(row['year']) + (10 - skew)
@@ -286,18 +291,21 @@ class WhatYearWasMovieReleasedQuestion(MovieQuestion):
 
 
 class WhatTagLineBelongsToMovieQuestion(MovieQuestion):
-    """
-        WhatTagLineBelongsToMovieQuestion
-    """
     def __init__(self, database):
-        super(WhatTagLineBelongsToMovieQuestion, self).__init__(database, displayType = None)
+        """
+        WhatTagLineBelongsToMovieQuestion
 
-        row = self.database.getRandomMovies(maxResults = 1, mustHaveTagline = True)[0]
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        super(WhatTagLineBelongsToMovieQuestion, self).__init__()
+
+        row = database.getRandomMovies(maxResults = 1, mustHaveTagline = True)[0]
         a = CorrectAnswer(row['idMovie'], row['tagline'], row['idFile'])
         a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
-        otherAnswers = self.database.getRandomMovies(maxResults = 3, excludeMovieIds = row['idMovie'], mustHaveTagline = True)
+        otherAnswers = database.getRandomMovies(maxResults = 3, excludeMovieIds = row['idMovie'], mustHaveTagline = True)
         for movie in otherAnswers:
             a = Answer(movie['idMovie'], movie['tagline'], row['idFile'])
             a.setCoverFile(row['strPath'], row['strFileName'])
@@ -316,19 +324,22 @@ class WhatTagLineBelongsToMovieQuestion(MovieQuestion):
 
 
 class WhoDirectedThisMovieQuestion(MovieQuestion):
-    """
-        WhoDirectedThisMovieQuestion
-    """
     def __init__(self, database):
-        super(WhoDirectedThisMovieQuestion, self).__init__(database, displayType = None)
+        """
+        WhoDirectedThisMovieQuestion
 
-        director = self.database.getRandomDirectors(maxResults = 1, minMovieCount = 1)[0]
-        row = self.database.getRandomMovies(maxResults = 1, directorId = director['idActor'])[0]
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        super(WhoDirectedThisMovieQuestion, self).__init__()
+
+        director = database.getRandomDirectors(maxResults = 1, minMovieCount = 1)[0]
+        row = database.getRandomMovies(maxResults = 1, directorId = director['idActor'])[0]
         a = CorrectAnswer(director['idActor'], director['strActor'], row['idFile'])
         a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
-        otherAnswers = self.database.getRandomDirectors(maxResults = 3, excludeDirectorId = director['idActor'])
+        otherAnswers = database.getRandomDirectors(maxResults = 3, excludeDirectorId = director['idActor'])
         for movie in otherAnswers:
             a = Answer(movie['idActor'], movie['strActor'], row['idFile'])
             a.setCoverFile(row['strPath'], row['strFileName'])
@@ -344,19 +355,22 @@ class WhoDirectedThisMovieQuestion(MovieQuestion):
 
 
 class WhatStudioReleasedMovieQuestion(MovieQuestion):
-    """
-        WhatStudioReleasedMovieQuestion
-    """
     def __init__(self, database):
-        super(WhatStudioReleasedMovieQuestion, self).__init__(database, displayType = None)
+        """
+        WhatStudioReleasedMovieQuestion
 
-        studio = self.database.getRandomStudios(maxResults = 1)[0]
-        row = self.database.getRandomMovies(maxResults = 1, studioId = studio['idStudio'])[0]
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        super(WhatStudioReleasedMovieQuestion, self).__init__()
+
+        studio = database.getRandomStudios(maxResults = 1)[0]
+        row = database.getRandomMovies(maxResults = 1, studioId = studio['idStudio'])[0]
         a = CorrectAnswer(studio['idStudio'], studio['strStudio'], row['idFile'])
         a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
-        otherAnswers = self.database.getRandomStudios(maxResults = 3, excludeStudioId = studio['idStudio'])
+        otherAnswers = database.getRandomStudios(maxResults = 3, excludeStudioId = studio['idStudio'])
         for movie in otherAnswers:
             a = Answer(movie['idStudio'], movie['strStudio'], row['idFile'])
             a.setCoverFile(row['strPath'], row['strFileName'])
@@ -372,16 +386,19 @@ class WhatStudioReleasedMovieQuestion(MovieQuestion):
 
 
 class WhatActorIsThisQuestion(MovieQuestion):
-    """
-        WhatActorIsThisQuestion
-    """
     def __init__(self, database):
+        """
+        WhatActorIsThisQuestion
+
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
         photoDisplayType = PhotoDisplayType()
-        super(WhatActorIsThisQuestion, self).__init__(database, photoDisplayType)
+        super(WhatActorIsThisQuestion, self).__init__(photoDisplayType)
 
         actor = None
         photoFile = None
-        rows = self.database.getRandomActors(maxResults = 10, selectDistinct = True)
+        rows = database.getRandomActors(maxResults = 10, selectDistinct = True)
         # try to find an actor with a cached photo
         for row in rows:
             photoFile = thumb.getCachedActorThumb(row['strActor'])
@@ -397,7 +414,7 @@ class WhatActorIsThisQuestion(MovieQuestion):
         self.answers.append(a)
 
         # Other actors
-        actors = self.database.getRandomActors(maxResults = 50, excludeActorId = actor['idActor'], appendDefaultClause = False)
+        actors = database.getRandomActors(maxResults = 50, excludeActorId = actor['idActor'], appendDefaultClause = False)
 
         # Check gender
         actorGender = IMDB.isActor(actor['strActor'])
@@ -418,14 +435,17 @@ class WhatActorIsThisQuestion(MovieQuestion):
 
 
 class WhoPlayedRoleInMovieQuestion(MovieQuestion):
-    """
-        WhoPlayedRoleInMovieQuestion
-    """
     def __init__(self, database):
-        super(WhoPlayedRoleInMovieQuestion, self).__init__(database, displayType = None)
+        """
+        WhoPlayedRoleInMovieQuestion
 
-        actor = self.database.getRandomActors(maxResults = 1, mustHaveRole = True)[0]
-        movie = self.database.getRandomMovies(maxResults = 1, actorIdInMovie = actor['idActor'])[0]
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        super(WhoPlayedRoleInMovieQuestion, self).__init__()
+
+        actor = database.getRandomActors(maxResults = 1, mustHaveRole = True)[0]
+        movie = database.getRandomMovies(maxResults = 1, actorIdInMovie = actor['idActor'])[0]
         role = actor['strRole']
         if re.search('[|/]', role):
             roles = re.split('[|/]', role)
@@ -436,7 +456,7 @@ class WhoPlayedRoleInMovieQuestion(MovieQuestion):
         a.setCoverFile(thumb.getCachedActorThumb(actor['strActor']))
         self.answers.append(a)
 
-        actors = self.database.getRandomActors(maxResults = 3, excludeActorId = actor['idActor'], movieId = movie['idMovie'])
+        actors = database.getRandomActors(maxResults = 3, excludeActorId = actor['idActor'], movieId = movie['idMovie'])
         for actor in actors:
             a = Answer(actor['idActor'], actor['strActor'])
             a.setCoverFile(thumb.getCachedActorThumb(actor['strActor']))
@@ -456,14 +476,17 @@ class WhoPlayedRoleInMovieQuestion(MovieQuestion):
 
 
 class WhatMovieIsThisQuoteFrom(MovieQuestion):
-    """
-        WhatQuoteIsThisFrom
-    """
     def __init__(self, database):
-        quoteDisplayType = QuoteDisplayType()
-        super(WhatMovieIsThisQuoteFrom, self).__init__(database, quoteDisplayType)
+        """
+        WhatQuoteIsThisFrom
 
-        rows = self.database.getRandomMovies(maxResults = 10, minYear = 1900)
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        quoteDisplayType = QuoteDisplayType()
+        super(WhatMovieIsThisQuoteFrom, self).__init__(quoteDisplayType)
+
+        rows = database.getRandomMovies(maxResults = 10, minYear = 1900)
         quoteText = None
         row = None
         for r in rows:
@@ -480,7 +503,7 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
         a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
-        theRest = self.database.getRandomMovies(maxResults = 3, excludeMovieIds = row['idMovie'])
+        theRest = database.getRandomMovies(maxResults = 3, excludeMovieIds = row['idMovie'])
         for movie in theRest:
             a = Answer(movie['idMovie'], movie['title'])
             a.setCoverFile(movie['strPath'], movie['strFileName'])
@@ -496,18 +519,21 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
 
 
 class WhatMovieIsNewestQuestion(MovieQuestion):
-    """
-        WhatMovieIsNewestQuestion
-    """
     def __init__(self, database):
-        super(WhatMovieIsNewestQuestion, self).__init__(database, displayType = None)
+        """
+        WhatMovieIsNewestQuestion
 
-        row = self.database.getRandomMovies(maxResults = 1, minYear = 1900)[0]
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        super(WhatMovieIsNewestQuestion, self).__init__()
+
+        row = database.getRandomMovies(maxResults = 1, minYear = 1900)[0]
         a = CorrectAnswer(row['idMovie'], row['title'], row['idFile'])
         a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
-        movies = self.database.getRandomMovies(maxResults = 3, minYear = 1900, maxYear = row['year'])
+        movies = database.getRandomMovies(maxResults = 3, minYear = 1900, maxYear = row['year'])
         if len(movies) < 3:
             raise QuestionException("Less than 3 movies found; bailing out")
 
@@ -525,14 +551,17 @@ class WhatMovieIsNewestQuestion(MovieQuestion):
 
 
 class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
-    """
-        WhatMovieIsNotDirectedByQuestion
-    """
     def __init__(self, database):
-        photoDisplayType = PhotoDisplayType()
-        super(WhatMovieIsNotDirectedByQuestion, self).__init__(database, photoDisplayType)
+        """
+        WhatMovieIsNotDirectedByQuestion
 
-        rows = self.database.getRandomDirectors(maxResults = 10, minMovieCount = 3)
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        photoDisplayType = PhotoDisplayType()
+        super(WhatMovieIsNotDirectedByQuestion, self).__init__(photoDisplayType)
+
+        rows = database.getRandomDirectors(maxResults = 10, minMovieCount = 3)
 
         director = None
         photoFile = None
@@ -549,13 +578,13 @@ class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
             raise QuestionException("Didn't find any directors with photoFile")
 
         # Movies not directed by director
-        movie = self.database.getRandomMovies(maxResults = 1, excludeDirectorId = director['idActor'])[0]
+        movie = database.getRandomMovies(maxResults = 1, excludeDirectorId = director['idActor'])[0]
         a = CorrectAnswer(director['idActor'], movie['title'])
         a.setCoverFile(movie['strPath'], movie['strFileName'])
         self.answers.append(a)
 
         # Movie actor is in
-        movies = self.database.getRandomMovies(maxResults = 3, directorId = director['idActor'])
+        movies = database.getRandomMovies(maxResults = 3, directorId = director['idActor'])
         for movie in movies:
             a = Answer(-1, movie['title'])
             a.setCoverFile(movie['strPath'], movie['strFileName'])
@@ -572,21 +601,27 @@ class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
 
 class WhatActorIsInTheseMoviesQuestion(MovieQuestion):
     def __init__(self, database):
-        threePhotoDisplayType = ThreePhotoDisplayType()
-        super(WhatActorIsInTheseMoviesQuestion, self).__init__(database, threePhotoDisplayType)
+        """
+        WhatActorIsInTheseMoviesQuestion
 
-        actor = self.database.getRandomActors(maxResults = 1, minMovieCount = 3)[0]
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        threePhotoDisplayType = ThreePhotoDisplayType()
+        super(WhatActorIsInTheseMoviesQuestion, self).__init__(threePhotoDisplayType)
+
+        actor = database.getRandomActors(maxResults = 1, minMovieCount = 3)[0]
         a = CorrectAnswer(actor['idActor'], actor['strActor'])
         a.setCoverFile(thumb.getCachedActorThumb(actor['strActor']))
         self.answers.append(a)
 
         movieIds = list()
-        rows = self.database.getRandomMovies(maxResults = 3, actorIdInMovie = actor['idActor'])
+        rows = database.getRandomMovies(maxResults = 3, actorIdInMovie = actor['idActor'])
         for row in rows:
             movieIds.append(row['idMovie'])
             threePhotoDisplayType.addPhoto(thumb.getCachedVideoThumb(row['strPath'], row['strFileName']))
 
-        otherActors = self.database.getRandomActors(maxResults = 3, excludeActorId = actor['idActor'], excludeMovieIds = movieIds)
+        otherActors = database.getRandomActors(maxResults = 3, excludeActorId = actor['idActor'], excludeMovieIds = movieIds)
         for other in otherActors:
             a = Answer(other['idActor'], other['strActor'])
             a.setCoverFile(thumb.getCachedActorThumb(other['strActor']))
@@ -602,16 +637,22 @@ class WhatActorIsInTheseMoviesQuestion(MovieQuestion):
 
 class WhatActorIsInMovieBesidesOtherActorQuestion(MovieQuestion):
     def __init__(self, database):
-        super(WhatActorIsInMovieBesidesOtherActorQuestion, self).__init__(database, displayType = None)
+        """
+        WhatActorIsInMovieBesidesOtherActorQuestion
 
-        movie = self.database.getRandomMovies(maxResults = 1, minActorCount = 3)[0]
-        actors = self.database.getRandomActors(maxResults = 2, movieId = movie['idMovie'])
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        super(WhatActorIsInMovieBesidesOtherActorQuestion, self).__init__()
+
+        movie = database.getRandomMovies(maxResults = 1, minActorCount = 3)[0]
+        actors = database.getRandomActors(maxResults = 2, movieId = movie['idMovie'])
 
         a = CorrectAnswer(actors[0]['idActor'], actors[0]['strActor'])
         a.setCoverFile(thumb.getCachedActorThumb(actors[0]['strActor']))
         self.answers.append(a)
 
-        otherActors = self.database.getRandomActors(maxResults = 3, excludeMovieIds = movie['idMovie'], excludeActorId = actors[0]['idActor'])
+        otherActors = database.getRandomActors(maxResults = 3, excludeMovieIds = movie['idMovie'], excludeActorId = actors[0]['idActor'])
         for actor in otherActors:
             a = Answer(actor['idActor'], actor['strActor'])
             a.setCoverFile(thumb.getCachedActorThumb(actor['strActor']))
@@ -627,14 +668,20 @@ class WhatActorIsInMovieBesidesOtherActorQuestion(MovieQuestion):
 
 class WhatMovieHasTheLongestRuntimeQuestion(MovieQuestion):
     def __init__(self, database):
-        super(WhatMovieHasTheLongestRuntimeQuestion, self).__init__(database, displayType = None)
+        """
+        WhatMovieHasTheLongestRuntimeQuestion
 
-        correctAnswer = self.database.getRandomMovies(maxResults = 1, mustHaveRuntime = True)[0]
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        super(WhatMovieHasTheLongestRuntimeQuestion, self).__init__()
+
+        correctAnswer = database.getRandomMovies(maxResults = 1, mustHaveRuntime = True)[0]
         a = CorrectAnswer(correctAnswer['idMovie'], correctAnswer['title'], correctAnswer['idFile'])
         a.setCoverFile(correctAnswer['strPath'], correctAnswer['strFileName'])
         self.answers.append(a)
 
-        movies = self.database.getRandomMovies(maxResults = 3, mustHaveRuntime = True, maxRuntime = correctAnswer['runtime'])
+        movies = database.getRandomMovies(maxResults = 3, mustHaveRuntime = True, maxRuntime = correctAnswer['runtime'])
         if len(movies) < 3:
             raise QuestionException("Less than 3 movies found; bailing out")
 
@@ -655,8 +702,12 @@ class WhatMovieHasTheLongestRuntimeQuestion(MovieQuestion):
 #
 
 class TVQuestion(Question):
-    def __init__(self, database, displayType):
-        super(TVQuestion, self).__init__(database, displayType)
+    def __init__(self, displayType = None):
+        """
+
+        @type displayType: DisplayType
+        """
+        super(TVQuestion, self).__init__(displayType)
 
     def _get_season_title(self, season):
         if not int(season):
@@ -669,21 +720,23 @@ class TVQuestion(Question):
 
 
 class WhatTVShowIsThisQuestion(TVQuestion):
-    """
-        WhatTVShowIsThisQuestion
-    """
-
     def __init__(self, database):
-        videoDisplayType  = VideoDisplayType()
-        super(WhatTVShowIsThisQuestion, self).__init__(database, videoDisplayType)
+        """
+        WhatTVShowIsThisQuestion
 
-        row = self.database.getRandomTVShows(maxResults = 1)[0]
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        videoDisplayType  = VideoDisplayType()
+        super(WhatTVShowIsThisQuestion, self).__init__(videoDisplayType)
+
+        row = database.getRandomTVShows(maxResults = 1)[0]
         a = CorrectAnswer(row['idShow'], row['title'], row['idFile'])
         a.setCoverFile(thumb.getCachedTVShowThumb(row['tvShowPath']))
         self.answers.append(a)
 
         # Fill with random episodes from other shows
-        shows = self.database.getRandomTVShows(maxResults = 3, excludeTVShowId = row['idShow'], onlySelectTVShow = True)
+        shows = database.getRandomTVShows(maxResults = 3, excludeTVShowId = row['idShow'], onlySelectTVShow = True)
         for show in shows:
             a = Answer(show['idShow'], show['title'])
             a.setCoverFile(thumb.getCachedTVShowThumb(show['tvShowPath']))
@@ -699,21 +752,23 @@ class WhatTVShowIsThisQuestion(TVQuestion):
 
 
 class WhatSeasonIsThisQuestion(TVQuestion):
-    """
-        WhatSeasonIsThisQuestion
-    """
-
     def __init__(self, database):
-        videoDisplayType  = VideoDisplayType()
-        super(WhatSeasonIsThisQuestion, self).__init__(database, videoDisplayType)
+        """
+        WhatSeasonIsThisQuestion
 
-        row = self.database.getRandomSeasons(maxResults = 1, minSeasonCount = 3)[0]
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        videoDisplayType  = VideoDisplayType()
+        super(WhatSeasonIsThisQuestion, self).__init__(videoDisplayType)
+
+        row = database.getRandomSeasons(maxResults = 1, minSeasonCount = 3)[0]
         a = CorrectAnswer("%s-%s" % (row['idShow'], row['season']), self._get_season_title(row['season']), row['idFile'], sortWeight = row['season'])
         a.setCoverFile(thumb.getCachedSeasonThumb(row['strPath'], self._get_season_title(row['season'])))
         self.answers.append(a)
 
         # Fill with random seasons from this show
-        shows = self.database.getRandomSeasons(maxResults = 3, onlySelectSeason = True, showId = row['idShow'], excludeSeason = row['season'])
+        shows = database.getRandomSeasons(maxResults = 3, onlySelectSeason = True, showId = row['idShow'], excludeSeason = row['season'])
         for show in shows:
             a = Answer("%s-%s" % (row['idShow'], show['season']), self._get_season_title(show['season']), sortWeight = show['season'])
             a.setCoverFile(thumb.getCachedSeasonThumb(row['strPath'], self._get_season_title(show['season'])))
@@ -730,15 +785,17 @@ class WhatSeasonIsThisQuestion(TVQuestion):
 
 
 class WhatEpisodeIsThisQuestion(TVQuestion):
-    """
-        WhatEpisodeIsThisQuestion
-    """
-
     def __init__(self, database):
-        videoDisplayType  = VideoDisplayType()
-        super(WhatEpisodeIsThisQuestion, self).__init__(database, videoDisplayType)
+        """
+        WhatEpisodeIsThisQuestion
 
-        row = self.database.getRandomEpisodes(maxResults = 1, minEpisodeCount = 3)[0]
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        videoDisplayType  = VideoDisplayType()
+        super(WhatEpisodeIsThisQuestion, self).__init__(videoDisplayType)
+
+        row = database.getRandomEpisodes(maxResults = 1, minEpisodeCount = 3)[0]
         answerText = self._get_episode_title(row['season'], row['episode'], row['episodeTitle'])
         id = "%s-%s-%s" % (row['idShow'], row['season'], row['episode'])
         a = CorrectAnswer(id, answerText, row['idFile'], sortWeight = row['episode'])
@@ -746,7 +803,7 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
         self.answers.append(a)
 
         # Fill with random episodes from this show
-        episodes = self.database.getRandomEpisodes(maxResults = 3, idShow = row['idShow'], season = row['season'], excludeEpisode = row['episode'])
+        episodes = database.getRandomEpisodes(maxResults = 3, idShow = row['idShow'], season = row['season'], excludeEpisode = row['episode'])
         for episode in episodes:
             answerText = self._get_episode_title(episode['season'], episode['episode'], episode['episodeTitle'])
             id = "%s-%s-%s" % (row['idShow'], row['season'], episode['episode'])
@@ -765,14 +822,16 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
 
 
 class WhenWasTVShowFirstAiredQuestion(TVQuestion):
-    """
-        WhenWasEpisodeFirstAiredQuestion
-    """
-
     def __init__(self, database):
-        super(WhenWasTVShowFirstAiredQuestion, self).__init__(database, displayType = None)
+        """
+        WhenWasTVShowFirstAiredQuestion
 
-        row = self.database.getRandomTVShows(maxResults = 1, excludeSpecials = True, episode = 1, mustHaveFirstAired = True)[0]
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        super(WhenWasTVShowFirstAiredQuestion, self).__init__()
+
+        row = database.getRandomTVShows(maxResults = 1, excludeSpecials = True, episode = 1, mustHaveFirstAired = True)[0]
         row['year'] = time.strptime(row['firstAired'], '%Y-%m-%d').tm_year
 
         skew = random.randint(0, 10)
@@ -807,15 +866,17 @@ class WhenWasTVShowFirstAiredQuestion(TVQuestion):
 
 
 class WhoPlayedRoleInTVShowQuestion(TVQuestion):
-    """
-        WhoPlayedRoleInTVShowQuestion
-    """
-
     def __init__(self, database):
-        photoDisplayType = PhotoDisplayType()
-        super(WhoPlayedRoleInTVShowQuestion, self).__init__(database, photoDisplayType)
+        """
+        WhoPlayedRoleInTVShowQuestion
 
-        row = self.database.getRandomTVShowActors(maxResults = 1, mustHaveRole = True)[0]
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        photoDisplayType = PhotoDisplayType()
+        super(WhoPlayedRoleInTVShowQuestion, self).__init__(photoDisplayType)
+
+        row = database.getRandomTVShowActors(maxResults = 1, mustHaveRole = True)[0]
         role = row['strRole']
         if re.search('[|/]', role):
             roles = re.split('[|/]', role)
@@ -827,7 +888,7 @@ class WhoPlayedRoleInTVShowQuestion(TVQuestion):
         self.answers.append(a)
 
 
-        actors = self.database.getRandomTVShowActors(maxResults = 3, onlySelectActor = True, showId = row['idShow'], excludeActorId = row['idActor'])
+        actors = database.getRandomTVShowActors(maxResults = 3, onlySelectActor = True, showId = row['idShow'], excludeActorId = row['idActor'])
         for actor in actors:
             a = Answer(actor['idActor'], actor['strActor'])
             a.setCoverFile(thumb.getCachedActorThumb(actor['strActor']))
@@ -846,14 +907,17 @@ class WhoPlayedRoleInTVShowQuestion(TVQuestion):
         return ADDON.getSetting('question.whoplayedroleintvshow.enabled') == 'true'
 
 class WhatTVShowIsThisQuoteFrom(TVQuestion):
-    """
-        WhatTVShowIsThisFrom
-    """
     def __init__(self, database):
-        quoteDisplayType = QuoteDisplayType()
-        super(WhatTVShowIsThisQuoteFrom, self).__init__(database, quoteDisplayType)
+        """
+        WhatTVShowIsThisQuoteFrom
 
-        row = self.database.getRandomTVShows(maxResults = 1)[0]
+        @type database: quizlib.db.Database
+        @param database: Database connection instance to use
+        """
+        quoteDisplayType = QuoteDisplayType()
+        super(WhatTVShowIsThisQuoteFrom, self).__init__(quoteDisplayType)
+
+        row = database.getRandomTVShows(maxResults = 1)[0]
         quoteText = IMDB.getRandomQuote(row['title'], season = row['season'], episode = row['episode'], maxLength = 128)
         if quoteText is None:
             raise QuestionException('Did not find any quotes')
@@ -863,7 +927,7 @@ class WhatTVShowIsThisQuoteFrom(TVQuestion):
         self.answers.append(a)
 
         # Fill with random episodes from other shows
-        shows = self.database.getRandomTVShows(maxResults = 3, excludeTVShowId = row['idShow'], onlySelectTVShow = True)
+        shows = database.getRandomTVShows(maxResults = 3, excludeTVShowId = row['idShow'], onlySelectTVShow = True)
         for show in shows:
             a = Answer(show['idShow'], show['title'])
             a.setCoverFile(thumb.getCachedTVShowThumb(show['tvShowPath']))
@@ -889,10 +953,8 @@ def getRandomQuestion(gameInstance, database):
     """
     subclasses = []
     if gameInstance.getType() == game.GAMETYPE_MOVIE:
-        #noinspection PyUnresolvedReferences
         subclasses = MovieQuestion.__subclasses__()
     elif gameInstance.getType() == game.GAMETYPE_TVSHOW:
-        #noinspection PyUnresolvedReferences
         subclasses = TVQuestion.__subclasses__()
 
     subclasses  = [ subclass for subclass in subclasses if subclass.isEnabled() ]
@@ -909,13 +971,11 @@ def getRandomQuestion(gameInstance, database):
     return None
 
 def isAnyMovieQuestionsEnabled():
-    #noinspection PyUnresolvedReferences
     subclasses = MovieQuestion.__subclasses__()
     subclasses  = [ subclass for subclass in subclasses if subclass.isEnabled() ]
     return subclasses
 
 def isAnyTVShowQuestionsEnabled():
-    #noinspection PyUnresolvedReferences
     subclasses = TVQuestion.__subclasses__()
     subclasses  = [ subclass for subclass in subclasses if subclass.isEnabled() ]
     return subclasses
