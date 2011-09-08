@@ -12,7 +12,7 @@ class TenSecondPlayer(xbmc.Player):
         """
         Creates and instance of TenSecondPlayer.
         """
-        super(TenSecondPlayer, self).__init__()
+        xbmc.Player.__init__(self)
         xbmc.log(">> TenSecondPlayer.__init__()")
         self.tenSecondTimer = None
 

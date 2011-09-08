@@ -93,11 +93,10 @@ class MenuGui(xbmcgui.WindowXML):
 
 
         if not database.hasMovies() and not database.hasTVShows():
-            # Missing requirements
+            # Must have at least one movie or tvshow
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_REQUIREMENTS_MISSING_LINE1),
                 strings(E_REQUIREMENTS_MISSING_LINE2))
             self.close()
-
 
         database.close()
 
@@ -117,6 +116,10 @@ class MenuGui(xbmcgui.WindowXML):
             self.close()
 
     def onClick(self, controlId):
+        """
+        @param controlId: id of the control that was clicked
+        @type controlId: int
+        """
         listControl = self.getControl(self.C_MENU_USER_SELECT)
         item = listControl.getSelectedItem()
 
@@ -413,7 +416,7 @@ class QuizGui(xbmcgui.WindowXML):
             self.onGameOver()
         elif self.uiState == self.STATE_LOADING:
             return # ignore the rest while we are loading
-        elif self.question and (controlId >= self.C_MAIN_FIRST_ANSWER and controlId <= self.C_MAIN_LAST_ANSWER):
+        elif self.question and (self.C_MAIN_FIRST_ANSWER <= controlId <= self.C_MAIN_LAST_ANSWER):
             answer = self.question.getAnswer(controlId - self.C_MAIN_FIRST_ANSWER)
             self.onQuestionAnswered(answer)
         elif controlId == self.C_MAIN_REPLAY:
@@ -469,30 +472,24 @@ class QuizGui(xbmcgui.WindowXML):
 
         correctAnswer = self.question.getCorrectAnswer()
         displayType = self.question.getDisplayType()
-        if displayType is None:
-            self.onVisibilityChanged()
-
-        elif isinstance(displayType, question.VideoDisplayType):
-            self.onVisibilityChanged(video = True)
+        if isinstance(displayType, question.VideoDisplayType):
             xbmc.sleep(1500) # give skin animation time to execute
             self.player.playWindowed(displayType.getVideoFile(), correctAnswer.idFile)
 
         elif isinstance(displayType, question.PhotoDisplayType):
             self.getControl(self.C_MAIN_PHOTO).setImage(displayType.getPhotoFile())
-            self.onVisibilityChanged(photo = True)
 
         elif isinstance(displayType, question.ThreePhotoDisplayType):
             self.getControl(self.C_MAIN_PHOTO_1).setImage(displayType.getPhotoFile(0))
             self.getControl(self.C_MAIN_PHOTO_2).setImage(displayType.getPhotoFile(1))
             self.getControl(self.C_MAIN_PHOTO_3).setImage(displayType.getPhotoFile(2))
-            self.onVisibilityChanged(threePhotos = True)
 
         elif isinstance(displayType, question.QuoteDisplayType):
             quoteText = displayType.getQuoteText()
             quoteText = self._obfuscateQuote(quoteText)
             self.getControl(self.C_MAIN_QUOTE_LABEL).setText(quoteText)
-            self.onVisibilityChanged(quote = True)
 
+        self.onVisibilityChanged(displayType)
 
         if not self.gameInstance.isInteractive():
             # answers correctly in ten seconds
@@ -552,7 +549,11 @@ class QuizGui(xbmcgui.WindowXML):
         self.onQuestionAnswered(answer)
 
     def onQuestionAnswered(self, answer):
-        print "onQuestionAnswered(..)"
+        """
+        @param answer: the chosen answer by the user
+        @type answer: Answer
+        """
+        xbmc.log("onQuestionAnswered(..)")
         if self.questionPointsThread is not None:
            self.questionPointsThread.cancel()
 
@@ -598,7 +599,7 @@ class QuizGui(xbmcgui.WindowXML):
         if controlId is None:
             controlId = self.getFocusId()
 
-        if controlId >= self.C_MAIN_FIRST_ANSWER or controlId <= self.C_MAIN_LAST_ANSWER:
+        if self.C_MAIN_FIRST_ANSWER <= controlId <= self.C_MAIN_LAST_ANSWER:
             answer = self.question.getAnswer(controlId - self.C_MAIN_FIRST_ANSWER)
             coverImage = self.getControl(self.C_MAIN_COVER_IMAGE)
             if answer is not None and answer.coverFile is not None and os.path.exists(answer.coverFile):
@@ -620,15 +621,17 @@ class QuizGui(xbmcgui.WindowXML):
         self.getControl(self.C_MAIN_CORRECT_VISIBILITY).setVisible(True)
         self.getControl(self.C_MAIN_INCORRECT_VISIBILITY).setVisible(True)
 
-    def onVisibilityChanged(self, video = False, photo = False, quote = False, threePhotos = False):
-        """Visibility is inverted in skin
+    def onVisibilityChanged(self, displayType = None):
         """
-        self.getControl(self.C_MAIN_VIDEO_VISIBILITY).setVisible(not video)
-        self.getControl(self.C_MAIN_PHOTO_VISIBILITY).setVisible(not photo)
-        self.getControl(self.C_MAIN_QUOTE_VISIBILITY).setVisible(not quote)
-        self.getControl(self.C_MAIN_THREE_PHOTOS_VISIBILITY).setVisible(not threePhotos)
+        @type displayType: quizlib.question.DisplayType
+        @param displayType: the type of display required by the current question
+        """
+        self.getControl(self.C_MAIN_VIDEO_VISIBILITY).setVisible(not isinstance(displayType, question.VideoDisplayType))
+        self.getControl(self.C_MAIN_PHOTO_VISIBILITY).setVisible(not isinstance(displayType, question.PhotoDisplayType))
+        self.getControl(self.C_MAIN_QUOTE_VISIBILITY).setVisible(not isinstance(displayType, question.QuoteDisplayType))
+        self.getControl(self.C_MAIN_THREE_PHOTOS_VISIBILITY).setVisible(not isinstance(displayType, question.ThreePhotoDisplayType))
         
-        self.getControl(self.C_MAIN_REPLAY_BUTTON_VISIBILITY).setEnabled(video)
+        self.getControl(self.C_MAIN_REPLAY_BUTTON_VISIBILITY).setEnabled(isinstance(displayType, question.VideoDisplayType))
 
     def _obfuscateQuote(self, quote):
         names = list()

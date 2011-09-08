@@ -1,5 +1,7 @@
 import xbmcaddon
 
+ADDON = xbmcaddon.Addon(id = 'script.moviequiz')
+
 Q_WHAT_MOVIE_IS_THIS = 30400
 Q_WHAT_MOVIE_IS_ACTOR_NOT_IN = 30401
 Q_WHAT_YEAR_WAS_MOVIE_RELEASED = 30402
@@ -78,7 +80,7 @@ E_DELETE_USER_LINE1 = 30058
 E_DELETE_USER_LINE2 = 30059
 
 def strings(id, replacements = None):
-    string = xbmcaddon.Addon(id = 'script.moviequiz').getLocalizedString(id)
+    string = ADDON.getLocalizedString(id)
     if replacements is not None:
         return string % replacements
     else:

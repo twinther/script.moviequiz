@@ -21,6 +21,12 @@ class Database(object):
     PARAM_REPL = '?'
 
     def __init__(self, allowedRatings, onlyWatched):
+        """
+        @param allowedRatings: limit movies based on ratings
+        @type allowedRatings: list
+        @param onlyWatched: only include watches movies or not
+        @type onlyWatched: bool
+        """
         self.conn = None
 
         self.defaultMovieViewClause = ''
@@ -39,7 +45,13 @@ class Database(object):
         self._fixMissingTVShowView()
 
     @staticmethod
-    def connect(maxRating = None, onlyUsedWatched = None):
+    def connect(allowedRatings = None, onlyWatched = None):
+        """
+        @param allowedRatings: limit movies based on ratings
+        @type allowedRatings: list
+        @param onlyWatched: only include watches movies or not
+        @type onlyWatched: bool
+        """
         settings = {
             'type' : 'sqlite3',
             'host' : xbmc.translatePath('special://database/')
@@ -69,9 +81,9 @@ class Database(object):
         xbmc.log("Loaded DB settings: %s" % settings)
 
         if settings.has_key('type') and settings['type'] is not None and settings['type'].lower() == 'mysql':
-            return MySQLDatabase(maxRating, onlyUsedWatched, settings)
+            return MySQLDatabase(allowedRatings, onlyWatched, settings)
         else:
-            return SQLiteDatabase(maxRating, onlyUsedWatched, settings)
+            return SQLiteDatabase(allowedRatings, onlyWatched, settings)
 
 
     def _fixMissingTVShowView(self):
@@ -160,7 +172,7 @@ class Database(object):
         except DbException:
             return False
 
-    def getRandomMovies(self, maxResults, setId = None, genres = None, excludeMovieIds = None, actorIdInMovie = None, actorIdNotInMovie = None,
+    def getMovies(self, maxResults, setId = None, genres = None, excludeMovieIds = None, actorIdInMovie = None, actorIdNotInMovie = None,
                         directorId = None, excludeDirectorId = None, studioId = None, minYear = None, maxYear = None, mustHaveTagline = False,
                         minActorCount = None, mustHaveRuntime = False, maxRuntime = None):
         """
@@ -177,38 +189,36 @@ class Database(object):
         * strFileName
         * idSet
 
-        @param self: database instance
-        @type self: Database
-        @param maxResults: Retrieves this number of movies at most (actual number may be less than this)
         @type maxResults: int
-        @param setId: Only retrieve movies included in this set
+        @param maxResults: Retrieves this number of movies at most (actual number may be less than this)
         @type setId: int
-        @param genres: Only retrieve movies in this/these genres
+        @param setId: Only retrieve movies included in this set
         @type genres: str
-        @param excludeMovieIds: Exclude the provided movie Ids from the list of movie candidiates
+        @param genres: Only retrieve movies in this/these genres
         @type excludeMovieIds: array of int
-        @param actorIdInMovie: Only retrieve movies with this actor
+        @param excludeMovieIds: Exclude the provided movie Ids from the list of movie candidiates
         @type actorIdInMovie: int
-        @param actorIdNotInMovie: Exclude movies with this actor from the list of movie candidiates
+        @param actorIdInMovie: Only retrieve movies with this actor
         @type actorIdNotInMovie: int
-        @param directorId: Only retrieve movies with this director
+        @param actorIdNotInMovie: Exclude movies with this actor from the list of movie candidiates
         @type directorId: int
-        @param excludeDirectorId: Exclude movies with this director from the list of movie candidates
+        @param directorId: Only retrieve movies with this director
         @type excludeDirectorId: int
-        @param studioId: Only retrieve movies with this studio
+        @param excludeDirectorId: Exclude movies with this director from the list of movie candidates
         @type studioId: int
-        @param minYear: Exclude movies with year less than this from the list of movie candidates
+        @param studioId: Only retrieve movies with this studio
         @type minYear: int
-        @param maxYear: Exclude movies with year more than this from the list of movie candidates
+        @param minYear: Exclude movies with year less than this from the list of movie candidates
         @type maxYear: int
-        @param mustHaveTagline: Exclude movies without a tagline from the list of movie candidates
+        @param maxYear: Exclude movies with year more than this from the list of movie candidates
         @type mustHaveTagline: bool
-        @param minActorCount: Only retrieve movies with this or more actors
+        @param mustHaveTagline: Exclude movies without a tagline from the list of movie candidates
         @type minActorCount: int
-        @param mustHaveRuntime: Exclude movies without a runtime from the list of movie candidates
+        @param minActorCount: Only retrieve movies with this or more actors
         @type mustHaveRuntime: bool
-        @param maxRuntime: Only retrieve movies with less than this runtime
+        @param mustHaveRuntime: Exclude movies without a runtime from the list of movie candidates
         @type maxRuntime: int
+        @param maxRuntime: Only retrieve movies with less than this runtime
         """
         params = list()
         query = """
@@ -286,8 +296,18 @@ class Database(object):
         return self.fetchall(query, params)
 
 
-    def getRandomActors(self, maxResults = None, minMovieCount = None, excludeActorId = None, selectDistinct = None,
+    def getMovieActors(self, maxResults = None, minMovieCount = None, excludeActorId = None, selectDistinct = None,
                         movieId = None, appendDefaultClause = True, mustHaveRole = False, excludeMovieIds = None):
+        """
+        Retrieves random movie actors from XBMC's video library.
+        For each actor the following information is returned:
+        * idActor
+        * strActor
+        * strRole
+
+        @type maxResults: int
+        @param maxResults: Retrieves this number of movies at most (actual number may be less than this)
+        """
         params = []
         if selectDistinct:
             query = "SELECT DISTINCT "

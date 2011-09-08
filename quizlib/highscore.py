@@ -16,9 +16,19 @@ except ImportError:
 
 class HighscoreDatabase(object):
     def getHighscores(self, game):
+        """
+        @type game: quizlib.game.Game
+        @param game: game instance
+        """
         raise
 
     def getHighscoresNear(self, game, highscoreId):
+        """
+        @type game: quizlib.game.Game
+        @param game: game instance
+        @type highscoreId: int
+        @param highscoreId: the highscoreId to get highscores near
+        """
         raise
 
 class GlobalHighscoreDatabase(HighscoreDatabase):

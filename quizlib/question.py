@@ -158,7 +158,7 @@ class WhatMovieIsThisQuestion(MovieQuestion):
         videoDisplayType = VideoDisplayType()
         super(WhatMovieIsThisQuestion, self).__init__(videoDisplayType)
 
-        correctAnswer = database.getRandomMovies(maxResults = 1)[0]
+        correctAnswer = database.getMovies(maxResults = 1)[0]
 
         a = CorrectAnswer(correctAnswer['idMovie'], correctAnswer['title'], correctAnswer['idFile'])
         a.setCoverFile(correctAnswer['strPath'], correctAnswer['strFileName'])
@@ -166,7 +166,7 @@ class WhatMovieIsThisQuestion(MovieQuestion):
 
         # Find other movies in set
         if correctAnswer['idSet'] is not None:
-            otherMoviesInSet = database.getRandomMovies(3, setId = correctAnswer['idSet'], excludeMovieIds = self._getMovieIds())
+            otherMoviesInSet = database.getMovies(3, setId = correctAnswer['idSet'], excludeMovieIds = self._getMovieIds())
             for movie in otherMoviesInSet:
                 a = Answer(movie['idMovie'], movie['title'], movie['idFile'])
                 a.setCoverFile(movie['strPath'], movie['strFileName'])
@@ -175,7 +175,7 @@ class WhatMovieIsThisQuestion(MovieQuestion):
         # Find other movies in genre
         if len(self.answers) < 4:
             try:
-                otherMoviesInGenre = database.getRandomMovies(maxResults = 4 - len(self.answers), genres = correctAnswer['genre'], excludeMovieIds = self._getMovieIds())
+                otherMoviesInGenre = database.getMovies(maxResults = 4 - len(self.answers), genres = correctAnswer['genre'], excludeMovieIds = self._getMovieIds())
                 for movie in otherMoviesInGenre:
                     a = Answer(movie['idMovie'], movie['title'], movie['idFile'])
                     a.setCoverFile(movie['strPath'], movie['strFileName'])
@@ -185,7 +185,7 @@ class WhatMovieIsThisQuestion(MovieQuestion):
 
         # Fill with random movies
         if len(self.answers) < 4:
-            theRest = database.getRandomMovies(maxResults = 4 - len(self.answers), excludeMovieIds = self._getMovieIds())
+            theRest = database.getMovies(maxResults = 4 - len(self.answers), excludeMovieIds = self._getMovieIds())
             for movie in theRest:
                 a = Answer(movie['idMovie'], movie['title'], movie['idFile'])
                 a.setCoverFile(movie['strPath'], movie['strFileName'])
@@ -210,7 +210,7 @@ class ActorNotInMovieQuestion(MovieQuestion):
         photoDisplayType = PhotoDisplayType()
         super(ActorNotInMovieQuestion, self).__init__(photoDisplayType)
 
-        rows = database.getRandomActors(maxResults = 10, minMovieCount = 3)
+        rows = database.getMovieActors(maxResults = 10, minMovieCount = 3)
         actor = None
         photoFile = None
         # try to find an actor with a cached photo (if non are found we bail out)
@@ -227,13 +227,13 @@ class ActorNotInMovieQuestion(MovieQuestion):
             raise QuestionException("Didn't find any actors with photoFile")
 
         # Movies actor is not in
-        row = database.getRandomMovies(maxResults = 1, actorIdNotInMovie = actor['idActor'])[0]
+        row = database.getMovies(maxResults = 1, actorIdNotInMovie = actor['idActor'])[0]
         a = CorrectAnswer(actor['idActor'], row['title'])
         a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
         # Movie actor is in
-        movies = database.getRandomMovies(maxResults = 3, actorIdInMovie = actor['idActor'])
+        movies = database.getMovies(maxResults = 3, actorIdInMovie = actor['idActor'])
         for movie in movies:
             a = Answer(-1, movie['title'])
             a.setCoverFile(movie['strPath'], movie['strFileName'])
@@ -258,7 +258,7 @@ class WhatYearWasMovieReleasedQuestion(MovieQuestion):
         """
         super(WhatYearWasMovieReleasedQuestion, self).__init__()
 
-        row = database.getRandomMovies(maxResults = 1, minYear = 1900)[0]
+        row = database.getMovies(maxResults = 1, minYear = 1900)[0]
         skew = random.randint(0, 10)
         minYear = int(row['year']) - skew
         maxYear = int(row['year']) + (10 - skew)
@@ -300,12 +300,12 @@ class WhatTagLineBelongsToMovieQuestion(MovieQuestion):
         """
         super(WhatTagLineBelongsToMovieQuestion, self).__init__()
 
-        row = database.getRandomMovies(maxResults = 1, mustHaveTagline = True)[0]
+        row = database.getMovies(maxResults = 1, mustHaveTagline = True)[0]
         a = CorrectAnswer(row['idMovie'], row['tagline'], row['idFile'])
         a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
-        otherAnswers = database.getRandomMovies(maxResults = 3, excludeMovieIds = row['idMovie'], mustHaveTagline = True)
+        otherAnswers = database.getMovies(maxResults = 3, excludeMovieIds = row['idMovie'], mustHaveTagline = True)
         for movie in otherAnswers:
             a = Answer(movie['idMovie'], movie['tagline'], row['idFile'])
             a.setCoverFile(row['strPath'], row['strFileName'])
@@ -334,7 +334,7 @@ class WhoDirectedThisMovieQuestion(MovieQuestion):
         super(WhoDirectedThisMovieQuestion, self).__init__()
 
         director = database.getRandomDirectors(maxResults = 1, minMovieCount = 1)[0]
-        row = database.getRandomMovies(maxResults = 1, directorId = director['idActor'])[0]
+        row = database.getMovies(maxResults = 1, directorId = director['idActor'])[0]
         a = CorrectAnswer(director['idActor'], director['strActor'], row['idFile'])
         a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
@@ -365,7 +365,7 @@ class WhatStudioReleasedMovieQuestion(MovieQuestion):
         super(WhatStudioReleasedMovieQuestion, self).__init__()
 
         studio = database.getRandomStudios(maxResults = 1)[0]
-        row = database.getRandomMovies(maxResults = 1, studioId = studio['idStudio'])[0]
+        row = database.getMovies(maxResults = 1, studioId = studio['idStudio'])[0]
         a = CorrectAnswer(studio['idStudio'], studio['strStudio'], row['idFile'])
         a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
@@ -398,7 +398,7 @@ class WhatActorIsThisQuestion(MovieQuestion):
 
         actor = None
         photoFile = None
-        rows = database.getRandomActors(maxResults = 10, selectDistinct = True)
+        rows = database.getMovieActors(maxResults = 10, selectDistinct = True)
         # try to find an actor with a cached photo
         for row in rows:
             photoFile = thumb.getCachedActorThumb(row['strActor'])
@@ -414,7 +414,7 @@ class WhatActorIsThisQuestion(MovieQuestion):
         self.answers.append(a)
 
         # Other actors
-        actors = database.getRandomActors(maxResults = 50, excludeActorId = actor['idActor'], appendDefaultClause = False)
+        actors = database.getMovieActors(maxResults = 50, excludeActorId = actor['idActor'], appendDefaultClause = False)
 
         # Check gender
         actorGender = IMDB.isActor(actor['strActor'])
@@ -444,8 +444,8 @@ class WhoPlayedRoleInMovieQuestion(MovieQuestion):
         """
         super(WhoPlayedRoleInMovieQuestion, self).__init__()
 
-        actor = database.getRandomActors(maxResults = 1, mustHaveRole = True)[0]
-        movie = database.getRandomMovies(maxResults = 1, actorIdInMovie = actor['idActor'])[0]
+        actor = database.getMovieActors(maxResults = 1, mustHaveRole = True)[0]
+        movie = database.getMovies(maxResults = 1, actorIdInMovie = actor['idActor'])[0]
         role = actor['strRole']
         if re.search('[|/]', role):
             roles = re.split('[|/]', role)
@@ -456,7 +456,7 @@ class WhoPlayedRoleInMovieQuestion(MovieQuestion):
         a.setCoverFile(thumb.getCachedActorThumb(actor['strActor']))
         self.answers.append(a)
 
-        actors = database.getRandomActors(maxResults = 3, excludeActorId = actor['idActor'], movieId = movie['idMovie'])
+        actors = database.getMovieActors(maxResults = 3, excludeActorId = actor['idActor'], movieId = movie['idMovie'])
         for actor in actors:
             a = Answer(actor['idActor'], actor['strActor'])
             a.setCoverFile(thumb.getCachedActorThumb(actor['strActor']))
@@ -486,7 +486,7 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
         quoteDisplayType = QuoteDisplayType()
         super(WhatMovieIsThisQuoteFrom, self).__init__(quoteDisplayType)
 
-        rows = database.getRandomMovies(maxResults = 10, minYear = 1900)
+        rows = database.getMovies(maxResults = 10, minYear = 1900)
         quoteText = None
         row = None
         for r in rows:
@@ -503,7 +503,7 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
         a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
-        theRest = database.getRandomMovies(maxResults = 3, excludeMovieIds = row['idMovie'])
+        theRest = database.getMovies(maxResults = 3, excludeMovieIds = row['idMovie'])
         for movie in theRest:
             a = Answer(movie['idMovie'], movie['title'])
             a.setCoverFile(movie['strPath'], movie['strFileName'])
@@ -528,12 +528,12 @@ class WhatMovieIsNewestQuestion(MovieQuestion):
         """
         super(WhatMovieIsNewestQuestion, self).__init__()
 
-        row = database.getRandomMovies(maxResults = 1, minYear = 1900)[0]
+        row = database.getMovies(maxResults = 1, minYear = 1900)[0]
         a = CorrectAnswer(row['idMovie'], row['title'], row['idFile'])
         a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
-        movies = database.getRandomMovies(maxResults = 3, minYear = 1900, maxYear = row['year'])
+        movies = database.getMovies(maxResults = 3, minYear = 1900, maxYear = row['year'])
         if len(movies) < 3:
             raise QuestionException("Less than 3 movies found; bailing out")
 
@@ -578,13 +578,13 @@ class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
             raise QuestionException("Didn't find any directors with photoFile")
 
         # Movies not directed by director
-        movie = database.getRandomMovies(maxResults = 1, excludeDirectorId = director['idActor'])[0]
+        movie = database.getMovies(maxResults = 1, excludeDirectorId = director['idActor'])[0]
         a = CorrectAnswer(director['idActor'], movie['title'])
         a.setCoverFile(movie['strPath'], movie['strFileName'])
         self.answers.append(a)
 
         # Movie actor is in
-        movies = database.getRandomMovies(maxResults = 3, directorId = director['idActor'])
+        movies = database.getMovies(maxResults = 3, directorId = director['idActor'])
         for movie in movies:
             a = Answer(-1, movie['title'])
             a.setCoverFile(movie['strPath'], movie['strFileName'])
@@ -610,18 +610,18 @@ class WhatActorIsInTheseMoviesQuestion(MovieQuestion):
         threePhotoDisplayType = ThreePhotoDisplayType()
         super(WhatActorIsInTheseMoviesQuestion, self).__init__(threePhotoDisplayType)
 
-        actor = database.getRandomActors(maxResults = 1, minMovieCount = 3)[0]
+        actor = database.getMovieActors(maxResults = 1, minMovieCount = 3)[0]
         a = CorrectAnswer(actor['idActor'], actor['strActor'])
         a.setCoverFile(thumb.getCachedActorThumb(actor['strActor']))
         self.answers.append(a)
 
         movieIds = list()
-        rows = database.getRandomMovies(maxResults = 3, actorIdInMovie = actor['idActor'])
+        rows = database.getMovies(maxResults = 3, actorIdInMovie = actor['idActor'])
         for row in rows:
             movieIds.append(row['idMovie'])
             threePhotoDisplayType.addPhoto(thumb.getCachedVideoThumb(row['strPath'], row['strFileName']))
 
-        otherActors = database.getRandomActors(maxResults = 3, excludeActorId = actor['idActor'], excludeMovieIds = movieIds)
+        otherActors = database.getMovieActors(maxResults = 3, excludeActorId = actor['idActor'], excludeMovieIds = movieIds)
         for other in otherActors:
             a = Answer(other['idActor'], other['strActor'])
             a.setCoverFile(thumb.getCachedActorThumb(other['strActor']))
@@ -645,14 +645,14 @@ class WhatActorIsInMovieBesidesOtherActorQuestion(MovieQuestion):
         """
         super(WhatActorIsInMovieBesidesOtherActorQuestion, self).__init__()
 
-        movie = database.getRandomMovies(maxResults = 1, minActorCount = 3)[0]
-        actors = database.getRandomActors(maxResults = 2, movieId = movie['idMovie'])
+        movie = database.getMovies(maxResults = 1, minActorCount = 3)[0]
+        actors = database.getMovieActors(maxResults = 2, movieId = movie['idMovie'])
 
         a = CorrectAnswer(actors[0]['idActor'], actors[0]['strActor'])
         a.setCoverFile(thumb.getCachedActorThumb(actors[0]['strActor']))
         self.answers.append(a)
 
-        otherActors = database.getRandomActors(maxResults = 3, excludeMovieIds = movie['idMovie'], excludeActorId = actors[0]['idActor'])
+        otherActors = database.getMovieActors(maxResults = 3, excludeMovieIds = movie['idMovie'], excludeActorId = actors[0]['idActor'])
         for actor in otherActors:
             a = Answer(actor['idActor'], actor['strActor'])
             a.setCoverFile(thumb.getCachedActorThumb(actor['strActor']))
@@ -676,12 +676,12 @@ class WhatMovieHasTheLongestRuntimeQuestion(MovieQuestion):
         """
         super(WhatMovieHasTheLongestRuntimeQuestion, self).__init__()
 
-        correctAnswer = database.getRandomMovies(maxResults = 1, mustHaveRuntime = True)[0]
+        correctAnswer = database.getMovies(maxResults = 1, mustHaveRuntime = True)[0]
         a = CorrectAnswer(correctAnswer['idMovie'], correctAnswer['title'], correctAnswer['idFile'])
         a.setCoverFile(correctAnswer['strPath'], correctAnswer['strFileName'])
         self.answers.append(a)
 
-        movies = database.getRandomMovies(maxResults = 3, mustHaveRuntime = True, maxRuntime = correctAnswer['runtime'])
+        movies = database.getMovies(maxResults = 3, mustHaveRuntime = True, maxRuntime = correctAnswer['runtime'])
         if len(movies) < 3:
             raise QuestionException("Less than 3 movies found; bailing out")
 
