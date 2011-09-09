@@ -26,8 +26,8 @@ ADDON = xbmcaddon.Addon(id = 'script.moviequiz')
 RESOURCES_PATH = os.path.join(ADDON.getAddonInfo('path'), 'resources', )
 AUDIO_CORRECT = os.path.join(RESOURCES_PATH, 'audio', 'correct.wav')
 AUDIO_WRONG = os.path.join(RESOURCES_PATH, 'audio', 'wrong.wav')
-BACKGROUND_MOVIE = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz-background.png')
-BACKGROUND_TV = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz-background-tvshows.png')
+BACKGROUND_MOVIE = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz-background-movie.jpg')
+BACKGROUND_TV = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz-background-tvshows.jpg')
 NO_PHOTO_IMAGE = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz-no-photo.png')
 
 MPAA_RATINGS = ['R', 'Rated R', 'PG-13', 'Rated PG-13', 'PG', 'Rated PG', 'G', 'Rated G']
@@ -307,6 +307,9 @@ class QuizGui(xbmcgui.WindowXML):
     C_MAIN_PHOTO_1 = 4701
     C_MAIN_PHOTO_2 = 4702
     C_MAIN_PHOTO_3 = 4703
+    C_MAIN_PHOTO_LABEL_1 = 4711
+    C_MAIN_PHOTO_LABEL_2 = 4712
+    C_MAIN_PHOTO_LABEL_3 = 4713
     C_MAIN_VIDEO_VISIBILITY = 5000
     C_MAIN_PHOTO_VISIBILITY = 5001
     C_MAIN_QUOTE_VISIBILITY = 5004
@@ -314,7 +317,7 @@ class QuizGui(xbmcgui.WindowXML):
     C_MAIN_CORRECT_VISIBILITY = 5002
     C_MAIN_INCORRECT_VISIBILITY = 5003
     C_MAIN_LOADING_VISIBILITY = 5005
-    C_MAIN_REPLAY_BUTTON_VISIBILITY = 5007
+    C_MAIN_COVER_IMAGE_VISIBILITY = 5007
 
     STATE_LOADING = 1
     STATE_PLAYING = 2
@@ -364,6 +367,7 @@ class QuizGui(xbmcgui.WindowXML):
         if self.gameInstance.getType() == game.GAMETYPE_TVSHOW:
             self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(self.defaultBackground)
 
+        xbmc.sleep(500) # Opening animation
         self.onNewGame()
 
     def onNewGame(self):
@@ -480,9 +484,12 @@ class QuizGui(xbmcgui.WindowXML):
             self.getControl(self.C_MAIN_PHOTO).setImage(displayType.getPhotoFile())
 
         elif isinstance(displayType, question.ThreePhotoDisplayType):
-            self.getControl(self.C_MAIN_PHOTO_1).setImage(displayType.getPhotoFile(0))
-            self.getControl(self.C_MAIN_PHOTO_2).setImage(displayType.getPhotoFile(1))
-            self.getControl(self.C_MAIN_PHOTO_3).setImage(displayType.getPhotoFile(2))
+            self.getControl(self.C_MAIN_PHOTO_1).setImage(displayType.getPhotoFile(0)[0])
+            self.getControl(self.C_MAIN_PHOTO_LABEL_1).setLabel(displayType.getPhotoFile(0)[1])
+            self.getControl(self.C_MAIN_PHOTO_2).setImage(displayType.getPhotoFile(1)[0])
+            self.getControl(self.C_MAIN_PHOTO_LABEL_2).setLabel(displayType.getPhotoFile(1)[1])
+            self.getControl(self.C_MAIN_PHOTO_3).setImage(displayType.getPhotoFile(2)[0])
+            self.getControl(self.C_MAIN_PHOTO_LABEL_3).setLabel(displayType.getPhotoFile(2)[1])
 
         elif isinstance(displayType, question.QuoteDisplayType):
             quoteText = displayType.getQuoteText()
@@ -575,6 +582,7 @@ class QuizGui(xbmcgui.WindowXML):
                 if answer.correct:
                     self.getControl(self.C_MAIN_FIRST_ANSWER + idx).setLabel('[B]%s[/B]' % answer.text)
                     self.setFocusId(self.C_MAIN_FIRST_ANSWER + idx)
+                    self.onThumbChanged(self.C_MAIN_FIRST_ANSWER + idx)
                 else:
                     self.getControl(self.C_MAIN_FIRST_ANSWER + idx).setLabel(textColor='0x88888888')
 
@@ -603,13 +611,13 @@ class QuizGui(xbmcgui.WindowXML):
             answer = self.question.getAnswer(controlId - self.C_MAIN_FIRST_ANSWER)
             coverImage = self.getControl(self.C_MAIN_COVER_IMAGE)
             if answer is not None and answer.coverFile is not None and os.path.exists(answer.coverFile):
-                coverImage.setVisible(True)
+                self.getControl(self.C_MAIN_COVER_IMAGE_VISIBILITY).setVisible(False)
                 coverImage.setImage(answer.coverFile)
             elif answer is not None and answer.coverFile is not None :
-                coverImage.setVisible(True)
+                self.getControl(self.C_MAIN_COVER_IMAGE_VISIBILITY).setVisible(False)
                 coverImage.setImage(NO_PHOTO_IMAGE)
             else:
-                coverImage.setVisible(False)
+                self.getControl(self.C_MAIN_COVER_IMAGE_VISIBILITY).setVisible(True)
 
     def onQuestionAnswerFeedbackTimer(self):
         """
@@ -630,11 +638,14 @@ class QuizGui(xbmcgui.WindowXML):
         self.getControl(self.C_MAIN_PHOTO_VISIBILITY).setVisible(not isinstance(displayType, question.PhotoDisplayType))
         self.getControl(self.C_MAIN_QUOTE_VISIBILITY).setVisible(not isinstance(displayType, question.QuoteDisplayType))
         self.getControl(self.C_MAIN_THREE_PHOTOS_VISIBILITY).setVisible(not isinstance(displayType, question.ThreePhotoDisplayType))
-        
-        self.getControl(self.C_MAIN_REPLAY_BUTTON_VISIBILITY).setEnabled(isinstance(displayType, question.VideoDisplayType))
+
 
     def _obfuscateQuote(self, quote):
         names = list()
+
+        for m in re.finditer('(\[.*?\])', quote, re.DOTALL):
+            quote = quote.replace(m.group(1), '')
+
         for m in re.finditer('(.*?:)', quote):
             name = m.group(1)
             if not name in names:

@@ -124,11 +124,11 @@ class PhotoDisplayType(DisplayType):
         return self.photoFile
 
 class ThreePhotoDisplayType(DisplayType):
-    def addPhoto(self, photo):
+    def addPhoto(self, photo, label):
         if not hasattr(self, 'photos'):
             self.photos = list()
 
-        self.photos.append(photo)
+        self.photos.append((photo, label))
 
     def getPhotoFile(self, index = 0):
         return self.photos[index]
@@ -619,7 +619,8 @@ class WhatActorIsInTheseMoviesQuestion(MovieQuestion):
         rows = database.getMovies(maxResults = 3, actorIdInMovie = actor['idActor'])
         for row in rows:
             movieIds.append(row['idMovie'])
-            threePhotoDisplayType.addPhoto(thumb.getCachedVideoThumb(row['strPath'], row['strFileName']))
+            photo = thumb.getCachedVideoThumb(row['strPath'], row['strFileName'])
+            threePhotoDisplayType.addPhoto(photo, row['title'])
 
         otherActors = database.getMovieActors(maxResults = 3, excludeActorId = actor['idActor'], excludeMovieIds = movieIds)
         for other in otherActors:
