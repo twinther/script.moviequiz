@@ -968,6 +968,8 @@ def getRandomQuestion(gameInstance, database):
             print "QuestionException in %s: %s" % (subclass, ex)
         except db.DbException, ex:
             print "DbException in %s: %s" % (subclass, ex)
+        except Exception, ex:
+            print "Exception in %s: %s" % (subclass, ex)
 
     return None
 
