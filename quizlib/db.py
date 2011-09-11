@@ -286,7 +286,7 @@ class Database(object):
             params.append(int(studioId))
 
         if minActorCount:
-            query += "AND (SELECT COUNT(DISTINCT alm.idActor) FROM actorlinkmovie alm WHERE alm.idMovie = mv.idMovie) >= " + self.PARAM_REPL
+            query += " AND (SELECT COUNT(DISTINCT alm.idActor) FROM actorlinkmovie alm WHERE alm.idMovie = mv.idMovie) >= " + self.PARAM_REPL
             params.append(int(minActorCount))
 
         query += " ORDER BY " + self.FUNC_RANDOM
@@ -323,7 +323,7 @@ class Database(object):
             query += self.defaultMovieViewClause
 
         if minMovieCount:
-            query += "GROUP BY alm.idActor HAVING count(mv.idMovie) >= " + self.PARAM_REPL
+            query += " GROUP BY alm.idActor HAVING count(mv.idMovie) >= " + self.PARAM_REPL
             params.append(int(minMovieCount))
 
         if excludeActorId:
@@ -362,7 +362,7 @@ class Database(object):
             """ + self.defaultMovieViewClause
 
         if minMovieCount:
-            query += "GROUP BY dlm.idDirector HAVING count(mv.idMovie) >= " + self.PARAM_REPL
+            query += " GROUP BY dlm.idDirector HAVING count(mv.idMovie) >= " + self.PARAM_REPL
             params.append(int(minMovieCount))
 
         if excludeDirectorId:
