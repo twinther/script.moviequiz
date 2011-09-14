@@ -48,10 +48,8 @@ class Imdb(object):
         quote = None
         for retries in range(0, 25):
             quote = quotes[random.randint(0, len(quotes)-1)]
-            print len(quote)
             if maxLength is None or len(quote) < maxLength:
                 break
-
 
         # filter and cleanup
         return re.sub('\n  ', ' ', quote)
@@ -205,13 +203,6 @@ class ImdbLoader(threading.Thread):
         self.imdb = imdb
 
     def run(self):
-        if os.path.exists(self.imdb.actorsPath):
-            startTime = time.time()
-            f = open(self.imdb.actorsPath)
-            self.imdb.actorNames = f.read().decode('iso-8859-1').splitlines()
-            f.close()
-            xbmc.log("Loaded %d actor names in %d seconds" % (len(self.imdb.actorNames), (time.time() - startTime)))
-
         if os.path.exists(self.imdb.quotesIndexPath):
             startTime = time.time()
             f = open(self.imdb.quotesIndexPath)
@@ -219,6 +210,12 @@ class ImdbLoader(threading.Thread):
             f.close()
             xbmc.log("Loaded %d MB quotes index in %d seconds" % (len(self.imdb.quotesIndex) / 1024000, (time.time() - startTime)))
 
+        if os.path.exists(self.imdb.actorsPath):
+            startTime = time.time()
+            f = open(self.imdb.actorsPath)
+            self.imdb.actorNames = f.read().decode('iso-8859-1').splitlines()
+            f.close()
+            xbmc.log("Loaded %d MB actor names in %d seconds" % (len(self.imdb.actorNames) / 1024000, (time.time() - startTime)))
 
 
 if __name__ == '__main__':

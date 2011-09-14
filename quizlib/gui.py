@@ -382,8 +382,10 @@ class QuizGui(xbmcgui.WindowXML):
         self.onNewQuestion()
 
     def close(self):
-        if self.player and self.player.isPlaying():
-            self.player.stop()
+        if self.player:
+            if self.player.isPlaying():
+                self.player.stop()
+            self.player.close()
         self.database.close()
         super(QuizGui, self).close()
         

@@ -18,7 +18,7 @@ __author__ = 'twinther'
 class Database(object):
     """Base class for the various databases"""
     FUNC_RANDOM = None
-    PARAM_REPL = '?'
+    PARAM_REPL = '?' # TODO change to function and call it player.py
 
     def __init__(self, allowedRatings, onlyWatched):
         """
@@ -32,8 +32,13 @@ class Database(object):
         self.defaultMovieViewClause = ''
         self.defaultTVShowViewClause = ''
         if allowedRatings:
-            self.defaultMovieViewClause += " AND TRIM(c12) IN ('%s')" % '\',\''.join(allowedRatings)
-            self.defaultTVShowViewClause += " AND TRIM(tv.c13) IN ('%s')" % '\',\''.join(allowedRatings)
+            self.defaultMovieViewClause += " AND (" #TRIM(c12) IN ('%s')" % '\',\''.join(allowedRatings)
+            self.defaultTVShowViewClause += " AND (" #TRIM(tv.c13) IN ('%s')" % '\',\''.join(allowedRatings)
+            for allowedRating in allowedRatings:
+                self.defaultMovieViewClause += " TRIM(c12) LIKE '%s%%%%' OR" % allowedRating
+                self.defaultTVShowViewClause += " TRIM(tv.c13) LIKE '%s%%%%' OR" % allowedRating
+            self.defaultMovieViewClause = self.defaultMovieViewClause[0:-3] + ")"
+            self.defaultTVShowViewClause = self.defaultTVShowViewClause[0:-3] + ")"
         if onlyWatched:
             self.defaultMovieViewClause += " AND mv.playCount IS NOT NULL"
             self.defaultTVShowViewClause += " AND ev.playCount IS NOT NULL"
@@ -171,6 +176,41 @@ class Database(object):
             return int(row['cnt']) > 0
         except DbException:
             return False
+
+    def getVideoBookmark(self, idFile):
+        """
+        Get bookmark details, so we can restore after playback
+
+        @param idFile: the id of the file currently playing
+        @type idFile: int
+        @return: dict with bookmark information
+        """
+        try:
+            bookmark = self.fetchone("SELECT idBookmark, timeInSeconds FROM bookmark WHERE idFile = " + self.PARAM_REPL, idFile)
+        except DbException:
+            bookmark = {'idFile' : idFile}
+
+        return bookmark
+
+    def resetVideoBookmark(self, bookmark):
+        """
+        Resets the bookmark to what it was and deletes it if necessary.
+
+        @param bookmark: The dict as returned by getVideoBookmark(..)
+        @type bookmark: dict
+        """
+        if bookmark.has_key('idFile'):
+            try:
+                self.execute("DELETE FROM bookmark WHERE idFile = " + self.PARAM_REPL, bookmark['idFile'])
+            except DbException:
+                pass
+        else:
+            try:
+                self.execute("UPDATE bookmark SET timeInSeconds = " + self.PARAM_REPL + " WHERE idBookmark = " + self.PARAM_REPL
+                    , (bookmark['timeInSeconds'], bookmark['idBookmark']))
+            except DbException:
+                pass
+
 
     def getMovies(self, maxResults, setId = None, genres = None, excludeMovieIds = None, actorIdInMovie = None, actorIdNotInMovie = None,
                         directorId = None, excludeDirectorId = None, studioId = None, minYear = None, maxYear = None, mustHaveTagline = False,
@@ -353,7 +393,7 @@ class Database(object):
         return self.fetchall(query, params)
 
 
-    def getRandomDirectors(self, maxResults = None, minMovieCount = None, excludeDirectorId = None):
+    def getMovieDirectors(self, maxResults = None, minMovieCount = None, excludeDirectorId = None):
         params = []
         query = """
             SELECT a.idActor, a.strActor
@@ -377,7 +417,7 @@ class Database(object):
         return self.fetchall(query, params)
 
 
-    def getRandomStudios(self, maxResults = None, excludeStudioId = None):
+    def getStudios(self, maxResults = None, excludeStudioId = None):
         params = []
         query = """
             SELECT s.idStudio, s.strStudio
@@ -396,7 +436,7 @@ class Database(object):
         return self.fetchall(query, params)
 
 
-    def getRandomTVShows(self, maxResults = None, excludeTVShowId = None, excludeSpecials = False, episode = None, mustHaveFirstAired = False, onlySelectTVShow = False):
+    def getTVShows(self, maxResults = None, excludeTVShowId = None, excludeSpecials = False, episode = None, mustHaveFirstAired = False, onlySelectTVShow = False):
         params = []
         if onlySelectTVShow:
             query = """
@@ -432,7 +472,7 @@ class Database(object):
         return self.fetchall(query, params)
 
 
-    def getRandomSeasons(self, maxResults = None, minSeasonCount = None, showId = None, excludeSeason = None, onlySelectSeason = False):
+    def getTVShowSeasons(self, maxResults = None, minSeasonCount = None, showId = None, excludeSeason = None, onlySelectSeason = False):
         params = []
         if onlySelectSeason:
             query = "SELECT DISTINCT ev.c12 AS season"
@@ -440,7 +480,7 @@ class Database(object):
             query = """
                 SELECT ev.idFile, ev.c12 AS season, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName, tv.strPath AS tvShowPath,
                 (SELECT COUNT(DISTINCT c12) FROM episodeview WHERE idShow=ev.idShow) AS seasons
-                """
+                """ # TODO rewrite seasons subquery for mysql
 
         query += """
             FROM episodeview ev, tvshowview tv
@@ -465,7 +505,7 @@ class Database(object):
 
         return self.fetchall(query, params)
 
-    def getRandomEpisodes(self, maxResults = None, minEpisodeCount = None, idShow = None, season = None, excludeEpisode = None):
+    def getTVShowEpisodes(self, maxResults = None, minEpisodeCount = None, idShow = None, season = None, excludeEpisode = None):
         params = []
         query = """
             SELECT ev.idFile, ev.c00 AS episodeTitle, ev.c12 AS season, ev.c13 AS episode, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName, ep.episodes
@@ -497,8 +537,8 @@ class Database(object):
         return self.fetchall(query, params)
 
 
-    def getRandomTVShowActors(self, maxResults = None, excludeActorId = None, selectDistinct = None,
-                        showId = None, appendDefaultClause = True, mustHaveRole = False, onlySelectActor = False):
+    def getTVShowActors(self, maxResults = None, excludeActorId = None, selectDistinct = None, showId = None,
+                        mustHaveRole = False, onlySelectActor = False):
         params = []
         if selectDistinct:
             query = "SELECT DISTINCT "
@@ -516,9 +556,7 @@ class Database(object):
                 alt.idActor, a.strActor, alt.strRole, tv.idShow, tv.c00 AS title, tv.strPath, tv.c08 AS genre
                 FROM tvshowview tv, actorlinktvshow alt, actors a, episodeview ev
                 WHERE tv.idShow = alt.idShow AND alt.idActor=a.idActor AND tv.idShow=ev.idShow AND ev.strFileName NOT LIKE '%%.nfo'
-                """
-        if appendDefaultClause:
-            query += self.defaultTVShowViewClause
+                """ + self.defaultTVShowViewClause
 
         if excludeActorId:
             query += " AND alt.idActor != " + self.PARAM_REPL

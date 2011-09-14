@@ -333,13 +333,13 @@ class WhoDirectedThisMovieQuestion(MovieQuestion):
         """
         super(WhoDirectedThisMovieQuestion, self).__init__()
 
-        director = database.getRandomDirectors(maxResults = 1, minMovieCount = 1)[0]
+        director = database.getMovieDirectors(maxResults = 1, minMovieCount = 1)[0]
         row = database.getMovies(maxResults = 1, directorId = director['idActor'])[0]
         a = CorrectAnswer(director['idActor'], director['strActor'], row['idFile'])
         a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
-        otherAnswers = database.getRandomDirectors(maxResults = 3, excludeDirectorId = director['idActor'])
+        otherAnswers = database.getMovieDirectors(maxResults = 3, excludeDirectorId = director['idActor'])
         for movie in otherAnswers:
             a = Answer(movie['idActor'], movie['strActor'], row['idFile'])
             a.setCoverFile(row['strPath'], row['strFileName'])
@@ -364,13 +364,13 @@ class WhatStudioReleasedMovieQuestion(MovieQuestion):
         """
         super(WhatStudioReleasedMovieQuestion, self).__init__()
 
-        studio = database.getRandomStudios(maxResults = 1)[0]
+        studio = database.getStudios(maxResults = 1)[0]
         row = database.getMovies(maxResults = 1, studioId = studio['idStudio'])[0]
         a = CorrectAnswer(studio['idStudio'], studio['strStudio'], row['idFile'])
         a.setCoverFile(row['strPath'], row['strFileName'])
         self.answers.append(a)
 
-        otherAnswers = database.getRandomStudios(maxResults = 3, excludeStudioId = studio['idStudio'])
+        otherAnswers = database.getStudios(maxResults = 3, excludeStudioId = studio['idStudio'])
         for movie in otherAnswers:
             a = Answer(movie['idStudio'], movie['strStudio'], row['idFile'])
             a.setCoverFile(row['strPath'], row['strFileName'])
@@ -561,7 +561,7 @@ class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
         photoDisplayType = PhotoDisplayType()
         super(WhatMovieIsNotDirectedByQuestion, self).__init__(photoDisplayType)
 
-        rows = database.getRandomDirectors(maxResults = 10, minMovieCount = 3)
+        rows = database.getMovieDirectors(maxResults = 10, minMovieCount = 3)
 
         director = None
         photoFile = None
@@ -731,13 +731,13 @@ class WhatTVShowIsThisQuestion(TVQuestion):
         videoDisplayType  = VideoDisplayType()
         super(WhatTVShowIsThisQuestion, self).__init__(videoDisplayType)
 
-        row = database.getRandomTVShows(maxResults = 1)[0]
+        row = database.getTVShows(maxResults = 1)[0]
         a = CorrectAnswer(row['idShow'], row['title'], row['idFile'])
         a.setCoverFile(thumb.getCachedTVShowThumb(row['tvShowPath']))
         self.answers.append(a)
 
         # Fill with random episodes from other shows
-        shows = database.getRandomTVShows(maxResults = 3, excludeTVShowId = row['idShow'], onlySelectTVShow = True)
+        shows = database.getTVShows(maxResults = 3, excludeTVShowId = row['idShow'], onlySelectTVShow = True)
         for show in shows:
             a = Answer(show['idShow'], show['title'])
             a.setCoverFile(thumb.getCachedTVShowThumb(show['tvShowPath']))
@@ -763,13 +763,13 @@ class WhatSeasonIsThisQuestion(TVQuestion):
         videoDisplayType  = VideoDisplayType()
         super(WhatSeasonIsThisQuestion, self).__init__(videoDisplayType)
 
-        row = database.getRandomSeasons(maxResults = 1, minSeasonCount = 3)[0]
+        row = database.getTVShowSeasons(maxResults = 1, minSeasonCount = 3)[0]
         a = CorrectAnswer("%s-%s" % (row['idShow'], row['season']), self._get_season_title(row['season']), row['idFile'], sortWeight = row['season'])
         a.setCoverFile(thumb.getCachedSeasonThumb(row['strPath'], self._get_season_title(row['season'])))
         self.answers.append(a)
 
         # Fill with random seasons from this show
-        shows = database.getRandomSeasons(maxResults = 3, onlySelectSeason = True, showId = row['idShow'], excludeSeason = row['season'])
+        shows = database.getTVShowSeasons(maxResults = 3, onlySelectSeason = True, showId = row['idShow'], excludeSeason = row['season'])
         for show in shows:
             a = Answer("%s-%s" % (row['idShow'], show['season']), self._get_season_title(show['season']), sortWeight = show['season'])
             a.setCoverFile(thumb.getCachedSeasonThumb(row['strPath'], self._get_season_title(show['season'])))
@@ -796,7 +796,7 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
         videoDisplayType  = VideoDisplayType()
         super(WhatEpisodeIsThisQuestion, self).__init__(videoDisplayType)
 
-        row = database.getRandomEpisodes(maxResults = 1, minEpisodeCount = 3)[0]
+        row = database.getTVShowEpisodes(maxResults = 1, minEpisodeCount = 3)[0]
         answerText = self._get_episode_title(row['season'], row['episode'], row['episodeTitle'])
         id = "%s-%s-%s" % (row['idShow'], row['season'], row['episode'])
         a = CorrectAnswer(id, answerText, row['idFile'], sortWeight = row['episode'])
@@ -804,7 +804,7 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
         self.answers.append(a)
 
         # Fill with random episodes from this show
-        episodes = database.getRandomEpisodes(maxResults = 3, idShow = row['idShow'], season = row['season'], excludeEpisode = row['episode'])
+        episodes = database.getTVShowEpisodes(maxResults = 3, idShow = row['idShow'], season = row['season'], excludeEpisode = row['episode'])
         for episode in episodes:
             answerText = self._get_episode_title(episode['season'], episode['episode'], episode['episodeTitle'])
             id = "%s-%s-%s" % (row['idShow'], row['season'], episode['episode'])
@@ -832,7 +832,7 @@ class WhenWasTVShowFirstAiredQuestion(TVQuestion):
         """
         super(WhenWasTVShowFirstAiredQuestion, self).__init__()
 
-        row = database.getRandomTVShows(maxResults = 1, excludeSpecials = True, episode = 1, mustHaveFirstAired = True)[0]
+        row = database.getTVShows(maxResults = 1, excludeSpecials = True, episode = 1, mustHaveFirstAired = True)[0]
         row['year'] = time.strptime(row['firstAired'], '%Y-%m-%d').tm_year
 
         skew = random.randint(0, 10)
@@ -877,7 +877,7 @@ class WhoPlayedRoleInTVShowQuestion(TVQuestion):
         photoDisplayType = PhotoDisplayType()
         super(WhoPlayedRoleInTVShowQuestion, self).__init__(photoDisplayType)
 
-        row = database.getRandomTVShowActors(maxResults = 1, mustHaveRole = True)[0]
+        row = database.getTVShowActors(maxResults = 1, mustHaveRole = True)[0]
         role = row['strRole']
         if re.search('[|/]', role):
             roles = re.split('[|/]', role)
@@ -889,7 +889,7 @@ class WhoPlayedRoleInTVShowQuestion(TVQuestion):
         self.answers.append(a)
 
 
-        actors = database.getRandomTVShowActors(maxResults = 3, onlySelectActor = True, showId = row['idShow'], excludeActorId = row['idActor'])
+        actors = database.getTVShowActors(maxResults = 3, onlySelectActor = True, showId = row['idShow'], excludeActorId = row['idActor'])
         for actor in actors:
             a = Answer(actor['idActor'], actor['strActor'])
             a.setCoverFile(thumb.getCachedActorThumb(actor['strActor']))
@@ -918,7 +918,7 @@ class WhatTVShowIsThisQuoteFrom(TVQuestion):
         quoteDisplayType = QuoteDisplayType()
         super(WhatTVShowIsThisQuoteFrom, self).__init__(quoteDisplayType)
 
-        row = database.getRandomTVShows(maxResults = 1)[0]
+        row = database.getTVShows(maxResults = 1)[0]
         quoteText = IMDB.getRandomQuote(row['title'], season = row['season'], episode = row['episode'], maxLength = 128)
         if quoteText is None:
             raise QuestionException('Did not find any quotes')
@@ -928,7 +928,7 @@ class WhatTVShowIsThisQuoteFrom(TVQuestion):
         self.answers.append(a)
 
         # Fill with random episodes from other shows
-        shows = database.getRandomTVShows(maxResults = 3, excludeTVShowId = row['idShow'], onlySelectTVShow = True)
+        shows = database.getTVShows(maxResults = 3, excludeTVShowId = row['idShow'], onlySelectTVShow = True)
         for show in shows:
             a = Answer(show['idShow'], show['title'])
             a.setCoverFile(thumb.getCachedTVShowThumb(show['tvShowPath']))
@@ -970,6 +970,8 @@ def getRandomQuestion(gameInstance, database):
             print "DbException in %s: %s" % (subclass, ex)
         except Exception, ex:
             print "Exception in %s: %s" % (subclass, ex)
+            import traceback, sys
+            traceback.print_exc(file = sys.stdout)
 
     return None
 
