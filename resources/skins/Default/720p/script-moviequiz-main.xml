@@ -95,6 +95,19 @@
                 <width>758</width>
                 <height>422</height>
             </control>
+
+            <control type="label" id="4800">
+                <posx>0</posx>
+                <posy>206</posy>
+                <width>788</width>
+                <height>40</height>
+                <font>font30</font>
+                <textcolor>ffffffff</textcolor>
+                <label>File not found</label>
+                <align>center</align>
+                <aligny>center</aligny>
+            </control>
+
         </control>
 
         <!-- quote group -->
@@ -355,7 +368,7 @@
                 <label>$ADDON[script.moviequiz 30011]</label>
                 <align>center</align>
                 <onright>4011</onright>
-                <enable>!Control.IsVisible(5000)</enable>
+                <enable>!Control.IsVisible(5000) + !Control.IsVisible(4800)</enable>
             </control>
             <control type="button" id="4011">
                 <description>Exit quiz</description>

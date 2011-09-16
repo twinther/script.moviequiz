@@ -5,6 +5,12 @@ import xbmc
 import os
 import re
 
+try:
+    import xbmcvfs
+    XBMC_VFS_AVAILABLE = True
+except ImportError:
+    XBMC_VFS_AVAILABLE = False
+
 class TenSecondPlayer(xbmc.Player):
     """TenSecondPlayer is a subclass of xbmc.Player that stops playback after about ten seconds."""
 
@@ -27,13 +33,10 @@ class TenSecondPlayer(xbmc.Player):
 
         self.playBackEventReceived = False
 
-    def __del__(self):
+    def close(self):
         if hasattr(self, 'database') and self.database:
             self.database.close()
-
-    def close(self):
-        if self.database:
-            self.database.close()
+            print "TenSecondPlayer closed"
 
     def replay(self):
         xbmc.log(">> TenSecondPlayer.replay()")
@@ -75,6 +78,10 @@ class TenSecondPlayer(xbmc.Player):
         xbmc.log(">> TenSecondPlayer.playWindowed()")
         self.startingPlayback = True
 
+        if XBMC_VFS_AVAILABLE and not xbmcvfs.exists(file):
+            xbmc.log(">> TenSecondPlayer - file not found: %s" % file)
+            return False
+
         self.lastFile = file
         self.lastIdFile= idFile
 
@@ -94,6 +101,8 @@ class TenSecondPlayer(xbmc.Player):
         # Get bookmark details, so we can restore after playback
         self.bookmark = self.database.getVideoBookmark(idFile)
 
+        xbmc.log(">> TenSecondPlayer.playWindowed() - about to play file %s" % file)
+
         self.playBackEventReceived = False
         self.play(item = file, windowed = True)
 
@@ -101,7 +110,9 @@ class TenSecondPlayer(xbmc.Player):
         while not self.playBackEventReceived and retries < 20:
             xbmc.sleep(250) # keep sleeping to get onPlayBackStarted() event
             retries += 1
+
         xbmc.log(">> TenSecondPlayer.playWindowed() - end")
+        return True
 
     def _getRandomDvdVob(self, ifoFile):
         xbmc.log(">> TenSecondPlayer._getRandomDvdVob() - ifoFile = %s" % ifoFile)

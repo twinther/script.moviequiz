@@ -310,6 +310,7 @@ class QuizGui(xbmcgui.WindowXML):
     C_MAIN_PHOTO_LABEL_1 = 4711
     C_MAIN_PHOTO_LABEL_2 = 4712
     C_MAIN_PHOTO_LABEL_3 = 4713
+    C_MAIN_VIDEO_FILE_NOT_FOUND = 4800
     C_MAIN_VIDEO_VISIBILITY = 5000
     C_MAIN_PHOTO_VISIBILITY = 5001
     C_MAIN_QUOTE_VISIBILITY = 5004
@@ -479,8 +480,10 @@ class QuizGui(xbmcgui.WindowXML):
         correctAnswer = self.question.getCorrectAnswer()
         displayType = self.question.getDisplayType()
         if isinstance(displayType, question.VideoDisplayType):
+            self.getControl(self.C_MAIN_VIDEO_FILE_NOT_FOUND).setVisible(False)
             xbmc.sleep(1500) # give skin animation time to execute
-            self.player.playWindowed(displayType.getVideoFile(), correctAnswer.idFile)
+            if not self.player.playWindowed(displayType.getVideoFile(), correctAnswer.idFile):
+                self.getControl(self.C_MAIN_VIDEO_FILE_NOT_FOUND).setVisible(True)
 
         elif isinstance(displayType, question.PhotoDisplayType):
             self.getControl(self.C_MAIN_PHOTO).setImage(displayType.getPhotoFile())
