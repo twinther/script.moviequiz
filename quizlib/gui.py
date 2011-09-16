@@ -37,7 +37,7 @@ class MenuGui(xbmcgui.WindowXML):
 
     C_MENU_MOVIE_QUIZ = 4001
     C_MENU_TVSHOW_QUIZ = 4002
-    C_MENU_SETTINGS = 4000
+    C_MENU_ABOUT = 4000
     C_MENU_EXIT = 4003
     C_MENU_COLLECTION_TRIVIA = 6000
     C_MENU_USER_SELECT = 6001
@@ -133,8 +133,10 @@ class MenuGui(xbmcgui.WindowXML):
             w.doModal()
             del w
 
-        elif controlId == self.C_MENU_SETTINGS:
-            ADDON.openSettings()
+        elif controlId == self.C_MENU_ABOUT:
+            w = AboutDialog()
+            w.doModal()
+            del w
 
         elif controlId == self.C_MENU_EXIT:
             self.close()
@@ -289,6 +291,35 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
     #noinspection PyUnusedLocal
     def onFocus(self, controlId):
         pass
+
+
+class AboutDialog(xbmcgui.WindowXMLDialog):
+
+    def __new__(cls):
+        return super(AboutDialog, cls).__new__(cls, 'script-moviequiz-about.xml', ADDON.getAddonInfo('path'))
+
+    def __init__(self):
+        super(AboutDialog, self).__init__()
+
+    def onInit(self):
+        f = open(ADDON.getAddonInfo('changelog'))
+        changelog = f.read()
+        f.close()
+
+        self.getControl(4000).setText(changelog)
+
+    def onAction(self, action):
+        if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
+            self.close()
+
+    def onClick(self, controlId):
+        self.close()
+
+
+    #noinspection PyUnusedLocal
+    def onFocus(self, controlId):
+        pass
+
 
 class QuizGui(xbmcgui.WindowXML):
     C_MAIN_FIRST_ANSWER = 4000
