@@ -105,12 +105,10 @@ class LocalHighscoreDatabase(HighscoreDatabase):
 
         self._createTables()
 
-    def __del__(self):
-        self.close()
-
     def close(self):
         if hasattr(self, 'conn') and self.conn is not None:
             self.conn.close()
+            print "LocalHighscoreDatabase closed"
         
     def addHighscore(self, game):
         if game.getPoints() <= 0:

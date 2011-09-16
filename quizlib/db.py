@@ -43,9 +43,6 @@ class Database(object):
             self.defaultMovieViewClause += " AND mv.playCount IS NOT NULL"
             self.defaultTVShowViewClause += " AND ev.playCount IS NOT NULL"
 
-    def __del__(self):
-        self.close()
-
     def postInit(self):
         self._fixMissingTVShowView()
 
@@ -113,8 +110,9 @@ class Database(object):
         c.close()
 
     def close(self):
-        self.conn.close()
-        print "Database closed"
+        if hasattr(self, 'conn') and self.conn:
+            self.conn.close()
+            print "Database closed"
 
     def fetchall(self, sql, parameters = tuple()):
         if isinstance(parameters, list):
@@ -362,10 +360,6 @@ class Database(object):
         if appendDefaultClause:
             query += self.defaultMovieViewClause
 
-        if minMovieCount:
-            query += " GROUP BY alm.idActor HAVING count(mv.idMovie) >= " + self.PARAM_REPL
-            params.append(int(minMovieCount))
-
         if excludeActorId:
             query += " AND alm.idActor != " + self.PARAM_REPL
             params.append(int(excludeActorId))
@@ -386,6 +380,10 @@ class Database(object):
             # different title
             query += " AND mv.c00 NOT IN (SELECT c00 FROM movieview WHERE idMovie IN (%s))" % excludeMovieString
 
+        if minMovieCount:
+            query += " GROUP BY alm.idActor HAVING count(mv.idMovie) >= " + self.PARAM_REPL
+            params.append(int(minMovieCount))
+
         query += " ORDER BY " + self.FUNC_RANDOM
         if maxResults:
             query += " LIMIT " + str(maxResults)
@@ -401,14 +399,13 @@ class Database(object):
             WHERE mv.idMovie = dlm.idMovie AND dlm.idDirector = a.idActor AND mv.strFileName NOT LIKE '%%.nfo'
             """ + self.defaultMovieViewClause
 
-        if minMovieCount:
-            query += " GROUP BY dlm.idDirector HAVING count(mv.idMovie) >= " + self.PARAM_REPL
-            params.append(int(minMovieCount))
-
         if excludeDirectorId:
             query += " AND dlm.idDirector != " + self.PARAM_REPL
             params.append(int(excludeDirectorId))
 
+        if minMovieCount:
+            query += " GROUP BY dlm.idDirector HAVING count(mv.idMovie) >= " + self.PARAM_REPL
+            params.append(int(minMovieCount))
 
         query += " ORDER BY " + self.FUNC_RANDOM
         if maxResults:
@@ -478,17 +475,16 @@ class Database(object):
             query = "SELECT DISTINCT ev.c12 AS season"
         else:
             query = """
-                SELECT ev.idFile, ev.c12 AS season, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName, tv.strPath AS tvShowPath,
-                (SELECT COUNT(DISTINCT c12) FROM episodeview WHERE idShow=ev.idShow) AS seasons
-                """ # TODO rewrite seasons subquery for mysql
+                SELECT ev.idFile, ev.c12 AS season, tv.c00 AS title, ev.idShow, ev.strPath, ev.strFileName, tv.strPath AS tvShowPath, s.seasons
+                """
 
         query += """
-            FROM episodeview ev, tvshowview tv
-            WHERE ev.idShow=tv.idShow AND ev.strFileName NOT LIKE '%%.nfo'
+            FROM episodeview ev, tvshowview tv, (SELECT idShow, COUNT(DISTINCT c12) AS seasons FROM episodeview GROUP BY idShow) s
+            WHERE ev.idShow=tv.idShow AND ev.idShow=s.idShow AND ev.strFileName NOT LIKE '%%.nfo'
             """
 
         if minSeasonCount:
-            query += " AND seasons >= " + self.PARAM_REPL
+            query += " AND s.seasons >= " + self.PARAM_REPL
             params.append(int(minSeasonCount))
 
         if showId:
