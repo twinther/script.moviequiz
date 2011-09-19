@@ -35,6 +35,9 @@ class GlobalHighscoreDatabase(HighscoreDatabase):
     STATUS_OK = 'OK'
     SERVICE_URL = 'http://moviequiz.xbmc.info/service.json.php'
 
+    def __init__(self, addonVersion):
+        self.addonVersion = addonVersion
+
     def addHighscore(self, nickname, game):
         if game.getPoints() <= 0:
             return -1
@@ -48,7 +51,9 @@ class GlobalHighscoreDatabase(HighscoreDatabase):
                 'nickname' : nickname,
                 'score' : game.getPoints(),
                 'correctAnswers' : game.getCorrectAnswers(),
-                'numberOfQuestions' : game.getTotalAnswers()
+                'numberOfQuestions' : game.getTotalAnswers(),
+                'addonVersion' : self.addonVersion,
+                'xbmcVersion' : xbmc.getInfoLabel('System.BuildVersion')
             }
         }
 

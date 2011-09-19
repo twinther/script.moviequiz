@@ -772,7 +772,7 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
             listControl.addItem(item)
 
         # Global highscore
-        globalHighscore = highscore.GlobalHighscoreDatabase()
+        globalHighscore = highscore.GlobalHighscoreDatabase(ADDON.getAddonInfo('version'))
         if ADDON.getSetting('submit.highscores') == 'true':
             newHighscoreId = globalHighscore.addHighscore(name, self.game)
         else:

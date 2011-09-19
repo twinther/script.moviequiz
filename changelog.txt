@@ -4,6 +4,7 @@
 - By popular demand: re-added MySQL support
 - New question type
   - What TV show is this quote from?
+- Fanart from http://wallpapers.brothersoft.com/hollywood-96405.html
 
 [B]Version 0.4.2 - 2011-08-31[/B]
 - Dropped support for MySQL for now (might add support again later with SQLAlchemy)
