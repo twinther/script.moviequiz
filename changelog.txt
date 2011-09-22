@@ -1,3 +1,6 @@
+[B]Version 0.4.4 - 2011-09-xx[/B]
+- Improved checks for invalid settings that could cause lock-ups and crashes
+
 [B]Version 0.4.3 - 2011-09-19[/B]
 - [B]You must re-download IMDB files[/B], due to speed-optimizations in lookups
 - By popular demand: re-added MySQL support

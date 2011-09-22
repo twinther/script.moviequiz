@@ -21,8 +21,6 @@ REMOTE_2 = 60
 REMOTE_3 = 61
 REMOTE_4 = 62
 
-ADDON = xbmcaddon.Addon(id = 'script.moviequiz')
-
 RESOURCES_PATH = os.path.join(ADDON.getAddonInfo('path'), 'resources', )
 AUDIO_CORRECT = os.path.join(RESOURCES_PATH, 'audio', 'correct.wav')
 AUDIO_WRONG = os.path.join(RESOURCES_PATH, 'audio', 'wrong.wav')
@@ -52,6 +50,34 @@ class MenuGui(xbmcgui.WindowXML):
         trivia = [strings(M_DEVELOPED_BY), strings(M_TRANSLATED_BY)]
 
         database = db.Database.connect()
+
+        # Check preconditions
+        if not database.hasMovies() and not database.hasTVShows():
+            # Must have at least one movie or tvshow
+            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_REQUIREMENTS_MISSING_LINE1),
+                strings(E_REQUIREMENTS_MISSING_LINE2), strings(E_REQUIREMENTS_MISSING_LINE3))
+            database.close()
+            self.close()
+            return
+
+        if not database.isAnyVideosWatched() and ADDON.getSetting(SETT_ONLY_WATCHED_MOVIES) == 'true':
+            # Only watched movies requires at least one watched video files
+            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_ONLY_WATCHED_LINE1),
+                strings(E_ONLY_WATCHED_LINE2), strings(E_ONLY_WATCHED_LINE3))
+            ADDON.setSetting(SETT_ONLY_WATCHED_MOVIES, 'false')
+
+        if not database.isAnyMPAARatingsAvailable() and ADDON.getSetting(SETT_MOVIE_RATING_LIMIT_ENABLED) == 'true':
+            # MPAA rating requires ratings to be available in database
+            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_MOVIE_RATING_LIMIT_LINE1),
+                strings(E_MOVIE_RATING_LIMIT_LINE2), strings(E_MOVIE_RATING_LIMIT_LINE3))
+            ADDON.setSetting(SETT_MOVIE_RATING_LIMIT_ENABLED, 'false')
+
+        if not database.isAnyContentRatingsAvailable() and ADDON.getSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED) == 'true':
+            # Content rating requires ratings to be available in database
+            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_TVSHOW_RATING_LIMIT_LINE1),
+                strings(E_TVSHOW_RATING_LIMIT_LINE2), strings(E_TVSHOW_RATING_LIMIT_LINE3))
+            ADDON.setSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED, 'false')
+
 
         if not database.hasMovies():
             self.getControl(self.C_MENU_MOVIE_QUIZ).setEnabled(False)
@@ -90,13 +116,6 @@ class MenuGui(xbmcgui.WindowXML):
                 strings(M_SEASON_COUNT) % seasons['count'],
                 strings(M_EPISODE_COUNT) % episodes['count']
             ]
-
-
-        if not database.hasMovies() and not database.hasTVShows():
-            # Must have at least one movie or tvshow
-            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_REQUIREMENTS_MISSING_LINE1),
-                strings(E_REQUIREMENTS_MISSING_LINE2))
-            self.close()
 
         database.close()
 
@@ -315,7 +334,6 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
     def onClick(self, controlId):
         self.close()
 
-
     #noinspection PyUnusedLocal
     def onFocus(self, controlId):
         pass
@@ -382,7 +400,7 @@ class QuizGui(xbmcgui.WindowXML):
             idx = CONTENT_RATINGS.index(ADDON.getSetting('tvshow.rating.limit'))
             ratings = CONTENT_RATINGS[idx:]
 
-        onlyUsedWatched = ADDON.getSetting('only.watched.movies') == 'true'
+        onlyUsedWatched = ADDON.getSetting(SETT_ONLY_WATCHED_MOVIES) == 'true'
 
         self.database = db.Database.connect(ratings, onlyUsedWatched)
         self.player = player.TenSecondPlayer()

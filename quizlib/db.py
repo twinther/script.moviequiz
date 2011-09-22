@@ -32,8 +32,8 @@ class Database(object):
         self.defaultMovieViewClause = ''
         self.defaultTVShowViewClause = ''
         if allowedRatings:
-            self.defaultMovieViewClause += " AND (" #TRIM(c12) IN ('%s')" % '\',\''.join(allowedRatings)
-            self.defaultTVShowViewClause += " AND (" #TRIM(tv.c13) IN ('%s')" % '\',\''.join(allowedRatings)
+            self.defaultMovieViewClause += " AND ("
+            self.defaultTVShowViewClause += " AND ("
             for allowedRating in allowedRatings:
                 self.defaultMovieViewClause += " TRIM(c12) LIKE '%s%%%%' OR" % allowedRating
                 self.defaultTVShowViewClause += " TRIM(tv.c13) LIKE '%s%%%%' OR" % allowedRating
@@ -171,6 +171,35 @@ class Database(object):
     def hasTVShows(self):
         try:
             row = self.fetchone("SELECT COUNT(*) AS cnt FROM tvshowview")
+            return int(row['cnt']) > 0
+        except DbException:
+            return False
+
+    def isAnyVideosWatched(self):
+        """
+        Checks if any movie or episode videos has been played. 
+        """
+        try:
+            row = self.fetchone("SELECT COUNT(*) AS cnt FROM files f, movie m WHERE f.idFile=m.idFile AND f.playCount IS NOT NULL")
+            movieCount = row['cnt']
+
+            row = self.fetchone("SELECT COUNT(*) AS cnt FROM files f, episode e WHERE f.idFile=e.idFile AND f.playCount IS NOT NULL")
+            episodeCount = row['cnt']
+
+            return movieCount > 0 < episodeCount
+        except DbException:
+            return False
+
+    def isAnyMPAARatingsAvailable(self):
+        try:
+            row = self.fetchone("SELECT COUNT(*) AS cnt FROM movie WHERE c12 != ''")
+            return int(row['cnt']) > 0
+        except DbException:
+            return False
+
+    def isAnyContentRatingsAvailable(self):
+        try:
+            row = self.fetchone("SELECT COUNT(*) AS cnt FROM tvshow WHERE c13 != ''")
             return int(row['cnt']) > 0
         except DbException:
             return False

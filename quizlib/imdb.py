@@ -10,7 +10,6 @@ from strings import *
 
 import xbmc
 import xbmcgui
-import xbmcaddon
 
 class Imdb(object):
     ACTOR_PATTERN = re.compile('^([^\t\(]+)( \([^\)]+\))?\t.*?$')
@@ -21,7 +20,8 @@ class Imdb(object):
     ACTORS_LIST = 'actors.list'
     ACTORS_URL = 'http://ftp.sunet.se/pub/tv+movies/imdb/actors.list.gz' 
 
-    def __init__(self, listsPath, preloadData = True):
+    def __init__(self, preloadData = True):
+        listsPath = xbmc.translatePath(ADDON.getAddonInfo('profile'))
         self.actorsPath = os.path.join(listsPath, self.ACTORS_LIST)
         self.quotesIndexPath = os.path.join(listsPath, self.QUOTES_INDEX)
         self.quotesListPath = os.path.join(listsPath, self.QUOTES_LIST)
@@ -226,13 +226,7 @@ if __name__ == '__main__':
         d.update(percentage, line1)
         return not d.iscanceled()
 
-
-    ADDON = xbmcaddon.Addon(id = 'script.moviequiz')
-    path = xbmc.translatePath(ADDON.getAddonInfo('profile'))
-    if not os.path.exists(path):
-        os.mkdir(path)
-    i = Imdb(path, preloadData = False)
-
+    i = Imdb(preloadData = False)
     d = xbmcgui.DialogProgress()
     try:
         d.create(strings(S_DOWNLOADING_IMDB_DATA))

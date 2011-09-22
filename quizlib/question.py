@@ -10,8 +10,7 @@ import game
 
 from strings import *
 
-ADDON = xbmcaddon.Addon(id = 'script.moviequiz')
-IMDB = imdb.Imdb(ADDON.getAddonInfo('profile'))
+IMDB = imdb.Imdb()
 
 class Answer(object):
     def __init__(self, id, text, idFile = None, sortWeight = None, correct = False):
