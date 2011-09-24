@@ -60,23 +60,23 @@ class MenuGui(xbmcgui.WindowXML):
             self.close()
             return
 
-        if not database.isAnyVideosWatched() and ADDON.getSetting(SETT_ONLY_WATCHED_MOVIES) == 'true':
-            # Only watched movies requires at least one watched video files
-            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_ONLY_WATCHED_LINE1),
-                strings(E_ONLY_WATCHED_LINE2), strings(E_ONLY_WATCHED_LINE3))
-            ADDON.setSetting(SETT_ONLY_WATCHED_MOVIES, 'false')
-
-        if not database.isAnyMPAARatingsAvailable() and ADDON.getSetting(SETT_MOVIE_RATING_LIMIT_ENABLED) == 'true':
-            # MPAA rating requires ratings to be available in database
-            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_MOVIE_RATING_LIMIT_LINE1),
-                strings(E_MOVIE_RATING_LIMIT_LINE2), strings(E_MOVIE_RATING_LIMIT_LINE3))
-            ADDON.setSetting(SETT_MOVIE_RATING_LIMIT_ENABLED, 'false')
-
-        if not database.isAnyContentRatingsAvailable() and ADDON.getSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED) == 'true':
-            # Content rating requires ratings to be available in database
-            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_TVSHOW_RATING_LIMIT_LINE1),
-                strings(E_TVSHOW_RATING_LIMIT_LINE2), strings(E_TVSHOW_RATING_LIMIT_LINE3))
-            ADDON.setSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED, 'false')
+#        if not database.isAnyVideosWatched() and ADDON.getSetting(SETT_ONLY_WATCHED_MOVIES) == 'true':
+#            # Only watched movies requires at least one watched video files
+#            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_ONLY_WATCHED_LINE1),
+#                strings(E_ONLY_WATCHED_LINE2), strings(E_ONLY_WATCHED_LINE3))
+#            ADDON.setSetting(SETT_ONLY_WATCHED_MOVIES, 'false')
+#
+#        if not database.isAnyMPAARatingsAvailable() and ADDON.getSetting(SETT_MOVIE_RATING_LIMIT_ENABLED) == 'true':
+#            # MPAA rating requires ratings to be available in database
+#            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_MOVIE_RATING_LIMIT_LINE1),
+#                strings(E_MOVIE_RATING_LIMIT_LINE2), strings(E_MOVIE_RATING_LIMIT_LINE3))
+#            ADDON.setSetting(SETT_MOVIE_RATING_LIMIT_ENABLED, 'false')
+#
+#        if not database.isAnyContentRatingsAvailable() and ADDON.getSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED) == 'true':
+#            # Content rating requires ratings to be available in database
+#            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_TVSHOW_RATING_LIMIT_LINE1),
+#                strings(E_TVSHOW_RATING_LIMIT_LINE2), strings(E_TVSHOW_RATING_LIMIT_LINE3))
+#            ADDON.setSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED, 'false')
 
 
         if not database.hasMovies():
@@ -344,6 +344,7 @@ class QuizGui(xbmcgui.WindowXML):
     C_MAIN_LAST_ANSWER = 4003
     C_MAIN_REPLAY = 4010
     C_MAIN_EXIT = 4011
+    C_MAIN_LOADING = 4020
     C_MAIN_CORRECT_SCORE = 4101
     C_MAIN_INCORRECT_SCORE = 4103
     C_MAIN_QUESTION_COUNT = 4104
@@ -502,6 +503,9 @@ class QuizGui(xbmcgui.WindowXML):
         self.uiState = self.STATE_LOADING
         self.getControl(self.C_MAIN_LOADING_VISIBILITY).setVisible(True)
         self.question = self._getNewQuestion()
+        if not self.question:
+            self.onGameOver()
+            return
         self.getControl(self.C_MAIN_QUESTION_LABEL).setLabel(self.question.getText())
 
         answers = self.question.getAnswers()
@@ -565,8 +569,11 @@ class QuizGui(xbmcgui.WindowXML):
     def _getNewQuestion(self):
         retries = 0
         q = None
+        # todo check if gui is closed
         while retries < 100:
             retries += 1
+
+            self.getControl(self.C_MAIN_LOADING).setPercent(retries)
 
             q = question.getRandomQuestion(self.gameInstance, self.database)
             if q is None:
