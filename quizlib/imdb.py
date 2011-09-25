@@ -3,7 +3,6 @@ import random
 import os
 import urllib2
 import zlib
-import threading
 import time
 
 from strings import *
@@ -20,7 +19,7 @@ class Imdb(object):
     ACTORS_LIST = 'actors.list'
     ACTORS_URL = 'http://ftp.sunet.se/pub/tv+movies/imdb/actors.list.gz' 
 
-    def __init__(self, preloadData = True):
+    def __init__(self):
         listsPath = xbmc.translatePath(ADDON.getAddonInfo('profile'))
         self.actorsPath = os.path.join(listsPath, self.ACTORS_LIST)
         self.quotesIndexPath = os.path.join(listsPath, self.QUOTES_INDEX)
@@ -29,11 +28,23 @@ class Imdb(object):
         self.actorNames = None
         self.quotesIndex = None
 
-        if preloadData:
-            ImdbLoader(self).start()
-
     def isDataPresent(self):
         return os.path.exists(self.actorsPath) and os.path.exists(self.quotesIndexPath) and os.path.exists(self.quotesListPath)
+
+    def loadData(self):
+        if os.path.exists(self.quotesIndexPath):
+            startTime = time.time()
+            f = open(self.quotesIndexPath)
+            self.quotesIndex = f.read()
+            f.close()
+            xbmc.log("Loaded %d MB quotes index in %d seconds" % (len(self.quotesIndex) / 1024000, (time.time() - startTime)))
+
+        if os.path.exists(self.actorsPath):
+            startTime = time.time()
+            f = open(self.actorsPath)
+            self.actorNames = f.read().decode('iso-8859-1').splitlines()
+            f.close()
+            xbmc.log("Loaded %d MB actor names in %d seconds" % (len(self.actorNames) / 1024000, (time.time() - startTime)))
 
     def downloadFiles(self, progressCallback = None):
         self._downloadGzipFile(self.QUOTES_URL, self.quotesListPath, progressCallback, self._createQuotesIndex)
@@ -42,7 +53,7 @@ class Imdb(object):
 
     def getRandomQuote(self, name, season = None, episode = None, maxLength = None):
         quotes = self._loadQuotes(name, season, episode)
-        if quotes is None:
+        if not quotes:
             return None
 
         quote = None
@@ -182,7 +193,7 @@ class Imdb(object):
             pattern = '\n%s [^\t]+\t([0-9]+)\n[^\t]+\t([0-9]+)' % name
         m = re.search(pattern, self.quotesIndex, re.DOTALL)
         if m is None:
-            return None
+            return []
 
         # load quotes based on position
         f = open(self.quotesListPath)
@@ -193,31 +204,6 @@ class Imdb(object):
         # remove first line and split on double new lines
         return quotes[quotes.find('\n')+1:-2].split('\n\n')
 
-class ImdbLoader(threading.Thread):
-    """
-    ImdbLoader handles background loading of Imdb data
-    to make the start-up feel quicker.
-    """
-    def __init__(self, imdb):
-        super(ImdbLoader, self).__init__()
-        self.imdb = imdb
-
-    def run(self):
-        if os.path.exists(self.imdb.quotesIndexPath):
-            startTime = time.time()
-            f = open(self.imdb.quotesIndexPath)
-            self.imdb.quotesIndex = f.read()
-            f.close()
-            xbmc.log("Loaded %d MB quotes index in %d seconds" % (len(self.imdb.quotesIndex) / 1024000, (time.time() - startTime)))
-
-        if os.path.exists(self.imdb.actorsPath):
-            startTime = time.time()
-            f = open(self.imdb.actorsPath)
-            self.imdb.actorNames = f.read().decode('iso-8859-1').splitlines()
-            f.close()
-            xbmc.log("Loaded %d MB actor names in %d seconds" % (len(self.imdb.actorNames) / 1024000, (time.time() - startTime)))
-
-
 if __name__ == '__main__':
     # this script is invoked from addon settings
 
@@ -226,7 +212,7 @@ if __name__ == '__main__':
         d.update(percentage, line1)
         return not d.iscanceled()
 
-    i = Imdb(preloadData = False)
+    i = Imdb()
     d = xbmcgui.DialogProgress()
     try:
         d.create(strings(S_DOWNLOADING_IMDB_DATA))

@@ -1,12 +1,6 @@
-import os
-import xbmc
 import xbmcaddon
 
 ADDON = xbmcaddon.Addon(id = 'script.moviequiz')
-# Make sure data dir exists
-if not os.path.exists(xbmc.translatePath(ADDON.getAddonInfo('profile'))):
-    os.makedirs(xbmc.translatePath(ADDON.getAddonInfo('profile')))
-
 
 Q_WHAT_MOVIE_IS_THIS = 30400
 Q_WHAT_MOVIE_IS_ACTOR_NOT_IN = 30401

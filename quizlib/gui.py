@@ -5,12 +5,14 @@ import time
 
 import xbmc
 import xbmcgui
+import datetime
 
 import game
 import question
 import player
 import db
 import highscore
+
 from strings import *
 
 # Constants from [xbmc]/xbmc/guilib/Key.h
@@ -31,6 +33,38 @@ NO_PHOTO_IMAGE = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz
 MPAA_RATINGS = ['R', 'Rated R', 'PG-13', 'Rated PG-13', 'PG', 'Rated PG', 'G', 'Rated G']
 CONTENT_RATINGS = ['TV-MA', 'TV-14', 'TV-PG', 'TV-G', 'TV-Y7-FV', 'TV-Y7', 'TV-Y']
 
+class LoadingGui(xbmcgui.WindowXMLDialog):
+    def __new__(cls, menuGui):
+        return super(LoadingGui, cls).__new__(cls, 'script-moviequiz-loading.xml', ADDON.getAddonInfo('path'))
+
+    def __init__(self, menuGui):
+        super(LoadingGui, self).__init__()
+        self.menuGui = menuGui
+
+    def onInit(self):
+        startTime = datetime.datetime.now()
+        self.menuGui.loadTrivia()
+        question.IMDB.loadData()
+
+        delta = datetime.datetime.now() - startTime
+        if delta.seconds < 2:
+            xbmc.sleep(1000 * (2 - delta.seconds))
+        self.close()
+
+    def onAction(self, action):
+        if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
+            self.close()
+
+    #noinspection PyUnusedLocal
+    def onClick(self, controlId):
+        pass
+
+    #noinspection PyUnusedLocal
+    def onFocus(self, controlId):
+        pass
+
+
+
 class MenuGui(xbmcgui.WindowXML):
 
     C_MENU_MOVIE_QUIZ = 4001
@@ -45,81 +79,48 @@ class MenuGui(xbmcgui.WindowXML):
 
     def __init__(self):
         super(MenuGui, self).__init__()
-    
-    def onInit(self):
-        trivia = [strings(M_DEVELOPED_BY), strings(M_TRANSLATED_BY)]
+        self.trivia = None
+        self.database = db.Database.connect()
+    def close(self):
+        self.database.close()
+        super(MenuGui, self).close()
 
-        database = db.Database.connect()
+    def onInit(self):
+        if not self.trivia:
+            loadingGui = LoadingGui(self)
+            loadingGui.doModal()
+            del loadingGui
 
         # Check preconditions
-        if not database.hasMovies() and not database.hasTVShows():
+        if not self.database.hasMovies() and not self.database.hasTVShows():
             # Must have at least one movie or tvshow
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_REQUIREMENTS_MISSING_LINE1),
                 strings(E_REQUIREMENTS_MISSING_LINE2), strings(E_REQUIREMENTS_MISSING_LINE3))
-            database.close()
             self.close()
             return
 
-#        if not database.isAnyVideosWatched() and ADDON.getSetting(SETT_ONLY_WATCHED_MOVIES) == 'true':
-#            # Only watched movies requires at least one watched video files
-#            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_ONLY_WATCHED_LINE1),
-#                strings(E_ONLY_WATCHED_LINE2), strings(E_ONLY_WATCHED_LINE3))
-#            ADDON.setSetting(SETT_ONLY_WATCHED_MOVIES, 'false')
-#
-#        if not database.isAnyMPAARatingsAvailable() and ADDON.getSetting(SETT_MOVIE_RATING_LIMIT_ENABLED) == 'true':
-#            # MPAA rating requires ratings to be available in database
-#            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_MOVIE_RATING_LIMIT_LINE1),
-#                strings(E_MOVIE_RATING_LIMIT_LINE2), strings(E_MOVIE_RATING_LIMIT_LINE3))
-#            ADDON.setSetting(SETT_MOVIE_RATING_LIMIT_ENABLED, 'false')
-#
-#        if not database.isAnyContentRatingsAvailable() and ADDON.getSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED) == 'true':
-#            # Content rating requires ratings to be available in database
-#            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_TVSHOW_RATING_LIMIT_LINE1),
-#                strings(E_TVSHOW_RATING_LIMIT_LINE2), strings(E_TVSHOW_RATING_LIMIT_LINE3))
-#            ADDON.setSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED, 'false')
+        if not self.database.isAnyVideosWatched() and ADDON.getSetting(SETT_ONLY_WATCHED_MOVIES) == 'true':
+            # Only watched movies requires at least one watched video files
+            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_ONLY_WATCHED_LINE1),
+                strings(E_ONLY_WATCHED_LINE2), strings(E_ONLY_WATCHED_LINE3))
+            ADDON.setSetting(SETT_ONLY_WATCHED_MOVIES, 'false')
 
+        if not self.database.isAnyMPAARatingsAvailable() and ADDON.getSetting(SETT_MOVIE_RATING_LIMIT_ENABLED) == 'true':
+            # MPAA rating requires ratings to be available in database
+            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_MOVIE_RATING_LIMIT_LINE1),
+                strings(E_MOVIE_RATING_LIMIT_LINE2), strings(E_MOVIE_RATING_LIMIT_LINE3))
+            ADDON.setSetting(SETT_MOVIE_RATING_LIMIT_ENABLED, 'false')
 
-        if not database.hasMovies():
-            self.getControl(self.C_MENU_MOVIE_QUIZ).setEnabled(False)
-        else:
-            if not question.isAnyMovieQuestionsEnabled():
-                self.getControl(self.C_MENU_MOVIE_QUIZ).setEnabled(False)
+        if not self.database.isAnyContentRatingsAvailable() and ADDON.getSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED) == 'true':
+            # Content rating requires ratings to be available in database
+            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_TVSHOW_RATING_LIMIT_LINE1),
+                strings(E_TVSHOW_RATING_LIMIT_LINE2), strings(E_TVSHOW_RATING_LIMIT_LINE3))
+            ADDON.setSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED, 'false')
 
-            movies = database.fetchone('SELECT COUNT(*) AS count, (SUM(c11) / 60) AS total_hours FROM movie')
-            actors = database.fetchone('SELECT COUNT(DISTINCT idActor) AS count FROM actorlinkmovie')
-            directors = database.fetchone('SELECT COUNT(DISTINCT idDirector) AS count FROM directorlinkmovie')
-            studios = database.fetchone('SELECT COUNT(idStudio) AS count FROM studio')
+        self.getControl(self.C_MENU_MOVIE_QUIZ).setEnabled(bool(self.database.hasMovies() and question.isAnyMovieQuestionsEnabled()))
+        self.getControl(self.C_MENU_TVSHOW_QUIZ).setEnabled(bool(self.database.hasTVShows() and question.isAnyTVShowQuestionsEnabled()))
 
-            trivia += [
-                    strings(M_MOVIE_COLLECTION_TRIVIA),
-                    strings(M_MOVIE_COUNT) % movies['count'],
-                    strings(M_ACTOR_COUNT) % actors['count'],
-                    strings(M_DIRECTOR_COUNT) % directors['count'],
-                    strings(M_STUDIO_COUNT) % studios['count'],
-                    strings(M_HOURS_OF_ENTERTAINMENT) % int(movies['total_hours'])
-            ]
-
-
-        if not database.hasTVShows():
-            self.getControl(self.C_MENU_TVSHOW_QUIZ).setEnabled(False)
-        else:
-            if not question.isAnyTVShowQuestionsEnabled():
-                self.getControl(self.C_MENU_TVSHOW_QUIZ).setEnabled(False)
-                
-            shows = database.fetchone('SELECT COUNT(*) AS count FROM tvshow')
-            seasons = database.fetchone('SELECT SUM(season_count) AS count FROM (SELECT idShow, COUNT(DISTINCT c12) AS season_count from episodeview GROUP BY idShow) AS tbl')
-            episodes = database.fetchone('SELECT COUNT(*) AS count FROM episode')
-
-            trivia += [
-                strings(M_TVSHOW_COLLECTION_TRIVIA),
-                strings(M_TVSHOW_COUNT) % shows['count'],
-                strings(M_SEASON_COUNT) % seasons['count'],
-                strings(M_EPISODE_COUNT) % episodes['count']
-            ]
-
-        database.close()
-
-        label = '  *  '.join(trivia)
+        label = '  *  '.join(self.trivia)
         self.getControl(self.C_MENU_COLLECTION_TRIVIA).setLabel(label)
 
         self.onUpdateUserSelectList()
@@ -129,6 +130,38 @@ class MenuGui(xbmcgui.WindowXML):
 
         if not question.isAnyTVShowQuestionsEnabled():
             xbmcgui.Dialog().ok(strings(E_WARNING), strings(E_ALL_TVSHOW_QUESTIONS_DISABLED), strings(E_QUIZ_TYPE_NOT_AVAILABLE))
+
+    def loadTrivia(self):
+        self.trivia = ['Movie Quiz v.' + ADDON.getAddonInfo('version'),
+                       strings(M_DEVELOPED_BY), strings(M_TRANSLATED_BY)]
+
+        if self.database.hasMovies():
+            movies = self.database.fetchone('SELECT COUNT(*) AS count, (SUM(c11) / 60) AS total_hours FROM movie')
+            actors = self.database.fetchone('SELECT COUNT(DISTINCT idActor) AS count FROM actorlinkmovie')
+            directors = self.database.fetchone('SELECT COUNT(DISTINCT idDirector) AS count FROM directorlinkmovie')
+            studios = self.database.fetchone('SELECT COUNT(idStudio) AS count FROM studio')
+
+            self.trivia += [
+                    strings(M_MOVIE_COLLECTION_TRIVIA),
+                    strings(M_MOVIE_COUNT) % movies['count'],
+                    strings(M_ACTOR_COUNT) % actors['count'],
+                    strings(M_DIRECTOR_COUNT) % directors['count'],
+                    strings(M_STUDIO_COUNT) % studios['count'],
+                    strings(M_HOURS_OF_ENTERTAINMENT) % int(movies['total_hours'])
+            ]
+
+
+        if self.database.hasTVShows():
+            shows = self.database.fetchone('SELECT COUNT(*) AS count FROM tvshow')
+            seasons = self.database.fetchone('SELECT SUM(season_count) AS count FROM (SELECT idShow, COUNT(DISTINCT c12) AS season_count from episodeview GROUP BY idShow) AS tbl')
+            episodes = self.database.fetchone('SELECT COUNT(*) AS count FROM episode')
+
+            self.trivia += [
+                strings(M_TVSHOW_COLLECTION_TRIVIA),
+                strings(M_TVSHOW_COUNT) % shows['count'],
+                strings(M_SEASON_COUNT) % seasons['count'],
+                strings(M_EPISODE_COUNT) % episodes['count']
+            ]
 
     def onAction(self, action):
         if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
@@ -331,6 +364,7 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
         if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
             self.close()
 
+    #noinspection PyUnusedLocal
     def onClick(self, controlId):
         self.close()
 
@@ -569,8 +603,8 @@ class QuizGui(xbmcgui.WindowXML):
     def _getNewQuestion(self):
         retries = 0
         q = None
-        # todo check if gui is closed
-        while retries < 100:
+        while retries < 100 and self.uiState == self.STATE_LOADING:
+            xbmc.sleep(10) # give XBMC time to process other events
             retries += 1
 
             self.getControl(self.C_MAIN_LOADING).setPercent(retries)
