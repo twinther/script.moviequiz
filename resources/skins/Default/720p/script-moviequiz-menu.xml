@@ -79,7 +79,7 @@
             <onright>4001</onright>
             <animation effect="fade" start="100" end="50" time="400" condition="!Control.HasFocus(4000)">Conditional</animation>
         </control>
-        <control type="button">
+        <control type="label">
             <posx>34</posx>
             <posy>590</posy>
             <width>256</width>
