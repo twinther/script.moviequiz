@@ -13,12 +13,10 @@ except ImportError:
     # Used by Dharma/internal python
     from pysqlite2 import dbapi2 as sqlite3
 
-__author__ = 'twinther'
-
 class Database(object):
     """Base class for the various databases"""
     FUNC_RANDOM = None
-    PARAM_REPL = '?' # TODO change to function and call it player.py
+    PARAM_REPL = None
 
     def __init__(self, allowedRatings, onlyWatched):
         """
@@ -607,7 +605,8 @@ class Database(object):
 
 class SQLiteDatabase(Database):
     FUNC_RANDOM = "random()"
-
+    PARAM_REPL = '?'
+    
     def __init__(self, maxRating, onlyWatched, settings):
         super(SQLiteDatabase, self).__init__(maxRating, onlyWatched)
         found = True

@@ -72,6 +72,10 @@
     <string id="30131">%s minutes</string>
     <string id="30132">%s questions</string>
 
+    <string id="30133">%d questions left</string>
+    <string id="30134">Last question</string>
+    <string id="30135">%d mins. left</string>
+
     <!-- Movie Questions -->
     <string id="30400">What movie is this?</string>
     <string id="30401">What movie is [B]%s[/B] not in?</string><!-- %s is actor name -->

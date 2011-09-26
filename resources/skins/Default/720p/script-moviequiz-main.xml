@@ -331,7 +331,7 @@
                 <posy>10</posy>
                 <width>100</width>
                 <height>40</height>
-                <label>0</label>
+                <label>0.0</label>
                 <textcolor>ffffffff</textcolor>
                 <font>font13</font>
                 <align>right</align>

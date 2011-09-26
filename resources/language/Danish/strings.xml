@@ -58,6 +58,9 @@
     <string id="30131">%s minutter</string>
     <string id="30132">%s spørgsmål</string>
 
+    <string id="30133">%d spørgsmål tilbage</string>
+    <string id="30134">Sidste spørgsmål</string>
+    <string id="30135">%d min. tilbage</string>
     <!-- Movie Questions -->
     <string id="30400">Hvilken film er det?</string>
     <string id="30401">Hvilken film medvirker [B]%s[/B] ikke i?</string><!-- %s is actor name -->

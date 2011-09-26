@@ -83,9 +83,9 @@ class QuestionLimitedGame(Game):
     def getStatsString(self):
         questionsLeft = self.questionLimit - self.questionCount
         if not questionsLeft:
-            return "Last question"
+            return strings(G_LAST_QUESTION)
         else:
-            return str(questionsLeft) + " questions left"
+            return strings(G_X_QUESTIONS_LEFT, questionsLeft)
 
     def getGameType(self):
         return 'question-limited'
@@ -106,7 +106,8 @@ class TimeLimitedGame(Game):
         return self._minutesLeft() >= self.timeLimitMinutes
 
     def getStatsString(self):
-        return str(self.timeLimitMinutes - self._minutesLeft()) + " mins. left"
+        minutesLeft = self.timeLimitMinutes - self._minutesLeft()
+        return strings(G_X_MINUTES_LEFT, minutesLeft)
 
     def _minutesLeft(self):
         delta = datetime.datetime.now() - self.startTime
