@@ -22,7 +22,6 @@
     <string id="30014">Choose player</string>
     <string id="30015">Add player</string>
 
-
     <string id="30050">Warning</string>
     <string id="30051">All movie questions types are disabled,</string>
     <string id="30052">All TV show questions types are disabled,</string>
@@ -175,8 +174,6 @@
     <string id="30706">%s questions limit</string>
     <string id="30707">one minute time limit</string>
     <string id="30708">%s minuts time limit</string>
-
-
 
     <string id="39998">Developed by Tommy Winther</string>
     <string id="39999">Translated by Tommy Winther</string>
