@@ -1,18 +1,12 @@
 import simplejson
 import urllib2
-import md5
+import hashlib
 import os
 
 import xbmc
 
 import db
-
-try:
-    # Used by Eden/external python
-    from sqlite3 import dbapi2 as sqlite3
-except ImportError:
-    # Used by Dharma/internal python
-    from pysqlite2 import dbapi2 as sqlite3
+import sqlite3
 
 class HighscoreDatabase(object):
     def getHighscores(self, game):
@@ -85,9 +79,10 @@ class GlobalHighscoreDatabase(HighscoreDatabase):
 
     def _request(self, data):
         jsonData = simplejson.dumps(data)
-
+        checksum = hashlib.md5(jsonData).hexdigest()
+        
         req = urllib2.Request(self.SERVICE_URL, jsonData)
-        req.add_header('X-MovieQuiz-Checksum', md5.new(jsonData).hexdigest())
+        req.add_header('X-MovieQuiz-Checksum', checksum)
         req.add_header('Content-Type', 'text/json')
 
         try:

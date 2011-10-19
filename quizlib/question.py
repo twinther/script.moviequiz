@@ -8,6 +8,8 @@ import re
 import imdb
 import game
 
+import xbmcvfs
+
 from strings import *
 
 IMDB = imdb.Imdb()
@@ -111,6 +113,9 @@ class VideoDisplayType(DisplayType):
             self.videoFile = filename
         else:
             self.videoFile = os.path.join(path, filename)
+
+        if not xbmcvfs.exists(file):
+            raise QuestionException('Video file not found: %s' % self.videoFile)
 
     def getVideoFile(self):
         return self.videoFile

@@ -1,17 +1,11 @@
-from elementtree import ElementTree
+from xml.etree import ElementTree
 from xml.parsers.expat import ExpatError
 
 import os
 import xbmc
 import mysql.connector
 import glob
-
-try:
-    # Used by Eden/external python
-    from sqlite3 import dbapi2 as sqlite3
-except ImportError:
-    # Used by Dharma/internal python
-    from pysqlite2 import dbapi2 as sqlite3
+import sqlite3
 
 class Database(object):
     """Base class for the various databases"""

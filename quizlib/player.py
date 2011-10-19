@@ -1,15 +1,11 @@
 import random
 import threading
 import db
-import xbmc
 import os
 import re
 
-try:
-    import xbmcvfs
-    XBMC_VFS_AVAILABLE = True
-except ImportError:
-    XBMC_VFS_AVAILABLE = False
+import xbmc
+import xbmcvfs
 
 class TenSecondPlayer(xbmc.Player):
     """TenSecondPlayer is a subclass of xbmc.Player that stops playback after about ten seconds."""
@@ -78,7 +74,7 @@ class TenSecondPlayer(xbmc.Player):
         xbmc.log(">> TenSecondPlayer.playWindowed()")
         self.startingPlayback = True
 
-        if XBMC_VFS_AVAILABLE and not xbmcvfs.exists(file):
+        if not xbmcvfs.exists(file):
             xbmc.log(">> TenSecondPlayer - file not found: %s" % file)
             return False
 
