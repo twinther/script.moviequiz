@@ -346,12 +346,41 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
 
 
 class AboutDialog(xbmcgui.WindowXMLDialog):
+    C_ABOUT_GLOBAL_HIGHSCORE_LIST = 1001
+
+    GAME_TYPES = [
+        game.UnlimitedGame(game.GAMETYPE_MOVIE, -1, True),
+
+        game.QuestionLimitedGame(game.GAMETYPE_MOVIE, -1, True, 5),
+        game.QuestionLimitedGame(game.GAMETYPE_MOVIE, -1, True, 10),
+        game.QuestionLimitedGame(game.GAMETYPE_MOVIE, -1, True, 15),
+        game.QuestionLimitedGame(game.GAMETYPE_MOVIE, -1, True, 25),
+        game.QuestionLimitedGame(game.GAMETYPE_MOVIE, -1, True, 50),
+        game.QuestionLimitedGame(game.GAMETYPE_MOVIE, -1, True, 100),
+
+        game.TimeLimitedGame(game.GAMETYPE_MOVIE, -1, True, 1),
+        game.TimeLimitedGame(game.GAMETYPE_MOVIE, -1, True, 2),
+        game.TimeLimitedGame(game.GAMETYPE_MOVIE, -1, True, 3),
+        game.TimeLimitedGame(game.GAMETYPE_MOVIE, -1, True, 5),
+        game.TimeLimitedGame(game.GAMETYPE_MOVIE, -1, True, 10),
+        game.TimeLimitedGame(game.GAMETYPE_MOVIE, -1, True, 15),
+        game.TimeLimitedGame(game.GAMETYPE_MOVIE, -1, True, 30),
+    ]
 
     def __new__(cls):
         return super(AboutDialog, cls).__new__(cls, 'script-moviequiz-about.xml', ADDON.getAddonInfo('path'))
 
     def __init__(self):
         super(AboutDialog, self).__init__()
+        self.globalHighscore = highscore.GlobalHighscoreDatabase(ADDON.getAddonInfo('version'))
+        self.localHighscore = highscore.LocalHighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
+
+        self.useGlobal = True
+        self.gameType = self.GAME_TYPES[0]
+
+    def close(self):
+        self.localHighscore.close()
+        super(AboutDialog, self).close()
 
     def onInit(self):
         f = open(ADDON.getAddonInfo('changelog'))
@@ -359,18 +388,52 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
         f.close()
 
         self.getControl(4000).setText(changelog)
+        self.reloadHighscores()
 
     def onAction(self, action):
         if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
             self.close()
 
-    #noinspection PyUnusedLocal
     def onClick(self, controlId):
-        self.close()
+        if controlId == 1002:
+            self.useGlobal = not self.useGlobal
+            self.reloadHighscores()
+
+        elif controlId == 1003:
+            list = []
+            for type in self.GAME_TYPES:
+                list.append(repr(type))
+            idx = xbmcgui.Dialog().select('type', list)
+            self.gameType = self.GAME_TYPES[idx]
+            self.reloadHighscores()
 
     #noinspection PyUnusedLocal
     def onFocus(self, controlId):
         pass
+
+    def reloadHighscores(self):
+        if self.useGlobal:
+            entries = self.globalHighscore.getHighscores(self.gameType)
+        else:
+            entries = self.localHighscore.getHighscores(self.gameType)
+
+
+
+        #self.getControl(self.C_GAMEOVER_GLOBAL_HIGHSCORE_TYPE).setLabel(subTypeText)
+        listControl = self.getControl(self.C_ABOUT_GLOBAL_HIGHSCORE_LIST)
+        listControl.reset()
+        for entry in entries:
+            item = xbmcgui.ListItem(entry['nickname'])
+            item.setProperty('position', str(entry['position']))
+            item.setProperty('score', str(entry['score']))
+            if self.useGlobal:
+                item.setProperty('countryIconUrl', entry['countryIconUrl'])
+                item.setProperty('timestamp', entry['timeAgo'])
+            else:
+                item.setProperty('timestamp', entry['timestamp'])
+#            if int(entry['id']) == int(newHighscoreId):
+#                item.setProperty('highlight', 'true')
+            listControl.addItem(item)
 
 
 class QuizGui(xbmcgui.WindowXML):

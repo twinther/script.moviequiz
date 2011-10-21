@@ -175,6 +175,13 @@
     <string id="30707">one minute time limit</string>
     <string id="30708">%s minuts time limit</string>
 
+    <!-- About strings -->
+    <string id="30800">Highscores</string>
+    <string id="30801">About</string>
+    <string id="30802">Changelog</string>
+
+    <string id="30810">About text</string>
+
     <string id="39998">Developed by Tommy Winther</string>
     <string id="39999">Translated by Tommy Winther</string>
 </strings>

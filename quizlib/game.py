@@ -69,6 +69,9 @@ class UnlimitedGame(Game):
     def getGameType(self):
         return 'unlimited'
 
+    def __repr__(self):
+        return "<UnlimitedGame>"
+
 
 class QuestionLimitedGame(Game):
     def __init__(self, type, userId, interactive, questionLimit):
@@ -96,6 +99,9 @@ class QuestionLimitedGame(Game):
     def reset(self):
         self.questionCount = 0
 
+    def __repr__(self):
+        return "<QuestionLimitedGame %s>" % str(self.questionLimit)
+
 class TimeLimitedGame(Game):
     def __init__(self, type, userId, interactive, timeLimitMinutes):
         super(TimeLimitedGame, self).__init__(type, userId, interactive)
@@ -122,4 +128,7 @@ class TimeLimitedGame(Game):
 
     def reset(self):
         self.startTime = datetime.datetime.now()
+
+    def __repr__(self):
+        return "<TimeLimitedGame %s>" % str(self.timeLimitMinutes)
 
