@@ -6,6 +6,7 @@ import xbmc
 import mysql.connector
 import glob
 import sqlite3
+import re
 
 class Database(object):
     """Base class for the various databases"""
@@ -608,7 +609,8 @@ class SQLiteDatabase(Database):
 
         # Find newest MyVideos.db and use that
         candidates = glob.glob(settings['host'] + '/MyVideos*.db')
-        list.sort(candidates, reverse=True)
+        candidates = natural_sorted(candidates)
+        list.reverse(candidates)
         if settings.has_key('name') and settings['name'] is not None:
             candidates.insert(0, settings['name'] + '.db') # defined in settings
 
@@ -628,6 +630,7 @@ class SQLiteDatabase(Database):
         xbmc.log("SQLiteDatabase opened")
 
         super(SQLiteDatabase, self).postInit()
+
 
 def _sqlite_dict_factory(cursor, row):
     d = {}
@@ -651,18 +654,38 @@ class MySQLDatabase(Database):
     def __init__(self, maxRating, onlyUsedWatched, settings):
         super(MySQLDatabase, self).__init__(maxRating, onlyUsedWatched)
         xbmc.log("Connecting to MySQL database...")
+        dbName = self._find_newest_database(settings)
+
         self.conn = mysql.connector.connect(
             host = settings['host'],
             user = settings['user'],
             passwd = settings['pass'],
-            db = settings['name']
+            db = str(dbName)
             )
 
-        xbmc.log("MySQLDatabase opened")
+        xbmc.log("MySQLDatabase %s opened" % dbName)
         super(MySQLDatabase, self).postInit()
 
     def cursor(self):
         return self.conn.cursor(cursor_class = MySQLCursorDict)
+
+    def _find_newest_database(self, settings):
+        conn = mysql.connector.connect(
+            host = settings['host'],
+            user = settings['user'],
+            passwd = settings['pass'],
+            db = 'information_schema'
+            )
+        c = conn.cursor()
+        c.execute('SELECT schema_name FROM schemata WHERE schema_name LIKE "' + settings['name'] + '%"')
+        rows = c.fetchall()
+        c.close()
+        conn.close()
+
+        candidates = natural_sorted([row[0] for row in rows])
+        list.reverse(candidates)
+
+        return candidates[0]
 
 
 class MySQLCursorDict(mysql.connector.cursor.MySQLCursor):
@@ -688,6 +711,13 @@ class DbException(Exception):
     def __init__(self, sql):
         Exception.__init__(self, sql)
 
+def natural_sorted(list):
+    """
+    http://www.codinghorror.com/blog/2007/12/sorting-for-humans-natural-sort-order.html
 
-
-
+    @param list:
+    @return: naturally sorted list
+    """
+    convert = lambda text: int(text) if text.isdigit() else text.lower()
+    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
+    return sorted(list, key = alphanum_key)
