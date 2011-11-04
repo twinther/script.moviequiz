@@ -30,6 +30,9 @@ class Game(object):
     def getType(self):
         return self.type
 
+    def setType(self, type):
+        self.type = type
+
     def getPoints(self):
         return self.points
 

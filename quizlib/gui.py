@@ -347,6 +347,9 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
 
 class AboutDialog(xbmcgui.WindowXMLDialog):
     C_ABOUT_GLOBAL_HIGHSCORE_LIST = 1001
+    C_ABOUT_HIGHSCORE_GLOBAL_TOGGLE = 1002
+    C_ABOUT_HIGHSCORE_TYPE_LIST = 1003
+    C_ABOUT_HIGHSCORE_MOVIE_TOGGLE = 1004
 
     GAME_TYPES = [
         game.UnlimitedGame(game.GAMETYPE_MOVIE, -1, True),
@@ -376,6 +379,7 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
         self.localHighscore = highscore.LocalHighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
 
         self.useGlobal = True
+        self.useMovieQuiz = True
         self.gameType = self.GAME_TYPES[0]
 
     def close(self):
@@ -387,6 +391,17 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
         changelog = f.read()
         f.close()
 
+        self.typeOptionList = []
+        for type in self.GAME_TYPES:
+            if isinstance(type, game.UnlimitedGame):
+                self.typeOptionList.append(strings(M_UNLIMITED))
+            elif isinstance(type, game.QuestionLimitedGame):
+                self.typeOptionList.append(strings(M_X_QUESTIONS, type.getGameSubType()))
+            elif isinstance(type, game.TimeLimitedGame):
+                self.typeOptionList.append(strings(M_X_MINUTES, type.getGameSubType()))
+            else:
+                self.typeOptionList.append(repr(type))
+
         self.getControl(4000).setText(changelog)
         self.reloadHighscores()
 
@@ -395,16 +410,19 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
             self.close()
 
     def onClick(self, controlId):
-        if controlId == 1002:
+        if controlId == self.C_ABOUT_HIGHSCORE_GLOBAL_TOGGLE:
             self.useGlobal = not self.useGlobal
             self.reloadHighscores()
 
-        elif controlId == 1003:
-            list = []
-            for type in self.GAME_TYPES:
-                list.append(repr(type))
-            idx = xbmcgui.Dialog().select('type', list)
-            self.gameType = self.GAME_TYPES[idx]
+        elif controlId == self.C_ABOUT_HIGHSCORE_TYPE_LIST:
+            idx = xbmcgui.Dialog().select('type', self.typeOptionList)
+            if idx != -1:
+                self.getControl(self.C_ABOUT_HIGHSCORE_TYPE_LIST).setLabel(self.typeOptionList[idx])
+                self.gameType = self.GAME_TYPES[idx]
+                self.reloadHighscores()
+
+        elif controlId == self.C_ABOUT_HIGHSCORE_MOVIE_TOGGLE:
+            self.useMovieQuiz = not self.useMovieQuiz
             self.reloadHighscores()
 
     #noinspection PyUnusedLocal
@@ -412,12 +430,15 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
         pass
 
     def reloadHighscores(self):
+        if self.useMovieQuiz:
+            self.gameType.setType(game.GAMETYPE_MOVIE)
+        else:
+            self.gameType.setType(game.GAMETYPE_TVSHOW)
+
         if self.useGlobal:
             entries = self.globalHighscore.getHighscores(self.gameType)
         else:
             entries = self.localHighscore.getHighscores(self.gameType)
-
-
 
         #self.getControl(self.C_GAMEOVER_GLOBAL_HIGHSCORE_TYPE).setLabel(subTypeText)
         listControl = self.getControl(self.C_ABOUT_GLOBAL_HIGHSCORE_LIST)
