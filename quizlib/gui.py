@@ -346,10 +346,16 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
 
 
 class AboutDialog(xbmcgui.WindowXMLDialog):
+    C_ABOUT_CLOSE_BUTTON = 504
+
     C_ABOUT_GLOBAL_HIGHSCORE_LIST = 1001
     C_ABOUT_HIGHSCORE_GLOBAL_TOGGLE = 1002
     C_ABOUT_HIGHSCORE_TYPE_LIST = 1003
     C_ABOUT_HIGHSCORE_MOVIE_TOGGLE = 1004
+
+    C_ABOUT_STATISTICS = 2001
+    C_ABOUT_STATIS_COUNTRIES = 2002
+    C_ABOUT_CHANGELOG = 4001
 
     GAME_TYPES = [
         game.UnlimitedGame(game.GAMETYPE_MOVIE, -1, True),
@@ -390,6 +396,7 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
         f = open(ADDON.getAddonInfo('changelog'))
         changelog = f.read()
         f.close()
+        self.getControl(self.C_ABOUT_CHANGELOG).setText(changelog)
 
         self.typeOptionList = []
         for type in self.GAME_TYPES:
@@ -402,15 +409,36 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
             else:
                 self.typeOptionList.append(repr(type))
 
-        self.getControl(4000).setText(changelog)
         self.reloadHighscores()
+
+        statistics = self.globalHighscore.getStatistics()
+        statisticsLabel = strings(M_STATISTICS, (
+                                  statistics['users']['unique_ips'],
+                                  statistics['users']['unique_countries'],
+                                  statistics['quiz']['total_games'],
+                                  statistics['quiz']['total_questions'],
+                                  statistics['quiz']['total_correct_answers'],
+                                  statistics['quiz']['correct_percentage']
+                                  ))
+        self.getControl(self.C_ABOUT_STATISTICS).setLabel(statisticsLabel)
+
+        listControl = self.getControl(self.C_ABOUT_STATIS_COUNTRIES)
+        listControl.reset()
+        for entry in statistics['top_countries']:
+            item = xbmcgui.ListItem('%s games' % entry['highscores'])
+            item.setProperty('countryIconUrl', entry['countryIconUrl'])
+            listControl.addItem(item)
+
 
     def onAction(self, action):
         if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
             self.close()
 
     def onClick(self, controlId):
-        if controlId == self.C_ABOUT_HIGHSCORE_GLOBAL_TOGGLE:
+        if controlId == self.C_ABOUT_CLOSE_BUTTON:
+            self.close()
+
+        elif controlId == self.C_ABOUT_HIGHSCORE_GLOBAL_TOGGLE:
             self.useGlobal = not self.useGlobal
             self.reloadHighscores()
 

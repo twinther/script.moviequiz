@@ -76,6 +76,16 @@ class GlobalHighscoreDatabase(HighscoreDatabase):
     def getHighscoresNear(self, game, highscoreId):
         return self.getHighscores(game)
 
+    def getStatistics(self):
+        req = {
+            'action' : 'statistics'
+        }
+
+        resp = self._request(req)
+        if resp['status'] == 'OK':
+            return resp['statistics']
+        else:
+            return []
 
     def _request(self, data):
         jsonData = simplejson.dumps(data)

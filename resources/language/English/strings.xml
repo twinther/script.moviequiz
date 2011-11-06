@@ -179,8 +179,10 @@
     <string id="30800">Highscores</string>
     <string id="30801">About</string>
     <string id="30802">Changelog</string>
+    <string id="30803">Statistics</string>
 
     <string id="30810">About text</string>
+    <string id="30820">Statistics based on global highscores data collected since September 2011.[CR][CR][B]%s[/B] unique users in [B]%s[/B] countries has submitted [B]%s[/B] highscores.[CR]A total of [B]%s[/B] questions has been answered with [B]%s[/B] being correct, which is [B]%s[/B] percent.</string>
 
     <string id="39998">Developed by Tommy Winther</string>
     <string id="39999">Translated by Tommy Winther</string>
