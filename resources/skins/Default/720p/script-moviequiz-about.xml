@@ -373,7 +373,7 @@
             <posy>80</posy>
             <width>990</width>
             <height>570</height>
-            <visible>Control.HasFocus(501) | Control.HasFocus(2002)</visible>
+            <visible>Control.HasFocus(501) | Control.HasFocus(2002) | Control.HasFocus(2003)</visible>
 
             <control type="label" id="2001">
                 <posx>0</posx>
@@ -383,31 +383,34 @@
                 <textcolor>ffffffff</textcolor>
                 <font>font13</font>
                 <wrapmultiline>true</wrapmultiline>
-                <label>$ADDON[script.moviequiz 30820]</label>
+                <label>Loading...</label>
             </control>
 
             <control type="label">
                 <posx>0</posx>
-                <posy>250</posy>
-                <width>200</width>
+                <posy>200</posy>
+                <width>220</width>
                 <height>50</height>
                 <textcolor>ffffffff</textcolor>
                 <font>font13</font>
                 <label>[B]Top countries[/B]</label>
+                <align>center</align>
             </control>
 
             <control type="list" id="2002">
+                <description>top countries list</description>
                 <posx>0</posx>
-                <posy>300</posy>
-                <width>450</width>
-                <height>280</height>
+                <posy>250</posy>
+                <width>220</width>
+                <height>330</height>
                 <onleft>501</onleft>
+                <onright>2003</onright>
                 <viewtype label="list">list</viewtype>
                 <orientation>vertical</orientation>
                 <scrolltime>200</scrolltime>
-                <itemlayout width="450" height="40">
+                <itemlayout width="220" height="40">
                     <control type="image">
-                        <posx>0</posx>
+                        <posx>5</posx>
                         <posy>5</posy>
                         <width>30</width>
                         <height>30</height>
@@ -415,15 +418,101 @@
                         <aspectratio>keep</aspectratio>
                     </control>
                     <control type="label">
-                        <posx>30</posx>
+                        <posx>220</posx>
                         <posy>0</posy>
-                        <width>420</width>
+                        <width>220</width>
                         <height>40</height>
                         <textcolor>ffffffff</textcolor>
                         <textoffsetx>10</textoffsetx>
                         <font>font13</font>
                         <info>ListItem.Label</info>
                         <aligny>center</aligny>
+                        <align>right</align>
+                    </control>
+                </itemlayout>
+                <focusedlayout width="220" height="40">
+                    <control type="image">
+                        <posx>0</posx>
+                        <posy>0</posy>
+                        <width>220</width>
+                        <height>40</height>
+                        <texture>quiz-button-focus.png</texture>
+                        <visible>Control.HasFocus(2002)</visible>
+                    </control>
+                    <control type="image">
+                        <posx>5</posx>
+                        <posy>5</posy>
+                        <width>30</width>
+                        <height>30</height>
+                        <info>ListItem.Property(countryIconUrl)</info>
+                        <aspectratio>keep</aspectratio>
+                    </control>
+                    <control type="label">
+                        <posx>220</posx>
+                        <posy>0</posy>
+                        <width>220</width>
+                        <height>40</height>
+                        <textcolor>ffffffff</textcolor>
+                        <textoffsetx>10</textoffsetx>
+                        <font>font13</font>
+                        <info>ListItem.Label</info>
+                        <aligny>center</aligny>
+                        <align>right</align>
+                    </control>
+                </focusedlayout>
+            </control>
+
+            <control type="label">
+                <posx>300</posx>
+                <posy>200</posy>
+                <width>450</width>
+                <height>50</height>
+                <textcolor>ffffffff</textcolor>
+                <font>font13</font>
+                <label>[B]Top players[/B]</label>
+            </control>
+
+            <control type="list" id="2003">
+                <description>top users list</description>
+                <posx>300</posx>
+                <posy>250</posy>
+                <width>450</width>
+                <height>330</height>
+                <onleft>2002</onleft>
+                <viewtype label="list">list</viewtype>
+                <orientation>vertical</orientation>
+                <scrolltime>200</scrolltime>
+                <itemlayout width="450" height="40">
+                    <control type="image">
+                        <posx>5</posx>
+                        <posy>5</posy>
+                        <width>30</width>
+                        <height>30</height>
+                        <info>ListItem.Property(countryIconUrl)</info>
+                        <aspectratio>keep</aspectratio>
+                    </control>
+                    <control type="label">
+                        <posx>35</posx>
+                        <posy>0</posy>
+                        <width>220</width>
+                        <height>40</height>
+                        <textcolor>ffffffff</textcolor>
+                        <textoffsetx>10</textoffsetx>
+                        <font>font13</font>
+                        <info>ListItem.Label</info>
+                        <aligny>center</aligny>
+                    </control>
+                    <control type="label">
+                        <posx>450</posx>
+                        <posy>0</posy>
+                        <width>200</width>
+                        <height>40</height>
+                        <textcolor>ffffffff</textcolor>
+                        <textoffsetx>10</textoffsetx>
+                        <font>font13</font>
+                        <info>ListItem.Property(games)</info>
+                        <aligny>center</aligny>
+                        <align>right</align>
                     </control>
                 </itemlayout>
                 <focusedlayout width="450" height="40">
@@ -433,10 +522,10 @@
                         <width>450</width>
                         <height>40</height>
                         <texture>quiz-button-focus.png</texture>
-                        <visible>Control.HasFocus(2002)</visible>
+                        <visible>Control.HasFocus(2003)</visible>
                     </control>
                     <control type="image">
-                        <posx>0</posx>
+                        <posx>5</posx>
                         <posy>5</posy>
                         <width>30</width>
                         <height>30</height>
@@ -444,9 +533,9 @@
                         <aspectratio>keep</aspectratio>
                     </control>
                     <control type="label">
-                        <posx>30</posx>
+                        <posx>35</posx>
                         <posy>0</posy>
-                        <width>420</width>
+                        <width>220</width>
                         <height>40</height>
                         <textcolor>ffffffff</textcolor>
                         <textoffsetx>10</textoffsetx>
@@ -454,8 +543,21 @@
                         <info>ListItem.Label</info>
                         <aligny>center</aligny>
                     </control>
+                    <control type="label">
+                        <posx>450</posx>
+                        <posy>0</posy>
+                        <width>200</width>
+                        <height>40</height>
+                        <textcolor>ffffffff</textcolor>
+                        <textoffsetx>10</textoffsetx>
+                        <font>font13</font>
+                        <info>ListItem.Property(games)</info>
+                        <aligny>center</aligny>
+                        <align>right</align>
+                    </control>
                 </focusedlayout>
             </control>
+
         </control>
 
         <control type="group" id="3000">
@@ -466,7 +568,7 @@
             <height>570</height>
             <visible>Control.HasFocus(502)</visible>
 
-            <control type="textbox">
+            <control type="textbox" id="3001">
                 <posx>0</posx>
                 <posy>0</posy>
                 <width>990</width>
@@ -475,7 +577,7 @@
                 <font>font13</font>
                 <wrapmultiline>true</wrapmultiline>
                 <autoscroll time="3600" delay="6000" repeat="6000">true</autoscroll>
-                <label>$ADDON[script.moviequiz 30810]</label>
+                <label>...</label>
             </control>
         </control>
 

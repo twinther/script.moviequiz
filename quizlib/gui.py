@@ -354,7 +354,9 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
     C_ABOUT_HIGHSCORE_MOVIE_TOGGLE = 1004
 
     C_ABOUT_STATISTICS = 2001
-    C_ABOUT_STATIS_COUNTRIES = 2002
+    C_ABOUT_STATISTICS_COUNTRIES = 2002
+    C_ABOUT_STATISTICS_USERS = 2003
+    C_ABOUT_ABOUT = 3001
     C_ABOUT_CHANGELOG = 4001
 
     GAME_TYPES = [
@@ -398,6 +400,11 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
         f.close()
         self.getControl(self.C_ABOUT_CHANGELOG).setText(changelog)
 
+        f = open(os.path.join(ADDON.getAddonInfo('path'), 'about.txt'))
+        about = f.read()
+        f.close()
+        self.getControl(self.C_ABOUT_ABOUT).setText(about)
+
         self.typeOptionList = []
         for type in self.GAME_TYPES:
             if isinstance(type, game.UnlimitedGame):
@@ -422,12 +429,21 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
                                   ))
         self.getControl(self.C_ABOUT_STATISTICS).setLabel(statisticsLabel)
 
-        listControl = self.getControl(self.C_ABOUT_STATIS_COUNTRIES)
+        listControl = self.getControl(self.C_ABOUT_STATISTICS_COUNTRIES)
         listControl.reset()
         for entry in statistics['top_countries']:
             item = xbmcgui.ListItem('%s games' % entry['highscores'])
             item.setProperty('countryIconUrl', entry['countryIconUrl'])
             listControl.addItem(item)
+
+        listControl = self.getControl(self.C_ABOUT_STATISTICS_USERS)
+        listControl.reset()
+        for entry in statistics['top_users']:
+            item = xbmcgui.ListItem(entry['nickname'])
+            item.setProperty('games', '%s games' % entry['games'])
+            item.setProperty('countryIconUrl', entry['countryIconUrl'])
+            listControl.addItem(item)
+
 
 
     def onAction(self, action):
@@ -685,7 +701,7 @@ class QuizGui(xbmcgui.WindowXML):
                 self.getControl(self.C_MAIN_VIDEO_FILE_NOT_FOUND).setVisible(True)
 
         elif isinstance(displayType, question.PhotoDisplayType):
-            self.getControl(self.C_MAIN_PHOTO).setImage(displayType.getPhotoFile())
+            self.getControl(self.C_MAIN_PHOTO).setImage(displayType.getPhotoFile(0))
 
         elif isinstance(displayType, question.ThreePhotoDisplayType):
             self.getControl(self.C_MAIN_PHOTO_1).setImage(displayType.getPhotoFile(0)[0])

@@ -134,7 +134,7 @@ class ThreePhotoDisplayType(DisplayType):
 
         self.photos.append((photo, label))
 
-    def getPhotoFile(self, index = 0):
+    def getPhotoFile(self, index):
         return self.photos[index]
 
 class QuoteDisplayType(DisplayType):
