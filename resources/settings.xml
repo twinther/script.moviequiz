@@ -43,6 +43,7 @@
         <setting id="question.whenwastvshowfirstaired.enabled" label="30583" type="bool" default="true"/>
         <setting id="question.whoplayedroleintvshow.enabled" label="30584" type="bool" default="true"/>
         <setting id="question.whattvshowisthisquotefrom.enabled" label="30585" type="bool" default="true"/>
+        <setting id="question.whattvshowisthisthemefrom.enabled" label="30586" type="bool" default="true"/>
 
      </category>
 

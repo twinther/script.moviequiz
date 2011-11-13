@@ -144,6 +144,13 @@ class QuoteDisplayType(DisplayType):
     def getQuoteText(self):
         return self.quoteText
 
+class AudioDisplayType(DisplayType):
+    def setAudioFile(self, audioFile):
+        self.audioFile = audioFile
+
+    def getAudioFile(self):
+        return self.audioFile
+
 #
 # MOVIE QUESTIONS
 #
@@ -943,7 +950,37 @@ class WhatTVShowIsThisQuoteFrom(TVQuestion):
     def isEnabled():
         return ADDON.getSetting('question.whattvshowisthisquotefrom.enabled') == 'true' and IMDB.isDataPresent()
 
+class WhatTVShowIsThisThemeFromQuestion(TVQuestion):
+    def __init__(self, database):
+        audioDisplayType = AudioDisplayType()
+        super(WhatTVShowIsThisThemeFromQuestion, self).__init__(audioDisplayType)
 
+        tvShow = None
+        themeSong = None
+        rows = database.getTVShows(maxResults = 10)
+        for row in rows:
+            themeSong = os.path.join(row['tvShowPath'], 'theme.mp3')
+            if xbmcvfs.exists(themeSong):
+                tvShow = row
+                break
+
+        if tvShow is None:
+            raise QuestionException('Unable to find any tv shows with a theme.mp3 file')
+
+        self.addCorrectAnswer(tvShow['idShow'], tvShow['title'], tvShow['idFile'], path = thumb.getCachedTVShowThumb(tvShow['tvShowPath']))
+
+        # Fill with random episodes from other shows
+        shows = database.getTVShows(maxResults = 3, excludeTVShowId = tvShow['idShow'], onlySelectTVShow = True)
+        for show in shows:
+            self.addAnswer(show['idShow'], show['title'], path = thumb.getCachedTVShowThumb(show['tvShowPath']))
+
+        random.shuffle(self.answers)
+        audioDisplayType.setAudioFile(themeSong)
+        self.text = strings(Q_WHAT_TVSHOW_IS_THIS_QUOTE_FROM)
+
+    @staticmethod
+    def isEnabled():
+        return ADDON.getSetting('question.whattvshowisthisthemefrom.enabled') == 'true'
 
 class QuestionException(Exception):
     pass

@@ -28,6 +28,7 @@ class TenSecondPlayer(xbmc.Player):
         self.lastStartTime = None
 
         self.playBackEventReceived = False
+        self.isAudioFile = False
 
     def close(self):
         if hasattr(self, 'database') and self.database:
@@ -44,7 +45,7 @@ class TenSecondPlayer(xbmc.Player):
     def stop(self):
         """
         Cancels the Timer in case it's active and stars a new Timer for a delayed stop.
-        This method doesn't actually stop playback, this is handled by delayedStop().
+        This method doesn't actually stop playback, this is handled by _delayedStop().
         """
         xbmc.log(">> TenSecondPlayer.stop()")
         # call xbmc.Player.stop() in a seperate thread to attempt to avoid xbmc lockups/crashes
@@ -66,7 +67,7 @@ class TenSecondPlayer(xbmc.Player):
 
     def playWindowed(self, file, idFile):
         """
-        Starts playback bby calling xbmc.Player.play(windowed = True).
+        Starts playback by calling xbmc.Player.play(windowed = True).
 
         It also loads bookmark information and keeps track on the Timer
         for stopping playback.
@@ -99,6 +100,7 @@ class TenSecondPlayer(xbmc.Player):
 
         xbmc.log(">> TenSecondPlayer.playWindowed() - about to play file %s" % file)
 
+        self.isAudioFile = False
         self.playBackEventReceived = False
         self.play(item = file, windowed = True)
 
@@ -109,6 +111,26 @@ class TenSecondPlayer(xbmc.Player):
 
         xbmc.log(">> TenSecondPlayer.playWindowed() - end")
         return True
+
+    def playAudio(self, file):
+        xbmc.log(">> TenSecondPlayer.playWindowed()")
+        self.startingPlayback = True
+
+        if not xbmcvfs.exists(file):
+            xbmc.log(">> TenSecondPlayer - file not found: %s" % file)
+            return False
+
+        xbmc.log(">> TenSecondPlayer.playWindowed() - about to play file %s" % file)
+
+        self.bookmark = None
+        self.isAudioFile = True
+        self.playBackEventReceived = False
+        self.play(item = file, windowed = True)
+
+        retries = 0
+        while not self.playBackEventReceived and retries < 20:
+            xbmc.sleep(250) # keep sleeping to get onPlayBackStarted() event
+            retries += 1
 
     def _getRandomDvdVob(self, ifoFile):
         xbmc.log(">> TenSecondPlayer._getRandomDvdVob() - ifoFile = %s" % ifoFile)
@@ -147,6 +169,10 @@ class TenSecondPlayer(xbmc.Player):
     def onPlayBackStarted(self):
         xbmc.log(">> TenSecondPlayer.onPlayBackStarted()")
         self.playBackEventReceived = True
+
+        if self.isAudioFile:
+            self.startingPlayback = False
+            return
 
         if self.lastStartTime is not None:
             startTime = self.lastStartTime

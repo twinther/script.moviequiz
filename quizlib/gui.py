@@ -716,6 +716,9 @@ class QuizGui(xbmcgui.WindowXML):
             quoteText = self._obfuscateQuote(quoteText)
             self.getControl(self.C_MAIN_QUOTE_LABEL).setText(quoteText)
 
+        elif isinstance(displayType, question.AudioDisplayType):
+            self.player.playAudio(displayType.getAudioFile())
+
         self.onVisibilityChanged(displayType)
 
         if not self.gameInstance.isInteractive():
