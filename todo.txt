@@ -2,9 +2,7 @@ TODOs and suggestions in no particular order
 
 - Error message when we are unable to find additional questions
 - DVD ISO's plays menu instead of movie
-- Add support for global statistics, eg. "lifetime" correct/incorrect answers and such
 - Multiplayer support
-- add support for tvtunes + related question(s)
 
 Movie Question suggestions:
 * How many movies do you have for year xy?
