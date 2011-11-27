@@ -99,7 +99,8 @@
     <string id="30454">Hvornår blev [B]%s[/B] sendt første gang?</string><!-- %s is tvshow title -->
     <string id="30455">Hvem spiller [B]%s[/B] i [B]%s[/B]?</string><!-- 1st %s is role, 2nd %s is tvshow title -->
     <string id="30456">Hvem ligger stemme til [B]%s[/B] i [B]%s[/B]?</string><!-- 1st %s is role, 2nd %s is movie title -->
-    <string id="30457">Hvilken TV-serie er dette citat fra??</string>
+    <string id="30457">Hvilken TV-serie er dette citat fra?</string>
+    <string id="30458">Hvilken TV-serie er dette tema fra?</string>
 
     <!-- Settings strings -->
     <string id="30500">Generelt</string>
@@ -148,6 +149,7 @@
     <string id="30583">Hvornår blev TV-serien sendt først gang?</string>
     <string id="30584">Hvem spiller rollen i TV-serien?</string>
     <string id="30585">Hvilken TV-serie er dette citat fra?</string>
+    <string id="30586">Hvilken TV-serie er dette tema fra?</string>
 
     <!-- Game type strings -->
     <string id="30600">[B]Vælg Movie Quiz spil type[/B]</string>
@@ -173,6 +175,23 @@
     <string id="30706">Grænse på %s spørgsmål</string>
     <string id="30707">Grænse på et minut</string>
     <string id="30708">Grænse på %s minutter</string>
+
+    <!-- About strings -->
+    <string id="30800">Highscores</string>
+    <string id="30801">Om</string>
+    <string id="30802">Versionshistorik</string>
+    <string id="30803">Statistik</string>
+
+    <string id="30810">Film Quiz</string>
+    <string id="30811">TV Quiz</string>
+
+    <string id="30812">[B]Name[/B]</string>
+    <string id="30813">[B]Score[/B]</string>
+    <string id="30814">[B]Dato[/B]</string>
+
+    <string id="30820">Statistikken er baseret på globale highscores indsamlet side september 2011.[CR][CR][B]%s[/B] unikke brugere i [B]%s[/B] landet has indsendt [B]%s[/B] highscores.[CR]I alt er [B]%s[/B] spørgsmål blevet besvaret hvoraf [B]%s[/B] var korrekte, hvilket er [B]%s[/B] procent.</string>
+    <string id="30821">[B]Flittigste lande[/B]</string>
+    <string id="30822">[B]Flittigste spillere[/B]</string>
 
     <string id="39998">Udviklet af Tommy Winther</string>
     <string id="39999">Oversat af Tommy Winther</string>
