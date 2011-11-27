@@ -12,7 +12,7 @@ def moviequiz_excepthook(type, value, traceback):
 #sys.excepthook = moviequiz_excepthook
 
 # Make sure data dir exists
-ADDON = xbmcaddon.Addon(id = 'script.moviequiz')
+ADDON = xbmcaddon.Addon()
 if not os.path.exists(xbmc.translatePath(ADDON.getAddonInfo('profile'))):
     os.makedirs(xbmc.translatePath(ADDON.getAddonInfo('profile')))
 

@@ -33,6 +33,9 @@
         <control type="label" id="5007">
             <description>visibility marker for cover image</description>
         </control>
+        <control type="label" id="5008">
+            <description>visibility marker for theme group</description>
+        </control>
 
         <!-- Background -->
         <control type="largeimage" id="4500">
@@ -246,6 +249,26 @@
                 <align>center</align>
                 <aligny>center</aligny>
                 <scroll>true</scroll>
+            </control>
+        </control>
+
+        <!-- theme group -->
+        <control type="group">
+            <description>theme group</description>
+            <posx>0</posx>
+            <posy>0</posy>
+            <width>1280</width>
+            <height>720</height>
+            <visible>!Control.IsVisible(5008)</visible>
+            <animation effect="fade" start="100" end="0" time="1000">Hidden</animation>
+            <animation effect="fade" start="0" end="100" time="1000">Visible</animation>
+
+            <control type="image">
+                <posx>0</posx>
+                <posy>0</posy>
+                <width>1280</width>
+                <height>720</height>
+                <texture>quiz-background-theme.jpg</texture>
             </control>
         </control>
 

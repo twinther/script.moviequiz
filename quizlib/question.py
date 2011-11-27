@@ -114,7 +114,7 @@ class VideoDisplayType(DisplayType):
         else:
             self.videoFile = os.path.join(path, filename)
 
-        if not xbmcvfs.exists(file):
+        if not xbmcvfs.exists(self.videoFile):
             raise QuestionException('Video file not found: %s' % self.videoFile)
 
     def getVideoFile(self):
@@ -976,7 +976,7 @@ class WhatTVShowIsThisThemeFromQuestion(TVQuestion):
 
         random.shuffle(self.answers)
         audioDisplayType.setAudioFile(themeSong)
-        self.text = strings(Q_WHAT_TVSHOW_IS_THIS_QUOTE_FROM)
+        self.text = strings(Q_WHAT_TVSHOW_IS_THIS_THEME_FROM)
 
     @staticmethod
     def isEnabled():

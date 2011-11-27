@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/script.moviequiz.iml" filepath="$PROJECT_DIR$/.idea/script.moviequiz.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../xbmcstubs/.idea/xbmcstubs.iml" filepath="$PROJECT_DIR$/../xbmcstubs/.idea/xbmcstubs.iml" />
     </modules>
   </component>
 </project>

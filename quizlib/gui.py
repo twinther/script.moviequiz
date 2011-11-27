@@ -527,6 +527,7 @@ class QuizGui(xbmcgui.WindowXML):
     C_MAIN_PHOTO_VISIBILITY = 5001
     C_MAIN_QUOTE_VISIBILITY = 5004
     C_MAIN_THREE_PHOTOS_VISIBILITY = 5006
+    C_MAIN_THEME_VISIBILITY = 5008
     C_MAIN_CORRECT_VISIBILITY = 5002
     C_MAIN_INCORRECT_VISIBILITY = 5003
     C_MAIN_LOADING_VISIBILITY = 5005
@@ -649,6 +650,9 @@ class QuizGui(xbmcgui.WindowXML):
             return # ignore multiple invocations
         self.uiState = self.STATE_GAME_OVER
 
+        if self.player.isPlaying():
+            self.player.stop()
+
         if self.questionPointsThread is not None:
            self.questionPointsThread.cancel()
 
@@ -701,7 +705,7 @@ class QuizGui(xbmcgui.WindowXML):
                 self.getControl(self.C_MAIN_VIDEO_FILE_NOT_FOUND).setVisible(True)
 
         elif isinstance(displayType, question.PhotoDisplayType):
-            self.getControl(self.C_MAIN_PHOTO).setImage(displayType.getPhotoFile(0))
+            self.getControl(self.C_MAIN_PHOTO).setImage(displayType.getPhotoFile())
 
         elif isinstance(displayType, question.ThreePhotoDisplayType):
             self.getControl(self.C_MAIN_PHOTO_1).setImage(displayType.getPhotoFile(0)[0])
@@ -864,6 +868,7 @@ class QuizGui(xbmcgui.WindowXML):
         self.getControl(self.C_MAIN_PHOTO_VISIBILITY).setVisible(not isinstance(displayType, question.PhotoDisplayType))
         self.getControl(self.C_MAIN_QUOTE_VISIBILITY).setVisible(not isinstance(displayType, question.QuoteDisplayType))
         self.getControl(self.C_MAIN_THREE_PHOTOS_VISIBILITY).setVisible(not isinstance(displayType, question.ThreePhotoDisplayType))
+        self.getControl(self.C_MAIN_THEME_VISIBILITY).setVisible(not isinstance(displayType, question.AudioDisplayType))
 
 
     def _obfuscateQuote(self, quote):
@@ -934,10 +939,7 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
         newHighscoreId = localHighscore.addHighscore(self.game)
         name = localHighscore.getNickname(self.game.getUserId())
 
-        if newHighscoreId != -1:
-            entries = localHighscore.getHighscoresNear(self.game, newHighscoreId)
-        else:
-            entries = localHighscore.getHighscores(self.game)
+        entries = localHighscore.getHighscores(self.game)
         localHighscore.close()
 
         subTypeText = None
@@ -953,13 +955,22 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
                 subTypeText = strings(M_X_MINUTS_LIMIT, self.game.getGameSubType())
 
         self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_TYPE).setLabel(subTypeText)
-        listControl = self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_LIST)
+        items = list()
+        selectedIndex = -1
         for entry in entries:
             item = xbmcgui.ListItem("%d. %s" % (entry['position'], entry['nickname']))
             item.setProperty('score', str(entry['score']))
             if int(entry['id']) == int(newHighscoreId):
                 item.setProperty('highlight', 'true')
-            listControl.addItem(item)
+                selectedIndex = len(items)
+            items.append(item)
+        listControl = self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_LIST)
+        listControl.addItems(items)
+        if selectedIndex != -1:
+            selectedIndex += 5
+            if selectedIndex > len(items):
+                selectedIndex = len(items) - 1
+            listControl.selectItem(selectedIndex)
 
         # Global highscore
         globalHighscore = highscore.GlobalHighscoreDatabase(ADDON.getAddonInfo('version'))
@@ -968,17 +979,22 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
         else:
             newHighscoreId = -1
 
-        if newHighscoreId != -1:
-            entries = globalHighscore.getHighscoresNear(self.game, newHighscoreId)
-        else:
-            entries = globalHighscore.getHighscores(self.game)
-
+        entries = globalHighscore.getHighscores(self.game)
         self.getControl(self.C_GAMEOVER_GLOBAL_HIGHSCORE_TYPE).setLabel(subTypeText)
-        listControl = self.getControl(self.C_GAMEOVER_GLOBAL_HIGHSCORE_LIST)
+        items = list()
+        selectedIndex = -1
         for entry in entries:
             item = xbmcgui.ListItem("%s. %s" % (entry['position'], entry['nickname']))
             item.setProperty('score', str(entry['score']))
             if int(entry['id']) == int(newHighscoreId):
                 item.setProperty('highlight', 'true')
-            listControl.addItem(item)
+                selectedIndex = len(items)
+            items.append(item)
+        listControl = self.getControl(self.C_GAMEOVER_GLOBAL_HIGHSCORE_LIST)
+        listControl.addItems(items)
+        if selectedIndex != -1:
+            selectedIndex += 5
+            if selectedIndex > len(items):
+                selectedIndex = len(items) - 1
+            listControl.selectItem(selectedIndex)
 

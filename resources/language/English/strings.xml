@@ -100,6 +100,7 @@
     <string id="30455">Who plays [B]%s[/B] in [B]%s[/B]?</string><!-- 1st %s is role, 2nd %s is tvshow title -->
     <string id="30456">Who voices [B]%s[/B] in [B]%s[/B]?</string><!-- 1st %s is role, 2nd %s is tvshow title -->
     <string id="30457">What TV show is this quote from?</string>
+    <string id="30458">What TV show is this theme from?</string>
 
     <!-- Settings strings -->
     <string id="30500">General</string>
