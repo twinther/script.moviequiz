@@ -459,7 +459,7 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
             self.reloadHighscores()
 
         elif controlId == self.C_ABOUT_HIGHSCORE_TYPE_LIST:
-            idx = xbmcgui.Dialog().select('type', self.typeOptionList)
+            idx = xbmcgui.Dialog().select(strings(M_CHOOSE_TYPE), self.typeOptionList)
             if idx != -1:
                 self.getControl(self.C_ABOUT_HIGHSCORE_TYPE_LIST).setLabel(self.typeOptionList[idx])
                 self.gameType = self.GAME_TYPES[idx]
