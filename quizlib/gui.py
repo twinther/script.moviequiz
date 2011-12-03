@@ -431,18 +431,22 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
 
         listControl = self.getControl(self.C_ABOUT_STATISTICS_COUNTRIES)
         listControl.reset()
+        items = list()
         for entry in statistics['top_countries']:
             item = xbmcgui.ListItem('%s games' % entry['highscores'])
             item.setProperty('countryIconUrl', entry['countryIconUrl'])
-            listControl.addItem(item)
+            items.append(item)
+        listControl.addItems(items)
 
         listControl = self.getControl(self.C_ABOUT_STATISTICS_USERS)
         listControl.reset()
+        items = list()
         for entry in statistics['top_users']:
             item = xbmcgui.ListItem(entry['nickname'])
             item.setProperty('games', '%s games' % entry['games'])
             item.setProperty('countryIconUrl', entry['countryIconUrl'])
-            listControl.addItem(item)
+            items.append(item)
+        listControl.addItems(items)
 
 
 
@@ -484,9 +488,9 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
         else:
             entries = self.localHighscore.getHighscores(self.gameType)
 
-        #self.getControl(self.C_GAMEOVER_GLOBAL_HIGHSCORE_TYPE).setLabel(subTypeText)
         listControl = self.getControl(self.C_ABOUT_GLOBAL_HIGHSCORE_LIST)
         listControl.reset()
+        items = list()
         for entry in entries:
             item = xbmcgui.ListItem(entry['nickname'])
             item.setProperty('position', str(entry['position']))
@@ -496,9 +500,8 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
                 item.setProperty('timestamp', entry['timeAgo'])
             else:
                 item.setProperty('timestamp', entry['timestamp'])
-#            if int(entry['id']) == int(newHighscoreId):
-#                item.setProperty('highlight', 'true')
-            listControl.addItem(item)
+            items.append(item)
+        listControl.addItems(items)
 
 
 class QuizGui(xbmcgui.WindowXML):
@@ -666,6 +669,7 @@ class QuizGui(xbmcgui.WindowXML):
             self.onGameOver()
             return
 
+        self.onStatsChanged()
         self.uiState = self.STATE_LOADING
         self.getControl(self.C_MAIN_LOADING_VISIBILITY).setVisible(True)
         self.question = self._getNewQuestion()
@@ -689,7 +693,6 @@ class QuizGui(xbmcgui.WindowXML):
                 self.setFocusId(self.C_MAIN_FIRST_ANSWER + idx)
 
         self.onThumbChanged()
-        self.onStatsChanged()
 
         if self.question.getFanartFile() is not None and os.path.exists(self.question.getFanartFile()):
             self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(self.question.getFanartFile())
@@ -822,7 +825,8 @@ class QuizGui(xbmcgui.WindowXML):
 
             xbmc.sleep(3000)
 
-        self.onNewQuestion()
+        if self.uiState != self.STATE_GAME_OVER:
+            self.onNewQuestion()
 
     def onStatsChanged(self):
         self.getControl(self.C_MAIN_CORRECT_SCORE).setLabel(str(self.gameInstance.getPoints()))
