@@ -1,6 +1,6 @@
 import xbmcaddon
 
-ADDON = xbmcaddon.Addon()
+ADDON = xbmcaddon.Addon(id = 'script.moviequiz')
 
 Q_WHAT_MOVIE_IS_THIS = 30400
 Q_WHAT_MOVIE_IS_ACTOR_NOT_IN = 30401
