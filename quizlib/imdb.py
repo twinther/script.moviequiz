@@ -37,14 +37,14 @@ class Imdb(object):
             f = open(self.quotesIndexPath)
             self.quotesIndex = f.read()
             f.close()
-            xbmc.log("Loaded %d MB quotes index in %d seconds" % (len(self.quotesIndex) / 1024000, (time.time() - startTime)))
+            xbmc.log("Loaded %d MB quotes index in %d seconds" % (len(self.quotesIndex) / 1048576, (time.time() - startTime)))
 
         if os.path.exists(self.actorsPath):
             startTime = time.time()
             f = open(self.actorsPath)
             self.actorNames = f.read().decode('iso-8859-1').splitlines()
             f.close()
-            xbmc.log("Loaded %d MB actor names in %d seconds" % (len(self.actorNames) / 1024000, (time.time() - startTime)))
+            xbmc.log("Loaded %d actor names in %d seconds" % (len(self.actorNames), (time.time() - startTime)))
 
     def downloadFiles(self, progressCallback = None):
         self._downloadGzipFile(self.QUOTES_URL, self.quotesListPath, progressCallback, self._createQuotesIndex)
