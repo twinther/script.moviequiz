@@ -1,3 +1,6 @@
+[B]Version 0.5.1 - 2011-12-xx[/B]
+- Fixed problem with New game where score, etc. were not reset
+
 [B]Version 0.5.0 - 2011-12-07[/B]
 - Improvied support for XBMC Eden
   (and dropped support for XBMC Dharma - use v.0.4.x instead)
