@@ -100,6 +100,7 @@ class QuestionLimitedGame(Game):
         return str(self.questionLimit)
 
     def reset(self):
+        super(QuestionLimitedGame, self).reset()
         self.questionCount = 0
 
     def __repr__(self):
@@ -120,7 +121,6 @@ class TimeLimitedGame(Game):
 
     def _minutesLeft(self):
         delta = datetime.datetime.now() - self.startTime
-        print delta
         return delta.seconds / 60
 
     def getGameType(self):
@@ -130,6 +130,7 @@ class TimeLimitedGame(Game):
         return str(self.timeLimitMinutes)
 
     def reset(self):
+        super(TimeLimitedGame, self).reset()
         self.startTime = datetime.datetime.now()
 
     def __repr__(self):
