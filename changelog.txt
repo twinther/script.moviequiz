@@ -1,5 +1,7 @@
 [B]Version 0.5.1 - 2011-12-xx[/B]
 - Fixed problem with New game where score, etc. were not reset
+- Use script.module.buggalo for error reporting
+- Fix MySQL support for XBMC 11.0
 
 [B]Version 0.5.0 - 2011-12-07[/B]
 - Improvied support for XBMC Eden

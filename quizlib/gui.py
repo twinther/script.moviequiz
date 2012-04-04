@@ -1,3 +1,23 @@
+#
+#      Copyright (C) 2012 Tommy Winther
+#      http://tommy.winther.nu
+#
+#  This Program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2, or (at your option)
+#  any later version.
+#
+#  This Program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this Program; see the file LICENSE.txt.  If not, write to
+#  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+#  http://www.gnu.org/copyleft/gpl.html
+#
+
 import threading
 import os
 import re
@@ -12,6 +32,8 @@ import question
 import player
 import db
 import highscore
+
+import buggalo
 
 from strings import *
 
@@ -41,6 +63,7 @@ class LoadingGui(xbmcgui.WindowXMLDialog):
         super(LoadingGui, self).__init__()
         self.menuGui = menuGui
 
+    @buggalo.buggalo_try_except()
     def onInit(self):
         startTime = datetime.datetime.now()
         self.menuGui.loadTrivia()
@@ -51,15 +74,16 @@ class LoadingGui(xbmcgui.WindowXMLDialog):
             xbmc.sleep(1000 * (2 - delta.seconds))
         self.close()
 
+    @buggalo.buggalo_try_except()
     def onAction(self, action):
         if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
             self.close()
 
-    #noinspection PyUnusedLocal
+    @buggalo.buggalo_try_except()
     def onClick(self, controlId):
         pass
 
-    #noinspection PyUnusedLocal
+    @buggalo.buggalo_try_except()
     def onFocus(self, controlId):
         pass
 
@@ -85,6 +109,7 @@ class MenuGui(xbmcgui.WindowXML):
         self.database.close()
         super(MenuGui, self).close()
 
+    @buggalo.buggalo_try_except()
     def onInit(self):
         if not self.trivia:
             loadingGui = LoadingGui(self)
@@ -163,10 +188,12 @@ class MenuGui(xbmcgui.WindowXML):
                 strings(M_EPISODE_COUNT) % episodes['count']
             ]
 
+    @buggalo.buggalo_try_except()
     def onAction(self, action):
         if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
             self.close()
 
+    @buggalo.buggalo_try_except()
     def onClick(self, controlId):
         """
         @param controlId: id of the control that was clicked
@@ -209,6 +236,7 @@ class MenuGui(xbmcgui.WindowXML):
 
 
 
+    @buggalo.buggalo_try_except()
     def onFocus(self, controlId):
         if controlId != self.C_MENU_USER_SELECT:
             listControl = self.getControl(self.C_MENU_USER_SELECT)
@@ -292,6 +320,7 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
         self.type = type
         self.userId = userId
 
+    @buggalo.buggalo_try_except()
     def onInit(self):
         if self.type == game.GAMETYPE_MOVIE:
             self.getControl(3999).setLabel(strings(M_CHOOSE_MOVIE_GAME_TYPE))
@@ -310,10 +339,12 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
             item.setProperty("limit", subTypes['limit'])
             control.addItem(item)
 
+    @buggalo.buggalo_try_except()
     def onAction(self, action):
         if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
             self.close()
 
+    @buggalo.buggalo_try_except()
     def onClick(self, controlId):
         interactive = True
         gameInstance = None
@@ -340,7 +371,7 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
             w.doModal()
             del w
 
-    #noinspection PyUnusedLocal
+    @buggalo.buggalo_try_except()
     def onFocus(self, controlId):
         pass
 
@@ -394,6 +425,7 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
         self.localHighscore.close()
         super(AboutDialog, self).close()
 
+    @buggalo.buggalo_try_except()
     def onInit(self):
         f = open(ADDON.getAddonInfo('changelog'))
         changelog = f.read()
@@ -450,10 +482,12 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
 
 
 
+    @buggalo.buggalo_try_except()
     def onAction(self, action):
         if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
             self.close()
 
+    @buggalo.buggalo_try_except()
     def onClick(self, controlId):
         if controlId == self.C_ABOUT_CLOSE_BUTTON:
             self.close()
@@ -473,7 +507,7 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
             self.useMovieQuiz = not self.useMovieQuiz
             self.reloadHighscores()
 
-    #noinspection PyUnusedLocal
+    @buggalo.buggalo_try_except()
     def onFocus(self, controlId):
         pass
 
@@ -580,6 +614,7 @@ class QuizGui(xbmcgui.WindowXML):
 
         self.uiState = self.STATE_LOADING
 
+    @buggalo.buggalo_try_except()
     def onInit(self):
         if self.gameInstance.getType() == game.GAMETYPE_TVSHOW:
             self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(self.defaultBackground)
@@ -605,7 +640,8 @@ class QuizGui(xbmcgui.WindowXML):
             self.player.close()
         self.database.close()
         super(QuizGui, self).close()
-        
+
+    @buggalo.buggalo_try_except()
     def onAction(self, action):
         if action.getId() == ACTION_PARENT_DIR or action.getId() == ACTION_PREVIOUS_MENU:
             self.onGameOver()
@@ -626,6 +662,7 @@ class QuizGui(xbmcgui.WindowXML):
             self.onQuestionAnswered(self.question.getAnswer(3))
 
 
+    @buggalo.buggalo_try_except()
     def onClick(self, controlId):
         difference = time.time() - self.lastClickTime
         self.lastClickTime = time.time()
@@ -645,6 +682,7 @@ class QuizGui(xbmcgui.WindowXML):
         elif controlId == self.C_MAIN_REPLAY:
             self.player.replay()
 
+    @buggalo.buggalo_try_except()
     def onFocus(self, controlId):
         self.onThumbChanged(controlId)
 
@@ -757,6 +795,7 @@ class QuizGui(xbmcgui.WindowXML):
 
         return q
 
+    @buggalo.buggalo_try_except()
     def onQuestionPointTimer(self):
         """
         onQuestionPointTimer handles the decreasing amount of points awareded to the user when a question is answered correctly.
@@ -853,6 +892,7 @@ class QuizGui(xbmcgui.WindowXML):
             else:
                 self.getControl(self.C_MAIN_COVER_IMAGE_VISIBILITY).setVisible(True)
 
+    @buggalo.buggalo_try_except()
     def onQuestionAnswerFeedbackTimer(self):
         """
         onQuestionAnswerFeedbackTimer is invoked by a timer when the red or green background behind the answers box
@@ -912,6 +952,7 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
         self.parentWindow = parentWindow
         self.game = game
 
+    @buggalo.buggalo_try_except()
     def onInit(self):
         self.getControl(4100).setLabel(strings(G_YOU_SCORED) % (self.game.getCorrectAnswers(), self.game.getTotalAnswers()))
         self.getControl(4101).setLabel(str(self.game.getPoints()))
@@ -919,11 +960,13 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
         if self.game.isInteractive():
             self._setupHighscores()
 
+    @buggalo.buggalo_try_except()
     def onAction(self, action):
         if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
             self.close()
             self.parentWindow.close()
 
+    @buggalo.buggalo_try_except()
     def onClick(self, controlId):
         if controlId == self.C_GAMEOVER_RETRY:
             self.parentWindow.onNewGame()
@@ -933,7 +976,7 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
             self.close()
             self.parentWindow.close()
 
-    #noinspection PyUnusedLocal
+    @buggalo.buggalo_try_except()
     def onFocus(self, controlId):
         pass
 
