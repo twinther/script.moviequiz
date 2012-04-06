@@ -117,26 +117,26 @@ class MenuGui(xbmcgui.WindowXML):
             del loadingGui
 
         # Check preconditions
-        if not self.database.hasMovies() and not self.database.hasTVShows():
+        if False:#not self.database.hasMovies() and not self.database.hasTVShows():
             # Must have at least one movie or tvshow
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_REQUIREMENTS_MISSING_LINE1),
                 strings(E_REQUIREMENTS_MISSING_LINE2), strings(E_REQUIREMENTS_MISSING_LINE3))
             self.close()
             return
 
-        if not self.database.isAnyVideosWatched() and ADDON.getSetting(SETT_ONLY_WATCHED_MOVIES) == 'true':
+        if False:#not self.database.isAnyVideosWatched() and ADDON.getSetting(SETT_ONLY_WATCHED_MOVIES) == 'true':
             # Only watched movies requires at least one watched video files
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_ONLY_WATCHED_LINE1),
                 strings(E_ONLY_WATCHED_LINE2), strings(E_ONLY_WATCHED_LINE3))
             ADDON.setSetting(SETT_ONLY_WATCHED_MOVIES, 'false')
 
-        if not self.database.isAnyMPAARatingsAvailable() and ADDON.getSetting(SETT_MOVIE_RATING_LIMIT_ENABLED) == 'true':
+        if False:#not self.database.isAnyMPAARatingsAvailable() and ADDON.getSetting(SETT_MOVIE_RATING_LIMIT_ENABLED) == 'true':
             # MPAA rating requires ratings to be available in database
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_MOVIE_RATING_LIMIT_LINE1),
                 strings(E_MOVIE_RATING_LIMIT_LINE2), strings(E_MOVIE_RATING_LIMIT_LINE3))
             ADDON.setSetting(SETT_MOVIE_RATING_LIMIT_ENABLED, 'false')
 
-        if not self.database.isAnyContentRatingsAvailable() and ADDON.getSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED) == 'true':
+        if False:#not self.database.isAnyContentRatingsAvailable() and ADDON.getSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED) == 'true':
             # Content rating requires ratings to be available in database
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_TVSHOW_RATING_LIMIT_LINE1),
                 strings(E_TVSHOW_RATING_LIMIT_LINE2), strings(E_TVSHOW_RATING_LIMIT_LINE3))
@@ -986,7 +986,7 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
         newHighscoreId = localHighscore.addHighscore(self.game)
         name = localHighscore.getNickname(self.game.getUserId())
 
-        entries = localHighscore.getHighscores(self.game)
+        entries = localHighscore.getHighscoresNear(self.game, newHighscoreId)
         localHighscore.close()
 
         subTypeText = None
@@ -1026,7 +1026,7 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
         else:
             newHighscoreId = -1
 
-        entries = globalHighscore.getHighscores(self.game)
+        entries = globalHighscore.getHighscoresNear(self.game, newHighscoreId)
         self.getControl(self.C_GAMEOVER_GLOBAL_HIGHSCORE_TYPE).setLabel(subTypeText)
         items = list()
         selectedIndex = -1

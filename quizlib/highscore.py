@@ -22,6 +22,8 @@ import simplejson
 import urllib2
 import hashlib
 import os
+import StringIO
+import gzip
 
 import xbmc
 
@@ -36,7 +38,7 @@ class HighscoreDatabase(object):
         """
         raise
 
-    def getHighscoresNear(self, game, highscoreId):
+    def getHighscoresNear(self, game, highscoreId, limit = 50):
         """
         @type game: quizlib.game.Game
         @param game: game instance
@@ -93,8 +95,21 @@ class GlobalHighscoreDatabase(HighscoreDatabase):
         else:
             return []
 
-    def getHighscoresNear(self, game, highscoreId):
-        return self.getHighscores(game)
+    def getHighscoresNear(self, game, highscoreId, limit = 50):
+        req = {
+            'action' : 'highscores-near',
+            'type' : game.getType(),
+            'gameType' : game.getGameType(),
+            'gameSubType' : game.getGameSubType(),
+            'highscoreId' : highscoreId,
+            'limit' : limit
+        }
+
+        resp = self._request(req)
+        if resp['status'] == 'OK':
+            return resp['highscores']
+        else:
+            return []
 
     def getStatistics(self):
         req = {
@@ -114,11 +129,21 @@ class GlobalHighscoreDatabase(HighscoreDatabase):
         req = urllib2.Request(self.SERVICE_URL, jsonData)
         req.add_header('X-MovieQuiz-Checksum', checksum)
         req.add_header('Content-Type', 'text/json')
+        req.add_header('Accept-encoding', 'gzip')
+
+        print jsonData
+        print req.headers
 
         try:
             u = urllib2.urlopen(req)
-            resp = u.read()
+            if u.info().get('Content-Encoding') == 'gzip':
+                buf = StringIO.StringIO(u.read())
+                f = gzip.GzipFile(fileobj=buf)
+                resp = f.read()
+            else:
+                resp = u.read()
             u.close()
+
             return simplejson.loads(resp)
         except urllib2.URLError:
             return {'status' : 'error'}
@@ -166,14 +191,14 @@ class LocalHighscoreDatabase(HighscoreDatabase):
             [game.getType(), game.getGameType(), game.getGameSubType()])
         return c.fetchall()
 
-    def getHighscoresNear(self, game, highscoreId):
+    def getHighscoresNear(self, game, highscoreId, limit = 50):
         c = self.conn.cursor()
         c.execute('SELECT position FROM highscore WHERE id=?', [highscoreId])
         r = c.fetchone()
         position = r['position']
 
         c.execute("SELECT h.*, u.nickname FROM highscore h, user u WHERE h.user_id=u.id AND h.type=? AND h.gameType=? and h.gameSubType=? AND h.position > ? AND h.position < ? ORDER BY h.position",
-            [game.getType(), game.getGameType(), game.getGameSubType(), position - 5, position + 5])
+            [game.getType(), game.getGameType(), game.getGameSubType(), position - (limit / 2), position + (limit / 2)])
         return c.fetchall()
 
     def createUser(self, nickname):

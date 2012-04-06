@@ -698,7 +698,7 @@ class MySQLDatabase(Database):
             db = 'information_schema'
             )
         c = conn.cursor()
-        c.execute('SELECT schema_name FROM schemata WHERE schema_name LIKE "MyVideos%"')
+        c.execute('SELECT schema_name FROM schemata WHERE schema_name LIKE "%s%%"' % settings['name'])
         rows = c.fetchall()
         c.close()
         conn.close()
