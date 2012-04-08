@@ -117,26 +117,26 @@ class MenuGui(xbmcgui.WindowXML):
             del loadingGui
 
         # Check preconditions
-        if False:#not self.database.hasMovies() and not self.database.hasTVShows():
+        if not self.database.hasMovies() and not self.database.hasTVShows():
             # Must have at least one movie or tvshow
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_REQUIREMENTS_MISSING_LINE1),
                 strings(E_REQUIREMENTS_MISSING_LINE2), strings(E_REQUIREMENTS_MISSING_LINE3))
             self.close()
             return
 
-        if False:#not self.database.isAnyVideosWatched() and ADDON.getSetting(SETT_ONLY_WATCHED_MOVIES) == 'true':
+        if not self.database.isAnyVideosWatched() and ADDON.getSetting(SETT_ONLY_WATCHED_MOVIES) == 'true':
             # Only watched movies requires at least one watched video files
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_ONLY_WATCHED_LINE1),
                 strings(E_ONLY_WATCHED_LINE2), strings(E_ONLY_WATCHED_LINE3))
             ADDON.setSetting(SETT_ONLY_WATCHED_MOVIES, 'false')
 
-        if False:#not self.database.isAnyMPAARatingsAvailable() and ADDON.getSetting(SETT_MOVIE_RATING_LIMIT_ENABLED) == 'true':
+        if not self.database.isAnyMPAARatingsAvailable() and ADDON.getSetting(SETT_MOVIE_RATING_LIMIT_ENABLED) == 'true':
             # MPAA rating requires ratings to be available in database
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_MOVIE_RATING_LIMIT_LINE1),
                 strings(E_MOVIE_RATING_LIMIT_LINE2), strings(E_MOVIE_RATING_LIMIT_LINE3))
             ADDON.setSetting(SETT_MOVIE_RATING_LIMIT_ENABLED, 'false')
 
-        if False:#not self.database.isAnyContentRatingsAvailable() and ADDON.getSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED) == 'true':
+        if not self.database.isAnyContentRatingsAvailable() and ADDON.getSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED) == 'true':
             # Content rating requires ratings to be available in database
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_TVSHOW_RATING_LIMIT_LINE1),
                 strings(E_TVSHOW_RATING_LIMIT_LINE2), strings(E_TVSHOW_RATING_LIMIT_LINE3))
@@ -377,6 +377,11 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
 
 
 class AboutDialog(xbmcgui.WindowXMLDialog):
+    C_ABOUT_VISIBILITY_MARKER = 100
+    C_ABOUT_HIGHSCORE_BUTTON = 500
+    C_ABOUT_STATISTICS_BUTTON = 501
+    C_ABOUT_ABOUT_BUTTON = 502
+    C_ABOUT_CHANGELOG_BUTTON = 503
     C_ABOUT_CLOSE_BUTTON = 504
 
     C_ABOUT_GLOBAL_HIGHSCORE_LIST = 1001
@@ -389,6 +394,11 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
     C_ABOUT_STATISTICS_USERS = 2003
     C_ABOUT_ABOUT = 3001
     C_ABOUT_CHANGELOG = 4001
+
+    VISIBLE_HIGHSCORES = 'highscores'
+    VISIBLE_STATISTICS = 'statistics'
+    VISIBLE_ABOUT = 'about'
+    VISIBLE_CHANGELOG = 'changelog'
 
     GAME_TYPES = [
         game.UnlimitedGame(game.GAMETYPE_MOVIE, -1, True),
@@ -420,9 +430,11 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
         self.useGlobal = True
         self.useMovieQuiz = True
         self.gameType = self.GAME_TYPES[0]
+        self.isClosing = False
 
     def close(self):
         self.localHighscore.close()
+        self.isClosing = True
         super(AboutDialog, self).close()
 
     @buggalo.buggalo_try_except()
@@ -447,8 +459,6 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
                 self.typeOptionList.append(strings(M_X_MINUTES, type.getGameSubType()))
             else:
                 self.typeOptionList.append(repr(type))
-
-        self.reloadHighscores()
 
         statistics = self.globalHighscore.getStatistics()
         statisticsLabel = strings(M_STATISTICS, (
@@ -480,7 +490,7 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
             items.append(item)
         listControl.addItems(items)
 
-
+        self.reloadHighscores()
 
     @buggalo.buggalo_try_except()
     def onAction(self, action):
@@ -509,9 +519,20 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
 
     @buggalo.buggalo_try_except()
     def onFocus(self, controlId):
-        pass
+        if controlId == self.C_ABOUT_HIGHSCORE_BUTTON:
+            self.getControl(self.C_ABOUT_VISIBILITY_MARKER).setLabel(self.VISIBLE_HIGHSCORES)
+        elif controlId == self.C_ABOUT_STATISTICS_BUTTON:
+            self.getControl(self.C_ABOUT_VISIBILITY_MARKER).setLabel(self.VISIBLE_STATISTICS)
+        elif controlId == self.C_ABOUT_ABOUT_BUTTON:
+            self.getControl(self.C_ABOUT_VISIBILITY_MARKER).setLabel(self.VISIBLE_ABOUT)
+        elif controlId == self.C_ABOUT_CHANGELOG_BUTTON:
+            self.getControl(self.C_ABOUT_VISIBILITY_MARKER).setLabel(self.VISIBLE_CHANGELOG)
 
     def reloadHighscores(self):
+        threading.Timer(0.1, self.reloadHighscoresInThread).start()
+
+    @buggalo.buggalo_try_except()
+    def reloadHighscoresInThread(self):
         if self.useMovieQuiz:
             self.gameType.setType(game.GAMETYPE_MOVIE)
         else:
@@ -525,7 +546,7 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
         listControl = self.getControl(self.C_ABOUT_GLOBAL_HIGHSCORE_LIST)
         listControl.reset()
         items = list()
-        for entry in entries:
+        for idx, entry in enumerate(entries):
             item = xbmcgui.ListItem(entry['nickname'])
             item.setProperty('position', str(entry['position']))
             item.setProperty('score', str(entry['score']))
@@ -535,6 +556,10 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
             else:
                 item.setProperty('timestamp', entry['timestamp'])
             items.append(item)
+
+            if self.isClosing:
+                return
+
         listControl.addItems(items)
 
 

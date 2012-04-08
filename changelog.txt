@@ -1,4 +1,4 @@
-[B]Version 0.5.1 - 2011-12-xx[/B]
+[B]Version 0.5.1 - 2012-04-xx[/B]
 - Fixed problem with New game where score, etc. were not reset
 - Use script.module.buggalo for error reporting
 - Improve MySQL support for XBMC 11.0

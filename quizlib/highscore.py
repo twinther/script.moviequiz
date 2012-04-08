@@ -131,9 +131,6 @@ class GlobalHighscoreDatabase(HighscoreDatabase):
         req.add_header('Content-Type', 'text/json')
         req.add_header('Accept-encoding', 'gzip')
 
-        print jsonData
-        print req.headers
-
         try:
             u = urllib2.urlopen(req)
             if u.info().get('Content-Encoding') == 'gzip':
