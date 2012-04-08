@@ -959,7 +959,11 @@ class QuizGui(xbmcgui.WindowXML):
 
 
 class GameOverDialog(xbmcgui.WindowXMLDialog):
+    C_GAMEOVER_VISIBILITY_MARKER = 100
+
     C_GAMEOVER_RETRY = 4000
+    C_GAMEOVER_GLOBAL_HIGHSCORE = 4001
+    C_GAMEOVER_HIGHSCORE = 4002
     C_GAMEOVER_MAINMENU = 4003
 
     C_GAMEOVER_GLOBAL_HIGHSCORE_LIST = 8001
@@ -967,6 +971,9 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
 
     C_GAMEOVER_LOCAL_HIGHSCORE_LIST = 9001
     C_GAMEOVER_LOCAL_HIGHSCORE_TYPE = 9002
+
+    VISIBLE_GLOBAL_HIGHSCORE = 'globalHighscore'
+    VISIBLE_LOCAL_HIGHSCORE = 'localHighscore'
 
     def __new__(cls, parentWindow, gameType):
         return super(GameOverDialog, cls).__new__(cls, 'script-moviequiz-gameover.xml', ADDON.getAddonInfo('path'))
@@ -1003,7 +1010,12 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
 
     @buggalo.buggalo_try_except()
     def onFocus(self, controlId):
-        pass
+        if controlId in [self.C_GAMEOVER_RETRY, self.C_GAMEOVER_MAINMENU]:
+            self.getControl(self.C_GAMEOVER_VISIBILITY_MARKER).setLabel('')
+        elif controlId == self.C_GAMEOVER_GLOBAL_HIGHSCORE:
+            self.getControl(self.C_GAMEOVER_VISIBILITY_MARKER).setLabel(self.VISIBLE_GLOBAL_HIGHSCORE)
+        elif controlId == self.C_GAMEOVER_HIGHSCORE:
+            self.getControl(self.C_GAMEOVER_VISIBILITY_MARKER).setLabel(self.VISIBLE_LOCAL_HIGHSCORE)
 
     def _setupHighscores(self):
         # Local highscore

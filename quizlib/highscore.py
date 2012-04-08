@@ -192,7 +192,10 @@ class LocalHighscoreDatabase(HighscoreDatabase):
         c = self.conn.cursor()
         c.execute('SELECT position FROM highscore WHERE id=?', [highscoreId])
         r = c.fetchone()
-        position = r['position']
+        if r:
+            position = r['position']
+        else:
+            position = 1
 
         c.execute("SELECT h.*, u.nickname FROM highscore h, user u WHERE h.user_id=u.id AND h.type=? AND h.gameType=? and h.gameSubType=? AND h.position > ? AND h.position < ? ORDER BY h.position",
             [game.getType(), game.getGameType(), game.getGameSubType(), position - (limit / 2), position + (limit / 2)])
