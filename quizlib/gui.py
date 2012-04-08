@@ -279,6 +279,8 @@ class MenuGui(xbmcgui.WindowXML):
         localHighscore.close()
 
 class GameTypeDialog(xbmcgui.WindowXMLDialog):
+    C_GAMETYPE_VISIBLE_MARKER = 100
+
     C_GAMETYPE_UNLIMITED = 4000
     C_GAMETYPE_TIME_LIMITED = 4001
     C_GAMETYPE_QUESTION_LIMITED = 4002
@@ -292,7 +294,12 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
     C_GAMETYPE_QUESTION_LIMITED_PLAY = 4204
 
     C_GAMETYPE_TIME_LIMIT = 4100
+    C_GAMETYPE_TIME_LIMIT_NEXT = 4101
+    C_GAMETYPE_TIME_LIMIT_PREVIOUS = 4102
+
     C_GAMETYPE_QUESTION_LIMIT = 4200
+    C_GAMETYPE_QUESTION_LIMIT_NEXT = 4201
+    C_GAMETYPE_QUESTION_LIMIT_PREVIOUS = 4202
 
     QUESTION_SUB_TYPES = [
         {'limit' : '5', 'text' : strings(M_X_QUESTIONS, '5')},
@@ -311,6 +318,10 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
         {'limit' : '15', 'text' : strings(M_X_MINUTES, '15')},
         {'limit' : '30', 'text' : strings(M_X_MINUTES, '30')}
     ]
+
+    VISIBLE_UNLIMITED = 'unlimited'
+    VISIBLE_TIME_LIMITED = 'time-limited'
+    VISIBLE_QUESTION_LIMITED = 'question-limited'
 
     def __new__(cls, type, userId):
         return super(GameTypeDialog, cls).__new__(cls, 'script-moviequiz-gametype.xml', ADDON.getAddonInfo('path'))
@@ -364,6 +375,34 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
             timeLimit = int(control.getSelectedItem().getProperty("limit"))
             gameInstance = game.TimeLimitedGame(self.type, self.userId, interactive, timeLimit)
 
+        elif controlId == self.C_GAMETYPE_TIME_LIMIT_NEXT:
+            control = self.getControl(self.C_GAMETYPE_TIME_LIMIT)
+            idx = control.getSelectedPosition() + 1
+            if idx > len(self.TIME_SUB_TYPES) - 1:
+                idx = 0
+            control.selectItem(idx)
+
+        elif controlId == self.C_GAMETYPE_TIME_LIMIT_PREVIOUS:
+            control = self.getControl(self.C_GAMETYPE_TIME_LIMIT)
+            idx = control.getSelectedPosition() - 1
+            if idx < 0:
+                idx = len(self.TIME_SUB_TYPES) - 1
+            control.selectItem(idx)
+
+        elif controlId == self.C_GAMETYPE_QUESTION_LIMIT_NEXT:
+            control = self.getControl(self.C_GAMETYPE_QUESTION_LIMIT)
+            idx = control.getSelectedPosition() + 1
+            if idx > len(self.QUESTION_SUB_TYPES) - 1:
+                idx = 0
+            control.selectItem(idx)
+
+        elif controlId == self.C_GAMETYPE_QUESTION_LIMIT_PREVIOUS:
+            control = self.getControl(self.C_GAMETYPE_QUESTION_LIMIT)
+            idx = control.getSelectedPosition() - 1
+            if idx < 0:
+                idx = len(self.QUESTION_SUB_TYPES) - 1
+            control.selectItem(idx)
+
         if gameInstance is not None:
             self.close()
 
@@ -373,7 +412,12 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
 
     @buggalo.buggalo_try_except()
     def onFocus(self, controlId):
-        pass
+        if controlId == self.C_GAMETYPE_UNLIMITED:
+            self.getControl(self.C_GAMETYPE_VISIBLE_MARKER).setLabel(self.VISIBLE_UNLIMITED)
+        elif controlId == self.C_GAMETYPE_QUESTION_LIMITED:
+            self.getControl(self.C_GAMETYPE_VISIBLE_MARKER).setLabel(self.VISIBLE_QUESTION_LIMITED)
+        elif controlId == self.C_GAMETYPE_TIME_LIMITED:
+            self.getControl(self.C_GAMETYPE_VISIBLE_MARKER).setLabel(self.VISIBLE_TIME_LIMITED)
 
 
 class AboutDialog(xbmcgui.WindowXMLDialog):
