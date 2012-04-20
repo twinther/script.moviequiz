@@ -66,9 +66,11 @@ class Imdb(object):
             f.close()
             xbmc.log("Loaded %d actor names in %d seconds" % (len(self.actorNames), (time.time() - startTime)))
 
-    def downloadFiles(self, progressCallback = None):
-        self._downloadGzipFile(self.QUOTES_URL, self.quotesListPath, progressCallback, self._createQuotesIndex)
-        self._downloadGzipFile(self.ACTORS_URL, self.actorsPath, progressCallback, self._postprocessActorNames)
+    def downloadFiles(self, downloadState):
+        downloadState.idx += 1
+        self._downloadGzipFile(self.QUOTES_URL, self.quotesListPath, downloadState.progress, self._createQuotesIndex)
+        downloadState.idx += 1
+        self._downloadGzipFile(self.ACTORS_URL, self.actorsPath, downloadState.progress, self._postprocessActorNames)
 
 
     def getRandomQuote(self, name, season = None, episode = None, maxLength = None):
@@ -151,7 +153,7 @@ class Imdb(object):
         @param progressCallback: a callback function which is invoked periodically with progress information
         @type progressCallback: method
         """
-        response = urllib2.urlopen(url)
+        response = urllib2.urlopen(url, timeout=30)
         file = open(destination, 'wb')
         decompressor = zlib.decompressobj(16+zlib.MAX_WBITS)
 
@@ -159,7 +161,7 @@ class Imdb(object):
         contentReceived = 0
         contentLength = int(response.info()['Content-Length'])
         while True:
-            chunk = response.read(8192)
+            chunk = response.read(102400)
             if not chunk:
                 break
             contentReceived += len(chunk)
@@ -227,16 +229,32 @@ class Imdb(object):
 if __name__ == '__main__':
     # this script is invoked from addon settings
 
-    def progress(received, size, percentage):
-        line1 = strings(S_RETRIEVED_X_OF_Y_MB) % (received / 1048576, size / 1048576)
-        d.update(percentage, line1)
-        return not d.iscanceled()
+    class DownloadState(object):
+        def __init__(self, count):
+            self.idx = 0
+            self.count = count
+
+        def progress(self, received, size, percentage):
+            line1 = strings(S_FILE_X_OF_Y) % (self.idx, self.count)
+            line2 = strings(S_RETRIEVED_X_OF_Y_MB) % (received / 1048576, size / 1048576)
+            d.update(percentage, line1, line2)
+            return not d.iscanceled()
 
     i = Imdb()
     d = xbmcgui.DialogProgress()
     try:
+        ds = DownloadState(2)
         d.create(strings(S_DOWNLOADING_IMDB_DATA))
-        i.downloadFiles(progress)
-    finally:
+        i.downloadFiles(ds)
+
+        canceled = d.iscanceled()
         d.close()
         del d
+
+        if not canceled:
+            xbmcgui.Dialog().ok(strings(S_DOWNLOADING_IMDB_DATA), strings(S_DOWNLOAD_COMPLETE))
+    except Exception, ex:
+        d.close()
+        del d
+
+        xbmcgui.Dialog().ok(strings(S_DOWNLOADING_IMDB_DATA), str(ex))
