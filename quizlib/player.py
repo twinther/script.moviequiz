@@ -96,7 +96,7 @@ class TenSecondPlayer(xbmc.Player):
         self.startingPlayback = True
 
         if not xbmcvfs.exists(file):
-            xbmc.log(">> TenSecondPlayer - file not found: %s" % file)
+            xbmc.log(">> TenSecondPlayer - file not found: %s" % file.encode('utf-8', 'ignore'))
             return False
 
         self.lastFile = file
@@ -118,7 +118,7 @@ class TenSecondPlayer(xbmc.Player):
         # Get bookmark details, so we can restore after playback
         self.bookmark = self.database.getVideoBookmark(idFile)
 
-        xbmc.log(">> TenSecondPlayer.playWindowed() - about to play file %s" % file)
+        xbmc.log(">> TenSecondPlayer.playWindowed() - about to play file %s" % file.encode('utf-8', 'ignore'))
 
         self.isAudioFile = False
         self.playBackEventReceived = False

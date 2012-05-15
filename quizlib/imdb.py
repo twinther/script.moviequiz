@@ -229,6 +229,10 @@ class Imdb(object):
 if __name__ == '__main__':
     # this script is invoked from addon settings
 
+    # Make sure data dir exists
+    if not os.path.exists(xbmc.translatePath(ADDON.getAddonInfo('profile'))):
+        os.makedirs(xbmc.translatePath(ADDON.getAddonInfo('profile')))
+
     class DownloadState(object):
         def __init__(self, count):
             self.idx = 0

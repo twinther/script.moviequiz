@@ -1,3 +1,6 @@
+[B]Version 0.5.2 - 2012-05-15[/B]
+- Make sure cache folder exists before retrieving IMDB data
+
 [B]Version 0.5.1 - 2012-04-20[/B]
 - Fixed problem with New game where score, etc. were not reset
 - Use script.module.buggalo for error reporting
