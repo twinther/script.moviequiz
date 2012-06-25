@@ -203,7 +203,7 @@ class LocalHighscoreDatabase(HighscoreDatabase):
 
     def createUser(self, nickname):
         c = self.conn.cursor()
-        c.execute("INSERT INTO user(nickname, last_used) VALUES(?, datetime('now'))", [nickname])
+        c.execute("INSERT INTO user(nickname, last_used) VALUES(?, datetime('now'))", [nickname.decode('utf-8', 'ignore')])
         self.conn.commit()
         rowid = c.lastrowid
         c.close()

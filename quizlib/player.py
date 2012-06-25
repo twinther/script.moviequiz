@@ -155,6 +155,9 @@ class TenSecondPlayer(xbmc.Player):
     def _getRandomDvdVob(self, ifoFile):
         xbmc.log(">> TenSecondPlayer._getRandomDvdVob() - ifoFile = %s" % ifoFile)
 
+        if not os.path.exists(ifoFile):
+            return ifoFile
+
         files = []
         path = os.path.dirname(ifoFile)
         for item in os.listdir(path):

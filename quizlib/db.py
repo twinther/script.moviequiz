@@ -20,6 +20,8 @@
 
 from xml.etree import ElementTree
 from xml.parsers.expat import ExpatError
+from xml.etree.ElementTree import ParseError
+
 
 import os
 import xbmc
@@ -93,6 +95,8 @@ class Database(object):
                     settings['pass'] = doc.findtext('videodatabase/pass')
             except ExpatError:
                xbmc.log("Unable to parse advancedsettings.xml")
+            except ParseError:
+                xbmc.log("Unable to parse advancedsettings.xml")
 
         xbmc.log("Loaded DB settings: %s" % settings)
 

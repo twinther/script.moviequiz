@@ -1023,11 +1023,11 @@ def getRandomQuestion(gameInstance, database):
         try:
             return candidate(database)
         except QuestionException, ex:
-            print "QuestionException in %s: %s" % (candidate, ex)
+            print "QuestionException in %s: %s" % (str(candidate).encode('utf-8', 'ignore'), ex)
         except db.DbException, ex:
-            print "DbException in %s: %s" % (candidate, ex)
+            print "DbException in %s: %s" % (str(candidate).encode('utf-8', 'ignore'), ex)
         except Exception, ex:
-            print "Exception in %s: %s" % (candidate, ex)
+            print "Exception in %s: %s" % (str(candidate).encode('utf-8', 'ignore'), ex)
             import traceback, sys
             traceback.print_exc(file = sys.stdout)
 
