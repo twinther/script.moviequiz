@@ -142,6 +142,7 @@ class Database(object):
         c = self.cursor()
         c.execute(sql, parameters)
         result = c.fetchall()
+        c.close()
 
         if result is None:
             raise DbException(sql)
@@ -158,6 +159,7 @@ class Database(object):
         c = self.cursor()
         c.execute(sql, parameters)
         result = c.fetchone()
+        c.close()
 
         if result is None:
             raise DbException(sql)

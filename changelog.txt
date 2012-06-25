@@ -1,5 +1,6 @@
 [B]Version 0.5.4 - 2012-06-xx[/B]
 - Fixed a number of minor errors submitted via the error reporting
+- Cleaned up database cursor handling to hopefully avoid some errors
 
 [B]Version 0.5.3 - 2012-05-29[/B]
 - Actually enable script.module.buggalo for error reporting

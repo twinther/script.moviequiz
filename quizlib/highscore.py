@@ -186,7 +186,9 @@ class LocalHighscoreDatabase(HighscoreDatabase):
         c = self.conn.cursor()
         c.execute('SELECT h.*, u.nickname FROM highscore h, user u WHERE h.user_id=u.id AND h.type=? AND h.gameType=? and h.gameSubType=? ORDER BY h.score DESC, h.timestamp ASC',
             [game.getType(), game.getGameType(), game.getGameSubType()])
-        return c.fetchall()
+        result = c.fetchall()
+        c.close()
+        return result
 
     def getHighscoresNear(self, game, highscoreId, limit = 50):
         c = self.conn.cursor()
@@ -199,7 +201,9 @@ class LocalHighscoreDatabase(HighscoreDatabase):
 
         c.execute("SELECT h.*, u.nickname FROM highscore h, user u WHERE h.user_id=u.id AND h.type=? AND h.gameType=? and h.gameSubType=? AND h.position > ? AND h.position < ? ORDER BY h.position",
             [game.getType(), game.getGameType(), game.getGameSubType(), position - (limit / 2), position + (limit / 2)])
-        return c.fetchall()
+        result = c.fetchall()
+        c.close()
+        return result
 
     def createUser(self, nickname):
         c = self.conn.cursor()
@@ -223,6 +227,7 @@ class LocalHighscoreDatabase(HighscoreDatabase):
         c.execute('DELETE FROM user WHERE id = ?', [id])
         c.execute('DELETE FROM highscore WHERE user_id = ?', [id])
         self.conn.commit()
+        c.close()
 
     def getNickname(self, userId):
         c = self.conn.cursor()
