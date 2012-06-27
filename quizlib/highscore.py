@@ -49,7 +49,7 @@ class HighscoreDatabase(object):
 
 class GlobalHighscoreDatabase(HighscoreDatabase):
     STATUS_OK = 'OK'
-    SERVICE_URL = 'http://moviequiz.xbmc.info/service.json.php'
+    SERVICE_URL = 'http://tommy.winther.nu/moviequiz/service.json.php'
 
     def __init__(self, addonVersion):
         self.addonVersion = addonVersion
@@ -153,7 +153,7 @@ class LocalHighscoreDatabase(HighscoreDatabase):
 
         self.conn = sqlite3.connect(highscoreDbPath, check_same_thread = False)
         self.conn.row_factory = db._sqlite_dict_factory
-        xbmc.log("HighscoreDatabase opened: " + highscoreDbPath)
+        #xbmc.log("HighscoreDatabase opened: " + highscoreDbPath)
 
         self._createTables()
 
@@ -249,7 +249,7 @@ class LocalHighscoreDatabase(HighscoreDatabase):
         except sqlite3.OperationalError:
             version = [0,0,0]
 
-        xbmc.log("Highscore Database version: " + str(version))
+        #xbmc.log("Highscore Database version: " + str(version))
 
         if version < [0,4,1]:
             xbmc.log("Migrating Highscore Database to v0.4.1")
