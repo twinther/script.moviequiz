@@ -713,6 +713,7 @@ class QuizGui(xbmcgui.WindowXML):
         self.question = None
         self.previousQuestions = []
         self.lastClickTime = -1
+        self.delayedNewQuestionTimer = None
 
         self.uiState = self.STATE_LOADING
 
@@ -793,6 +794,9 @@ class QuizGui(xbmcgui.WindowXML):
             return # ignore multiple invocations
         self.uiState = self.STATE_GAME_OVER
 
+        if self.delayedNewQuestionTimer is not None:
+            self.delayedNewQuestionTimer.cancel()
+
         if self.player.isPlaying():
             self.player.stop()
 
@@ -804,11 +808,14 @@ class QuizGui(xbmcgui.WindowXML):
             w.doModal()
             del w
 
+    @buggalo.buggalo_try_except()
     def onNewQuestion(self):
+        print "uiState = " + self.uiState
         if self.gameInstance.isGameOver():
             self.onGameOver()
             return
 
+        self.delayedNewQuestionTimer = None
         self.onStatsChanged()
         self.uiState = self.STATE_LOADING
         self.getControl(self.C_MAIN_LOADING_VISIBILITY).setVisible(True)
@@ -964,9 +971,11 @@ class QuizGui(xbmcgui.WindowXML):
                 # Display non-obfuscated quote text
                 self.getControl(self.C_MAIN_QUOTE_LABEL).setText(self.question.getDisplayType().getQuoteText())
 
-            xbmc.sleep(3000)
+            if self.uiState != self.STATE_GAME_OVER:
+                self.delayedNewQuestionTimer = threading.Timer(3.0, self.onNewQuestion)
+                self.delayedNewQuestionTimer.start()
 
-        if self.uiState != self.STATE_GAME_OVER:
+        else:
             self.onNewQuestion()
 
     def onStatsChanged(self):
