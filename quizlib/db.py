@@ -34,15 +34,17 @@ class Database(object):
     FUNC_RANDOM = None
     PARAM_REPL = None
 
-    def __init__(self, allowedRatings, onlyWatched):
+    def __init__(self):
+        self.conn = None
+        self.isClosed = False
+
+    def setupDefaultClauses(self, allowedRatings, onlyWatched):
         """
         @param allowedRatings: limit movies based on ratings
         @type allowedRatings: list
         @param onlyWatched: only include watches movies or not
         @type onlyWatched: bool
         """
-        self.conn = None
-
         self.defaultMovieViewClause = ''
         self.defaultTVShowViewClause = ''
         if allowedRatings:
@@ -61,13 +63,7 @@ class Database(object):
         self._fixMissingTVShowView()
 
     @staticmethod
-    def connect(allowedRatings = None, onlyWatched = None):
-        """
-        @param allowedRatings: limit movies based on ratings
-        @type allowedRatings: list
-        @param onlyWatched: only include watches movies or not
-        @type onlyWatched: bool
-        """
+    def connect():
         settings = {
             'type' : 'sqlite3',
             'host' : xbmc.translatePath('special://database/'),
@@ -100,9 +96,9 @@ class Database(object):
         xbmc.log("Successfully loaded DB settings")
 
         if settings.has_key('type') and settings['type'] is not None and settings['type'].lower() == 'mysql':
-            return MySQLDatabase(allowedRatings, onlyWatched, settings)
+            return MySQLDatabase(settings)
         else:
-            return SQLiteDatabase(allowedRatings, onlyWatched, settings)
+            return SQLiteDatabase(settings)
 
 
     def _fixMissingTVShowView(self):
@@ -127,6 +123,7 @@ class Database(object):
         c.close()
 
     def close(self):
+        self.isClosed = True
         if hasattr(self, 'conn') and self.conn:
             self.conn.close()
             print "Database closed"
@@ -231,10 +228,12 @@ class Database(object):
         @type idFile: int
         @return: dict with bookmark information
         """
-        try:
-            bookmark = self.fetchone("SELECT idBookmark, timeInSeconds FROM bookmark WHERE idFile = " + self.PARAM_REPL, idFile)
-        except DbException:
-            bookmark = {'idFile' : idFile}
+        bookmark = {'idFile' : idFile}
+        if not self.isClosed:
+            try:
+                bookmark = self.fetchone("SELECT idBookmark, timeInSeconds FROM bookmark WHERE idFile = " + self.PARAM_REPL, idFile)
+            except DbException:
+                pass
 
         return bookmark
 
@@ -245,6 +244,9 @@ class Database(object):
         @param bookmark: The dict as returned by getVideoBookmark(..)
         @type bookmark: dict
         """
+        if self.isClosed:
+            return # ignore
+
         if bookmark.has_key('idFile'):
             try:
                 self.execute("DELETE FROM bookmark WHERE idFile = " + self.PARAM_REPL, bookmark['idFile'])
@@ -628,8 +630,8 @@ class SQLiteDatabase(Database):
     FUNC_RANDOM = "random()"
     PARAM_REPL = '?'
     
-    def __init__(self, maxRating, onlyWatched, settings):
-        super(SQLiteDatabase, self).__init__(maxRating, onlyWatched)
+    def __init__(self, settings):
+        super(SQLiteDatabase, self).__init__()
         found = True
         db_file = None
 
@@ -677,8 +679,8 @@ class MySQLDatabase(Database):
     FUNC_RANDOM = "rand()"
     PARAM_REPL = '%s'
 
-    def __init__(self, maxRating, onlyUsedWatched, settings):
-        super(MySQLDatabase, self).__init__(maxRating, onlyUsedWatched)
+    def __init__(self, settings):
+        super(MySQLDatabase, self).__init__()
         xbmc.log("Connecting to MySQL database...")
         dbName = self._find_newest_database(settings)
 

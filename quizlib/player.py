@@ -20,7 +20,6 @@
 
 import random
 import threading
-import db
 import os
 import re
 
@@ -38,7 +37,7 @@ class TenSecondPlayer(xbmc.Player):
         xbmc.log(">> TenSecondPlayer.__init__()")
         self.tenSecondTimer = None
 
-        self.database = db.Database.connect()
+        self.database = None
         self.bookmark = None
         self.startingPlayback = False
 
@@ -49,11 +48,6 @@ class TenSecondPlayer(xbmc.Player):
 
         self.playBackEventReceived = False
         self.isAudioFile = False
-
-    def close(self):
-        if hasattr(self, 'database') and self.database:
-            self.database.close()
-            print "TenSecondPlayer closed"
 
     def replay(self):
         xbmc.log(">> TenSecondPlayer.replay()")

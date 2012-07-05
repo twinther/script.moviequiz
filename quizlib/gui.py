@@ -122,10 +122,14 @@ class MenuGui(xbmcgui.WindowXML):
         self.trivia = None
         self.database = db.Database.connect()
 
+        self.moviesEnabled = True
+        self.tvShowsEnabled = True
+
         if self.database is None:
             pass
 
     def close(self):
+        print "Closing database"
         self.database.close()
         super(MenuGui, self).close()
 
@@ -162,8 +166,11 @@ class MenuGui(xbmcgui.WindowXML):
                 strings(E_TVSHOW_RATING_LIMIT_LINE2), strings(E_TVSHOW_RATING_LIMIT_LINE3))
             ADDON.setSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED, 'false')
 
-        self.getControl(self.C_MENU_MOVIE_QUIZ).setEnabled(bool(self.database.hasMovies() and question.isAnyMovieQuestionsEnabled()))
-        self.getControl(self.C_MENU_TVSHOW_QUIZ).setEnabled(bool(self.database.hasTVShows() and question.isAnyTVShowQuestionsEnabled()))
+        self.moviesEnabled = bool(self.database.hasMovies() and question.isAnyMovieQuestionsEnabled())
+        self.tvShowsEnabled = bool(self.database.hasTVShows() and question.isAnyTVShowQuestionsEnabled())
+
+        self.getControl(self.C_MENU_MOVIE_QUIZ).setEnabled(self.moviesEnabled)
+        self.getControl(self.C_MENU_TVSHOW_QUIZ).setEnabled(self.tvShowsEnabled)
 
         label = '  *  '.join(self.trivia)
         self.getControl(self.C_MENU_COLLECTION_TRIVIA).setLabel(label)
@@ -222,8 +229,8 @@ class MenuGui(xbmcgui.WindowXML):
             self.getControl(self.C_MENU_MOVIE_QUIZ).setEnabled(False)
             self.getControl(self.C_MENU_TVSHOW_QUIZ).setEnabled(False)
         else:
-            self.getControl(self.C_MENU_MOVIE_QUIZ).setEnabled(True)
-            self.getControl(self.C_MENU_TVSHOW_QUIZ).setEnabled(True)
+            self.getControl(self.C_MENU_MOVIE_QUIZ).setEnabled(self.moviesEnabled)
+            self.getControl(self.C_MENU_TVSHOW_QUIZ).setEnabled(self.tvShowsEnabled)
 
 
     @buggalo.buggalo_try_except()
@@ -239,7 +246,7 @@ class MenuGui(xbmcgui.WindowXML):
             if item is None:
                 xbmcgui.Dialog().ok(strings(CHOOSE_PLAYER), strings(CHOOSE_PLAYER_LINE_1))
                 return
-            w = GameTypeDialog(game.GAMETYPE_MOVIE, item.getProperty('id'))
+            w = GameTypeDialog(game.GAMETYPE_MOVIE, item.getProperty('id'), self.database)
             w.doModal()
             del w
 
@@ -247,7 +254,7 @@ class MenuGui(xbmcgui.WindowXML):
             if item is None:
                 xbmcgui.Dialog().ok(strings(CHOOSE_PLAYER), strings(CHOOSE_PLAYER_LINE_1))
                 return
-            w = GameTypeDialog(game.GAMETYPE_TVSHOW, item.getProperty('id'))
+            w = GameTypeDialog(game.GAMETYPE_TVSHOW, item.getProperty('id'), self.database)
             w.doModal()
             del w
 
@@ -356,13 +363,14 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
     VISIBLE_TIME_LIMITED = 'time-limited'
     VISIBLE_QUESTION_LIMITED = 'question-limited'
 
-    def __new__(cls, type, userId):
+    def __new__(cls, type, userId, database):
         return super(GameTypeDialog, cls).__new__(cls, 'script-moviequiz-gametype.xml', ADDON.getAddonInfo('path'))
 
-    def __init__(self, type, userId):
+    def __init__(self, type, userId, database):
         super(GameTypeDialog, self).__init__()
         self.type = type
         self.userId = userId
+        self.database = database
 
     @buggalo.buggalo_try_except()
     def onInit(self):
@@ -439,7 +447,7 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
         if gameInstance is not None:
             self.close()
 
-            w = QuizGui(gameInstance)
+            w = QuizGui(gameInstance, self.database)
             w.doModal()
             del w
 
@@ -676,18 +684,21 @@ class QuizGui(xbmcgui.WindowXML):
     STATE_PLAYING = 2
     STATE_GAME_OVER = 3
 
-    def __new__(cls, gameInstance):
+    def __new__(cls, gameInstance, database):
         return super(QuizGui, cls).__new__(cls, 'script-moviequiz-main.xml', ADDON.getAddonInfo('path'))
 
-    def __init__(self, gameInstance):
+    def __init__(self, gameInstance, database):
         """
         @param gameInstance: the Game instance
         @type gameInstance: Game
+        @param database: Database connection
+        @type database: db.Database
         """
         super(QuizGui, self).__init__()
 
         self.gameInstance = gameInstance
-        xbmc.log("Starting game: %s" + str(self.gameInstance))
+        self.database = database
+        xbmc.log("Starting game: %s" % str(self.gameInstance))
 
         if self.gameInstance.getType() == game.GAMETYPE_TVSHOW:
             self.defaultBackground = BACKGROUND_TV
@@ -705,8 +716,9 @@ class QuizGui(xbmcgui.WindowXML):
 
         onlyUsedWatched = ADDON.getSetting(SETT_ONLY_WATCHED_MOVIES) == 'true'
 
-        self.database = db.Database.connect(ratings, onlyUsedWatched)
+        self.database.setupDefaultClauses(ratings, onlyUsedWatched)
         self.player = player.TenSecondPlayer()
+        self.player.database = self.database
 
         self.questionPointsThread = None
         self.questionPoints = 0
@@ -740,12 +752,12 @@ class QuizGui(xbmcgui.WindowXML):
         if self.player:
             if self.player.isPlaying():
                 self.player.stop()
-            self.player.close()
-        self.database.close()
         super(QuizGui, self).close()
 
     @buggalo.buggalo_try_except()
     def onAction(self, action):
+        buggalo.addExtraData('action', str(action))
+        buggalo.addExtraData('action.id', str(action))
         if action.getId() == ACTION_PARENT_DIR or action.getId() == ACTION_PREVIOUS_MENU:
             self.onGameOver()
 
@@ -810,7 +822,6 @@ class QuizGui(xbmcgui.WindowXML):
 
     @buggalo.buggalo_try_except()
     def onNewQuestion(self):
-        print "uiState = " + self.uiState
         if self.gameInstance.isGameOver():
             self.onGameOver()
             return
