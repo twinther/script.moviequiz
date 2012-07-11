@@ -56,12 +56,14 @@ class TenSecondPlayer(xbmc.Player):
             self.playWindowed(self.lastFile, self.lastIdFile)
             self.replaying = False
 
-    def stop(self):
+    def stopPlayback(self, force = False):
         """
         Cancels the Timer in case it's active and stars a new Timer for a delayed stop.
         This method doesn't actually stop playback, this is handled by _delayedStop().
         """
         xbmc.log(">> TenSecondPlayer.stop()")
+        if force:
+            self.startingPlayback = False
         # call xbmc.Player.stop() in a seperate thread to attempt to avoid xbmc lockups/crashes
         threading.Timer(0.5, self._delayedStop).start()
         if self.tenSecondTimer is not None:

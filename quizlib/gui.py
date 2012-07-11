@@ -758,7 +758,7 @@ class QuizGui(xbmcgui.WindowXML):
     def close(self):
         if self.player:
             if self.player.isPlaying():
-                self.player.stop()
+                self.player.stopPlayback(True)
         super(QuizGui, self).close()
 
     @buggalo.buggalo_try_except()
@@ -817,7 +817,7 @@ class QuizGui(xbmcgui.WindowXML):
             self.delayedNewQuestionTimer.cancel()
 
         if self.player.isPlaying():
-            self.player.stop()
+            self.player.stopPlayback(True)
 
         if self.questionPointsThread is not None:
            self.questionPointsThread.cancel()
