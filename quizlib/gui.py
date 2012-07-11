@@ -272,7 +272,7 @@ class MenuGui(xbmcgui.WindowXML):
                 self.onUpdateUserSelectList()
 
             else:
-                deleteUser = xbmcgui.Dialog().yesno(strings(E_DELETE_USER, str(item.getLabel())),
+                deleteUser = xbmcgui.Dialog().yesno(strings(E_DELETE_USER, item.getLabel().decode('utf-8')),
                                                     strings(E_DELETE_USER_LINE1), strings(E_DELETE_USER_LINE2))
                 if deleteUser:
                     localHighscore = highscore.LocalHighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
@@ -918,10 +918,10 @@ class QuizGui(xbmcgui.WindowXML):
     @buggalo.buggalo_try_except()
     def onQuestionPointTimer(self):
         """
-        onQuestionPointTimer handles the decreasing amount of points awareded to the user when a question is answered correctly.
+        onQuestionPointTimer handles the decreasing amount of points awarded to the user when a question is answered correctly.
 
         The points start a 100 and is decreasing exponentially slower to make it more difficult to get a higher score.
-        When the points reach 10 the decreasing ends, making 10 the lowes score you can get.
+        When the points reach 10 the decreasing ends, making 10 the lowest score you can get.
 
         Before the timer starts the user gets a three second head start - this is to actually make it possible to get a perfect 100 score.
         """

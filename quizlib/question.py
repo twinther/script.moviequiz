@@ -136,7 +136,7 @@ class VideoDisplayType(DisplayType):
             self.videoFile = os.path.join(path, filename)
 
         if not xbmcvfs.exists(self.videoFile):
-            raise QuestionException('Video file not found: %s' % self.videoFile)
+            raise QuestionException('Video file not found: %s' % self.videoFile.encode('utf-8', 'ignore'))
 
     def getVideoFile(self):
         return self.videoFile
@@ -1023,6 +1023,8 @@ def getRandomQuestion(gameInstance, database):
     for candidate in questionCandidates:
         try:
             return candidate(database)
+        except QuestionException, ex:
+            print "QuestionException: %s" % str(ex)
         except Exception, ex:
             xbmc.log("%s in %s" % (ex.__class__.__name__, candidate.__name__))
             import traceback, sys
