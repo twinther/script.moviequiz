@@ -120,21 +120,28 @@ class MenuGui(xbmcgui.WindowXML):
     def __init__(self):
         super(MenuGui, self).__init__()
         self.trivia = None
-        self.database = db.Database.connect()
+        try:
+            self.database = db.Database.connect()
+            self.databaseError = None
+        except db.DbException, ex:
+            self.databaseError = ex
 
         self.moviesEnabled = True
         self.tvShowsEnabled = True
 
-        if self.database is None:
-            pass
-
     def close(self):
-        print "Closing database"
-        self.database.close()
+        if hasattr(self, 'database') and self.database is not None:
+            print "Closing database"
+            self.database.close()
         super(MenuGui, self).close()
 
     @buggalo.buggalo_try_except()
     def onInit(self):
+        if self.databaseError is not None:
+            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_DATABASE_ERROR_LINE1), strings(E_DATABASE_ERROR_LINE2), str(self.databaseError))
+            self.close()
+            return
+
         if not self.trivia:
             loadingGui = LoadingGui(self)
             loadingGui.doModal()

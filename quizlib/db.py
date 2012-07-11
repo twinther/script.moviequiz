@@ -88,10 +88,8 @@ class Database(object):
                     settings['user'] = doc.findtext('videodatabase/user')
                 if doc.findtext('videodatabase/pass') is not None:
                     settings['pass'] = doc.findtext('videodatabase/pass')
-            except ExpatError:
-               xbmc.log("Unable to parse advancedsettings.xml")
-            except SyntaxError:
-                xbmc.log("Unable to parse advancedsettings.xml")
+            except (ExpatError, SyntaxError):
+                raise DbException("Unable to parse advancedsettings.xml")
 
         xbmc.log("Successfully loaded DB settings")
 
@@ -631,34 +629,35 @@ class SQLiteDatabase(Database):
     PARAM_REPL = '?'
     
     def __init__(self, settings):
-        super(SQLiteDatabase, self).__init__()
-        found = True
-        db_file = None
+        try:
+            super(SQLiteDatabase, self).__init__()
+            found = True
+            db_file = None
 
-        # Find newest MyVideos.db and use that
-        candidates = glob.glob(settings['host'] + '/MyVideos*.db')
-        candidates = natural_sorted(candidates)
-        list.reverse(candidates)
-        if settings.has_key('name') and settings['name'] is not None:
-            candidates.insert(0, settings['name'] + '.db') # defined in settings
+            # Find newest MyVideos.db and use that
+            candidates = glob.glob(settings['host'] + '/MyVideos*.db')
+            candidates = natural_sorted(candidates)
+            list.reverse(candidates)
+            if settings.has_key('name') and settings['name'] is not None:
+                candidates.insert(0, settings['name'] + '.db') # defined in settings
 
-        for candidate in candidates:
-            db_file = os.path.join(settings['host'], candidate)
-            if os.path.exists(db_file):
-                found = True
-                break
+            for candidate in candidates:
+                db_file = os.path.join(settings['host'], candidate)
+                if os.path.exists(db_file):
+                    found = True
+                    break
 
-        if not found:
-            xbmc.log("Unable to find any known SQLiteDatabase files!")
-            return
+            if not found:
+                raise DbException("Unable to find any known SQLiteDatabase files!")
 
-        #xbmc.log("Connecting to SQLite database file: %s" % db_file)
-        self.conn = sqlite3.connect(db_file, check_same_thread = False)
-        self.conn.row_factory = _sqlite_dict_factory
-        xbmc.log("SQLiteDatabase opened")
+            #xbmc.log("Connecting to SQLite database file: %s" % db_file)
+            self.conn = sqlite3.connect(db_file, check_same_thread = False)
+            self.conn.row_factory = _sqlite_dict_factory
+            xbmc.log("SQLiteDatabase opened")
 
-        super(SQLiteDatabase, self).postInit()
-
+            super(SQLiteDatabase, self).postInit()
+        except Exception, ex:
+            raise DbException(ex)
 
 def _sqlite_dict_factory(cursor, row):
     d = {}
@@ -680,19 +679,22 @@ class MySQLDatabase(Database):
     PARAM_REPL = '%s'
 
     def __init__(self, settings):
-        super(MySQLDatabase, self).__init__()
-        xbmc.log("Connecting to MySQL database...")
-        dbName = self._find_newest_database(settings)
+        try:
+            super(MySQLDatabase, self).__init__()
+            xbmc.log("Connecting to MySQL database...")
+            dbName = self._find_newest_database(settings)
 
-        self.conn = mysql.connector.connect(
-            host = settings['host'],
-            user = settings['user'],
-            passwd = settings['pass'],
-            db = str(dbName)
-            )
+            self.conn = mysql.connector.connect(
+                host = settings['host'],
+                user = settings['user'],
+                passwd = settings['pass'],
+                db = str(dbName)
+                )
 
-        #xbmc.log("MySQLDatabase %s opened" % dbName)
-        super(MySQLDatabase, self).postInit()
+            #xbmc.log("MySQLDatabase %s opened" % dbName)
+            super(MySQLDatabase, self).postInit()
+        except Exception, ex:
+            raise DbException(ex)
 
     def cursor(self):
         return self.conn.cursor(cursor_class = MySQLCursorDict)

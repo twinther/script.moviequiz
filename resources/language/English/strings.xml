@@ -49,6 +49,9 @@
     <string id="30068">[I]Limit TV show selection based on Content rating[/I]</string>
     <string id="30069">setting will be disabled.</string>
 
+    <string id="30070">There was a problem accessing the XBMC database.</string>
+    <string id="30071">The error message is:</string>
+
     <!-- Menu -->
     <string id="30100">Play Movie Quiz</string>
     <string id="30101">Play TV Quiz</string>

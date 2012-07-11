@@ -49,6 +49,9 @@
     <string id="30068">[I]Begræns udvalget af TV-serier baseret på Content rating[/I]</string>
     <string id="30069">indstillingen er slået fra.</string>
 
+    <string id="30070">Det var ikke muligt at tilgå XBMC's database.</string>
+    <string id="30071">Fejlbeskeden er:</string>
+
     <!-- Menu -->
     <string id="30100">Spil Film Quiz</string>
     <string id="30101">Spil TV Quiz</string>
