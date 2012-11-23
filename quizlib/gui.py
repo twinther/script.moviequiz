@@ -30,8 +30,8 @@ import datetime
 import game
 import question
 import player
-import db
 import highscore
+import library
 
 import buggalo
 
@@ -120,61 +120,48 @@ class MenuGui(xbmcgui.WindowXML):
     def __init__(self):
         super(MenuGui, self).__init__()
         self.trivia = None
-        try:
-            self.database = db.Database.connect()
-            self.databaseError = None
-        except db.DbException, ex:
-            self.databaseError = ex
 
         self.moviesEnabled = True
         self.tvShowsEnabled = True
 
-    def close(self):
-        if hasattr(self, 'database') and self.database is not None:
-            print "Closing database"
-            self.database.close()
-        super(MenuGui, self).close()
-
     @buggalo.buggalo_try_except()
     def onInit(self):
-        if self.databaseError is not None:
-            xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_DATABASE_ERROR_LINE1), strings(E_DATABASE_ERROR_LINE2), str(self.databaseError))
-            self.close()
-            return
-
         if not self.trivia:
             loadingGui = LoadingGui(self)
             loadingGui.doModal()
             del loadingGui
 
         # Check preconditions
-        if not self.database.hasMovies() and not self.database.hasTVShows():
+        hasMovies = library.hasMovies()
+        hasTVShows = library.hasTVShows()
+
+        if not hasMovies and not hasTVShows:
             # Must have at least one movie or tvshow
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_REQUIREMENTS_MISSING_LINE1),
                 strings(E_REQUIREMENTS_MISSING_LINE2), strings(E_REQUIREMENTS_MISSING_LINE3))
             self.close()
             return
 
-        if not self.database.isAnyVideosWatched() and ADDON.getSetting(SETT_ONLY_WATCHED_MOVIES) == 'true':
+        if not library.isAnyVideosWatched() and ADDON.getSetting(SETT_ONLY_WATCHED_MOVIES) == 'true':
             # Only watched movies requires at least one watched video files
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_ONLY_WATCHED_LINE1),
                 strings(E_ONLY_WATCHED_LINE2), strings(E_ONLY_WATCHED_LINE3))
             ADDON.setSetting(SETT_ONLY_WATCHED_MOVIES, 'false')
 
-        if not self.database.isAnyMPAARatingsAvailable() and ADDON.getSetting(SETT_MOVIE_RATING_LIMIT_ENABLED) == 'true':
+        if not library.isAnyMPAARatingsAvailable() and ADDON.getSetting(SETT_MOVIE_RATING_LIMIT_ENABLED) == 'true':
             # MPAA rating requires ratings to be available in database
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_MOVIE_RATING_LIMIT_LINE1),
                 strings(E_MOVIE_RATING_LIMIT_LINE2), strings(E_MOVIE_RATING_LIMIT_LINE3))
             ADDON.setSetting(SETT_MOVIE_RATING_LIMIT_ENABLED, 'false')
 
-        if not self.database.isAnyContentRatingsAvailable() and ADDON.getSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED) == 'true':
+        if not library.isAnyContentRatingsAvailable() and ADDON.getSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED) == 'true':
             # Content rating requires ratings to be available in database
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_TVSHOW_RATING_LIMIT_LINE1),
                 strings(E_TVSHOW_RATING_LIMIT_LINE2), strings(E_TVSHOW_RATING_LIMIT_LINE3))
             ADDON.setSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED, 'false')
 
-        self.moviesEnabled = bool(self.database.hasMovies() and question.isAnyMovieQuestionsEnabled())
-        self.tvShowsEnabled = bool(self.database.hasTVShows() and question.isAnyTVShowQuestionsEnabled())
+        self.moviesEnabled = bool(hasMovies and question.isAnyMovieQuestionsEnabled())
+        self.tvShowsEnabled = bool(hasTVShows and question.isAnyTVShowQuestionsEnabled())
 
         self.getControl(self.C_MENU_MOVIE_QUIZ).setEnabled(self.moviesEnabled)
         self.getControl(self.C_MENU_TVSHOW_QUIZ).setEnabled(self.tvShowsEnabled)
@@ -194,36 +181,22 @@ class MenuGui(xbmcgui.WindowXML):
         self.trivia = ['Movie Quiz v.' + ADDON.getAddonInfo('version'),
                        strings(M_DEVELOPED_BY), strings(M_TRANSLATED_BY)]
 
-        if self.database.hasMovies():
-            movies = self.database.fetchone('SELECT COUNT(*) AS count, (SUM(c11) / 60) AS total_hours FROM movie')
-            actors = self.database.fetchone('SELECT COUNT(DISTINCT idActor) AS count FROM actorlinkmovie')
-            directors = self.database.fetchone('SELECT COUNT(DISTINCT idDirector) AS count FROM directorlinkmovie')
-            studios = self.database.fetchone('SELECT COUNT(idStudio) AS count FROM studio')
-
+        if library.hasMovies():
             self.trivia.append(strings(M_MOVIE_COLLECTION_TRIVIA))
-            if movies is not None:
-                self.trivia.append(strings(M_MOVIE_COUNT) % movies['count'])
-            if actors is not None:
-                self.trivia.append(strings(M_ACTOR_COUNT) % actors['count'])
-            if directors is not None:
-                self.trivia.append(strings(M_DIRECTOR_COUNT) % directors['count'])
-            if studios is not None:
-                self.trivia.append(strings(M_STUDIO_COUNT) % studios['count'])
-            if movies is not None:
-                self.trivia.append(strings(M_HOURS_OF_ENTERTAINMENT) % int(movies['total_hours']))
+            self.trivia.append(strings(M_MOVIE_COUNT) % library.getMovieCount())
 
-        if self.database.hasTVShows():
-            shows = self.database.fetchone('SELECT COUNT(*) AS count FROM tvshow')
-            seasons = self.database.fetchone('SELECT SUM(season_count) AS count FROM (SELECT idShow, COUNT(DISTINCT c12) AS season_count from episodeview GROUP BY idShow) AS tbl')
-            episodes = self.database.fetchone('SELECT COUNT(*) AS count FROM episode')
+#            self.trivia.append(strings(M_ACTOR_COUNT) % actors['count'])
+#            self.trivia.append(strings(M_DIRECTOR_COUNT) % directors['count'])
+#            self.trivia.append(strings(M_STUDIO_COUNT) % studios['count'])
 
+#            self.trivia.append(strings(M_HOURS_OF_ENTERTAINMENT) % int(movies['total_hours']))
+
+        if library.hasTVShows():
             self.trivia.append(strings(M_TVSHOW_COLLECTION_TRIVIA))
-            if shows is not None:
-                self.trivia.append(strings(M_TVSHOW_COUNT) % shows['count'])
-            if seasons is not None:
-                self.trivia.append(strings(M_SEASON_COUNT) % seasons['count'])
-            if episodes is not None:
-                self.trivia.append(strings(M_EPISODE_COUNT) % episodes['count'])
+            self.trivia.append(strings(M_TVSHOW_COUNT) % library.getTVShowsCount())
+#            self.trivia.append(strings(M_SEASON_COUNT) % self.library.getSeasonsCount())
+            self.trivia.append(strings(M_EPISODE_COUNT) % library.getEpisodesCount())
+
 
     @buggalo.buggalo_try_except()
     def onAction(self, action):
@@ -253,7 +226,7 @@ class MenuGui(xbmcgui.WindowXML):
             if item is None:
                 xbmcgui.Dialog().ok(strings(CHOOSE_PLAYER), strings(CHOOSE_PLAYER_LINE_1))
                 return
-            w = GameTypeDialog(game.GAMETYPE_MOVIE, item.getProperty('id'), self.database)
+            w = GameTypeDialog(game.GAMETYPE_MOVIE, item.getProperty('id'))
             w.doModal()
             del w
 
@@ -261,7 +234,7 @@ class MenuGui(xbmcgui.WindowXML):
             if item is None:
                 xbmcgui.Dialog().ok(strings(CHOOSE_PLAYER), strings(CHOOSE_PLAYER_LINE_1))
                 return
-            w = GameTypeDialog(game.GAMETYPE_TVSHOW, item.getProperty('id'), self.database)
+            w = GameTypeDialog(game.GAMETYPE_TVSHOW, item.getProperty('id'))
             w.doModal()
             del w
 
@@ -370,14 +343,13 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
     VISIBLE_TIME_LIMITED = 'time-limited'
     VISIBLE_QUESTION_LIMITED = 'question-limited'
 
-    def __new__(cls, type, userId, database):
+    def __new__(cls, type, userId):
         return super(GameTypeDialog, cls).__new__(cls, 'script-moviequiz-gametype.xml', ADDON.getAddonInfo('path'))
 
-    def __init__(self, type, userId, database):
+    def __init__(self, type, userId):
         super(GameTypeDialog, self).__init__()
         self.type = type
         self.userId = userId
-        self.database = database
 
     @buggalo.buggalo_try_except()
     def onInit(self):
@@ -454,7 +426,7 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
         if gameInstance is not None:
             self.close()
 
-            w = QuizGui(gameInstance, self.database)
+            w = QuizGui(gameInstance)
             w.doModal()
             del w
 
@@ -691,20 +663,17 @@ class QuizGui(xbmcgui.WindowXML):
     STATE_PLAYING = 2
     STATE_GAME_OVER = 3
 
-    def __new__(cls, gameInstance, database):
+    def __new__(cls, gameInstance):
         return super(QuizGui, cls).__new__(cls, 'script-moviequiz-main.xml', ADDON.getAddonInfo('path'))
 
-    def __init__(self, gameInstance, database):
+    def __init__(self, gameInstance):
         """
         @param gameInstance: the Game instance
         @type gameInstance: Game
-        @param database: Database connection
-        @type database: db.Database
         """
         super(QuizGui, self).__init__()
 
         self.gameInstance = gameInstance
-        self.database = database
         xbmc.log("Starting game: %s" % str(self.gameInstance))
 
         if self.gameInstance.getType() == game.GAMETYPE_TVSHOW:
@@ -723,9 +692,9 @@ class QuizGui(xbmcgui.WindowXML):
 
         onlyUsedWatched = ADDON.getSetting(SETT_ONLY_WATCHED_MOVIES) == 'true'
 
-        self.database.setupDefaultClauses(ratings, onlyUsedWatched)
+        # TODO self.database.setupDefaultClauses(ratings, onlyUsedWatched)
         self.player = player.TenSecondPlayer()
-        self.player.database = self.database
+        # TODO self.player.database = self.database
 
         self.questionPointsThread = None
         self.questionPoints = 0
@@ -859,7 +828,7 @@ class QuizGui(xbmcgui.WindowXML):
 
         self.onThumbChanged()
 
-        if self.question.getFanartFile() is not None and os.path.exists(self.question.getFanartFile()):
+        if self.question.getFanartFile() is not None:
             self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(self.question.getFanartFile())
         else:
             self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(self.defaultBackground)
@@ -904,6 +873,7 @@ class QuizGui(xbmcgui.WindowXML):
         self.onQuestionPointTimer()
 
     def _getNewQuestion(self):
+        # TODO load availble question types just once
         retries = 0
         q = None
         while retries < 100 and self.uiState == self.STATE_LOADING:
@@ -912,7 +882,7 @@ class QuizGui(xbmcgui.WindowXML):
 
             self.getControl(self.C_MAIN_LOADING).setPercent(retries)
 
-            q = question.getRandomQuestion(self.gameInstance, self.database)
+            q = question.getRandomQuestion(self.gameInstance)
             if q is None:
                 continue
             
@@ -1012,7 +982,7 @@ class QuizGui(xbmcgui.WindowXML):
         if self.C_MAIN_FIRST_ANSWER <= controlId <= self.C_MAIN_LAST_ANSWER:
             answer = self.question.getAnswer(controlId - self.C_MAIN_FIRST_ANSWER)
             coverImage = self.getControl(self.C_MAIN_COVER_IMAGE)
-            if answer is not None and answer.coverFile is not None and os.path.exists(answer.coverFile):
+            if answer is not None and answer.coverFile is not None:
                 self.getControl(self.C_MAIN_COVER_IMAGE_VISIBILITY).setVisible(False)
                 coverImage.setImage(answer.coverFile)
             elif answer is not None and answer.coverFile is not None :

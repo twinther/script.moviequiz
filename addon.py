@@ -24,15 +24,17 @@ import xbmcaddon
 import buggalo
 from quizlib.gui import MenuGui
 
-buggalo.SUBMIT_URL = 'http://tommy.winther.nu/exception/submit.php'
-try:
-    # Make sure data dir exists
-    ADDON = xbmcaddon.Addon()
-    if not os.path.exists(xbmc.translatePath(ADDON.getAddonInfo('profile'))):
-        os.makedirs(xbmc.translatePath(ADDON.getAddonInfo('profile')))
 
-    w = MenuGui()
-    w.doModal()
-    del w
-except Exception:
-    buggalo.onExceptionRaised()
+if True:
+    buggalo.SUBMIT_URL = 'http://tommy.winther.nu/exception/submit.php'
+    try:
+        # Make sure data dir exists
+        ADDON = xbmcaddon.Addon()
+        if not os.path.exists(xbmc.translatePath(ADDON.getAddonInfo('profile'))):
+            os.makedirs(xbmc.translatePath(ADDON.getAddonInfo('profile')))
+
+        w = MenuGui()
+        w.doModal()
+        del w
+    except Exception:
+        buggalo.onExceptionRaised()

@@ -112,7 +112,7 @@ class TenSecondPlayer(xbmc.Player):
             #todo file = self._getRandomDvdVob(file)
 
         # Get bookmark details, so we can restore after playback
-        self.bookmark = self.database.getVideoBookmark(idFile)
+        # TODO self.bookmark = self.database.getVideoBookmark(idFile)
 
         #xbmc.log(">> TenSecondPlayer.playWindowed() - about to play file %s" % file.encode('utf-8', 'ignore'))
 
