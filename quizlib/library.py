@@ -1,4 +1,22 @@
-__author__ = 'tommy'
+#
+#      Copyright (C) 2012 Tommy Winther
+#      http://tommy.winther.nu
+#
+#  This Program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2, or (at your option)
+#  any later version.
+#
+#  This Program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this Program; see the file LICENSE.txt.  If not, write to
+#  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+#  http://www.gnu.org/copyleft/gpl.html
+#
 
 import xbmc
 import json
@@ -60,7 +78,23 @@ def isAnyContentRatingsAvailable():
     return len(query.asList('tvshows')) > 0
 
 
+def buildRatingsFilters(field, ratings):
+    filters = list()
+    for rating in ratings:
+        filters.append({
+            'operator' : 'isnot',
+            'field' : field,
+            'value' : rating
+        })
+    return filters
 
+def buildOnlyWathcedFilter():
+    return [{
+                'operator' : 'greaterthan',
+                'field' : 'playcount',
+                'value' : '0'
+
+            }]
 
 
 class Query(object):
@@ -84,11 +118,15 @@ class Query(object):
 
         command = json.dumps(self.query)
         resp = xbmc.executeJSONRPC(command)
-        print resp
+        #print resp
         return json.loads(resp)
 
     def asList(self, key = 'movies'):
-        return self.getResponse()['result'][key]
+        response = self.getResponse()
+        if response['result'].has_key(key):
+            return self.getResponse()['result'][key]
+        else:
+            return list()
 
     def asItem(self, key = 'movies'):
         list = self.asList(key)
@@ -96,6 +134,10 @@ class Query(object):
             return list[0]
         else:
             return None
+
+    def withFilters(self, filters):
+        self.filters.extend(iter(filters))
+        return self
 
     def inSet(self, set):
         self.filters.append({
@@ -114,11 +156,12 @@ class Query(object):
         return self
 
     def excludeTitles(self, titles):
-        self.filters.append({
-            'operator' : 'doesnotcontain',
-            'field' : 'title',
-            'value' : titles
-        })
+        for title in titles:
+            self.filters.append({
+                'operator' : 'doesnotcontain',
+                'field' : 'title',
+                'value' : title
+            })
         return self
 
     def withActor(self, actor):

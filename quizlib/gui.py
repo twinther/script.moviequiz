@@ -17,6 +17,7 @@
 #  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #  http://www.gnu.org/copyleft/gpl.html
 #
+import random
 
 import threading
 import os
@@ -681,20 +682,20 @@ class QuizGui(xbmcgui.WindowXML):
         else:
             self.defaultBackground = BACKGROUND_MOVIE
 
-        ratings = None
+        self.defaultLibraryFilters = list()
         if gameInstance.getType() == game.GAMETYPE_MOVIE and ADDON.getSetting('movie.rating.limit.enabled') == 'true':
             idx = MPAA_RATINGS.index(ADDON.getSetting('movie.rating.limit'))
-            ratings = MPAA_RATINGS[idx:]
+            self.defaultLibraryFilters.extend(iter(library.buildRatingsFilters('mpaarating', MPAA_RATINGS[:idx])))
 
         elif gameInstance.getType() == game.GAMETYPE_TVSHOW and ADDON.getSetting('tvshow.rating.limit.enabled') == 'true':
             idx = CONTENT_RATINGS.index(ADDON.getSetting('tvshow.rating.limit'))
-            ratings = CONTENT_RATINGS[idx:]
+            self.defaultLibraryFilters.extend(iter(library.buildRatingsFilters('rating', CONTENT_RATINGS[:idx])))
 
-        onlyUsedWatched = ADDON.getSetting(SETT_ONLY_WATCHED_MOVIES) == 'true'
+        if ADDON.getSetting(SETT_ONLY_WATCHED_MOVIES) == 'true':
+            self.defaultLibraryFilters.extend(library.buildOnlyWathcedFilter())
 
-        # TODO self.database.setupDefaultClauses(ratings, onlyUsedWatched)
         self.player = player.TenSecondPlayer()
-        # TODO self.player.database = self.database
+        self.questionCandidates = question.getEnabledQuestionCandidates(self.gameInstance)
 
         self.questionPointsThread = None
         self.questionPoints = 0
@@ -838,7 +839,7 @@ class QuizGui(xbmcgui.WindowXML):
         if isinstance(displayType, question.VideoDisplayType):
             self.getControl(self.C_MAIN_VIDEO_FILE_NOT_FOUND).setVisible(False)
             xbmc.sleep(1500) # give skin animation time to execute
-            if not self.player.playWindowed(displayType.getVideoFile(), correctAnswer.idFile):
+            if not self.player.playWindowed(displayType.getVideoFile(), displayType.getResumePoint()):
                 self.getControl(self.C_MAIN_VIDEO_FILE_NOT_FOUND).setVisible(True)
 
         elif isinstance(displayType, question.PhotoDisplayType):
@@ -873,7 +874,6 @@ class QuizGui(xbmcgui.WindowXML):
         self.onQuestionPointTimer()
 
     def _getNewQuestion(self):
-        # TODO load availble question types just once
         retries = 0
         q = None
         while retries < 100 and self.uiState == self.STATE_LOADING:
@@ -882,8 +882,19 @@ class QuizGui(xbmcgui.WindowXML):
 
             self.getControl(self.C_MAIN_LOADING).setPercent(retries)
 
-            q = question.getRandomQuestion(self.gameInstance)
-            if q is None:
+            random.shuffle(self.questionCandidates)
+            for candidate in self.questionCandidates:
+                try:
+                    q = candidate(self.defaultLibraryFilters)
+                    break
+                except question.QuestionException, ex:
+                    print "QuestionException: %s" % str(ex)
+                except Exception, ex:
+                    xbmc.log("%s in %s" % (ex.__class__.__name__, candidate.__name__))
+                    import traceback, sys
+                    traceback.print_exc(file = sys.stdout)
+
+            if q is None or len(q.getAnswers()) < 3:
                 continue
             
             if not q.getUniqueIdentifier() in self.previousQuestions:
@@ -943,7 +954,7 @@ class QuizGui(xbmcgui.WindowXML):
             self.getControl(self.C_MAIN_INCORRECT_VISIBILITY).setVisible(False)
 
         if self.player.isPlaying():
-            self.player.stop()
+            self.player.stopPlayback()
 
         threading.Timer(0.5, self.onQuestionAnswerFeedbackTimer).start()
         if ADDON.getSetting('show.correct.answer') == 'true' and not answer.correct:

@@ -37,13 +37,10 @@ class TenSecondPlayer(xbmc.Player):
         xbmc.log(">> TenSecondPlayer.__init__()")
         self.tenSecondTimer = None
 
-        self.database = None
-        self.bookmark = None
         self.startingPlayback = False
 
-        self.replaying = False
         self.lastFile = None
-        self.lastIdFile = None
+        self.lastResumePoint = None
         self.lastStartTime = None
 
         self.playBackEventReceived = False
@@ -52,9 +49,7 @@ class TenSecondPlayer(xbmc.Player):
     def replay(self):
         xbmc.log(">> TenSecondPlayer.replay()")
         if self.lastFile is not None:
-            self.replaying = True
-            self.playWindowed(self.lastFile, self.lastIdFile)
-            self.replaying = False
+            self.playWindowed(self.lastFile, self.lastResumePoint, replay = True)
 
     def stopPlayback(self, force = False):
         """
@@ -76,17 +71,21 @@ class TenSecondPlayer(xbmc.Player):
         This is done in a seperate thread to attempt to avoid xbmc lockups/crashes
         """
         xbmc.log(">> TenSecondPlayer.delayedStop()")
+
+        # Restore resume point
+        if self.lastResumePoint is not None:
+            xbmc.log(">> Seeking to resume point at %d secs." % self.lastResumePoint)
+            self.seekTime(self.lastResumePoint)
+            xbmc.sleep(500)
+
         if not self.startingPlayback and self.isPlaying():
             xbmc.Player.stop(self)
         xbmc.log(">> TenSecondPlayer.delayedStop() - end")
 
 
-    def playWindowed(self, file, idFile):
+    def playWindowed(self, file, resumePoint, replay = False):
         """
         Starts playback by calling xbmc.Player.play(windowed = True).
-
-        It also loads bookmark information and keeps track on the Timer
-        for stopping playback.
         """
         xbmc.log(">> TenSecondPlayer.playWindowed()")
         self.startingPlayback = True
@@ -96,9 +95,9 @@ class TenSecondPlayer(xbmc.Player):
             return False
 
         self.lastFile = file
-        self.lastIdFile= idFile
+        self.lastResumePoint = resumePoint
 
-        if not self.replaying:
+        if not replay:
             self.lastStartTime = None
 
         if self.tenSecondTimer is not None:
@@ -110,9 +109,6 @@ class TenSecondPlayer(xbmc.Player):
         elif file[-4:].lower() == '.iso':
             pass
             #todo file = self._getRandomDvdVob(file)
-
-        # Get bookmark details, so we can restore after playback
-        # TODO self.bookmark = self.database.getVideoBookmark(idFile)
 
         #xbmc.log(">> TenSecondPlayer.playWindowed() - about to play file %s" % file.encode('utf-8', 'ignore'))
 
@@ -177,7 +173,7 @@ class TenSecondPlayer(xbmc.Player):
 
         xbmc.sleep(250)
         if self.isPlaying():
-            xbmc.Player.stop(self)
+            self.stopPlayback()
 
         retries = 0
         while self.isPlaying() and retries < 20 and not self.startingPlayback:
@@ -216,8 +212,3 @@ class TenSecondPlayer(xbmc.Player):
 
         if self.tenSecondTimer is not None:
             self.tenSecondTimer.cancel()
-
-        # Restore bookmark details
-        if self.bookmark is not None:
-            xbmc.sleep(1000) # Delay to allow XBMC to store the bookmark before we reset it
-            self.database.resetVideoBookmark(self.bookmark)

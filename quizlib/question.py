@@ -29,7 +29,6 @@ import imdb
 import game
 import library
 
-import xbmc
 import xbmcvfs
 
 from strings import *
@@ -37,11 +36,10 @@ from strings import *
 IMDB = imdb.Imdb()
 
 class Answer(object):
-    def __init__(self, id, text, idFile = None, image = None, sortWeight = None, correct = False):
+    def __init__(self, id, text, image = None, sortWeight = None, correct = False):
         self.correct = correct
         self.id = id
         self.text = text
-        self.idFile = idFile
         self.coverFile = image
         self.sortWeight = sortWeight
 
@@ -66,7 +64,6 @@ class Question(object):
         self.text = None
         self.fanartFile = None
         self.displayType = displayType
-        # todo self.title
 
     def getText(self):
         return self.text
@@ -80,11 +77,11 @@ class Question(object):
         except IndexError:
             return None
 
-    def addCorrectAnswer(self, id, text, idFile = None, image = None, filename = None, sortWeight = None):
-        self.addAnswer(id, text, idFile, image, filename, sortWeight, correct = True)
+    def addCorrectAnswer(self, id, text, image = None, sortWeight = None):
+        self.addAnswer(id, text, image, sortWeight, correct = True)
 
-    def addAnswer(self, id, text, idFile = None, image = None, filename = None, sortWeight = None, correct = False):
-        a = Answer(id, text, idFile, image, sortWeight, correct)
+    def addAnswer(self, id, text, image = None, sortWeight = None, correct = False):
+        a = Answer(id, text, image, sortWeight, correct)
         self.answers.append(a)
 
 
@@ -97,8 +94,8 @@ class Question(object):
     def getUniqueIdentifier(self):
         return "%s-%s" % (self.__class__.__name__, str(self.getCorrectAnswer().id))
 
-    def setFanartFile(self, path, filename = None):
-        self.fanartFile = path
+    def setFanartFile(self, fanartFile):
+        self.fanartFile = fanartFile
 
     def getFanartFile(self):
         return self.fanartFile
@@ -133,22 +130,17 @@ class DisplayType(object):
     pass
 
 class VideoDisplayType(DisplayType):
-    def setVideoFile(self, videoFile):
+    def setVideoFile(self, videoFile, resumePoint):
         self.videoFile = videoFile
+        self.resumePoint = resumePoint
         if not xbmcvfs.exists(self.videoFile):
             raise QuestionException('Video file not found: %s' % self.videoFile.encode('utf-8', 'ignore'))
 
-#    def setVideoFile(self, path, filename):
-#        if filename[0:8] == 'stack://':
-#            self.videoFile = filename
-#        else:
-#            self.videoFile = os.path.join(path, filename)
-#
-#        if not xbmcvfs.exists(self.videoFile):
-#            raise QuestionException('Video file not found: %s' % self.videoFile.encode('utf-8', 'ignore'))
-
     def getVideoFile(self):
         return self.videoFile
+
+    def getResumePoint(self):
+        return self.resumePoint
 
 class PhotoDisplayType(DisplayType):
     def setPhotoFile(self, photoFile):
@@ -189,29 +181,30 @@ class MovieQuestion(Question):
     pass
 
 class WhatMovieIsThisQuestion(MovieQuestion):
-    def __init__(self):
+    def __init__(self, defaultFilters):
         """
         What movie is this?
         """
         videoDisplayType = VideoDisplayType()
         super(WhatMovieIsThisQuestion, self).__init__(videoDisplayType)
 
-        correctAnswer = library.getMovies(['title', 'set', 'genre', 'file', 'art']).limitTo(1).asItem()
+        correctAnswer = library.getMovies(['title', 'set', 'genre', 'file', 'resume', 'art']).withFilters(defaultFilters).limitTo(1).asItem()
         if not correctAnswer:
             raise QuestionException('No movies found')
 
         self.addCorrectAnswer(id = correctAnswer['movieid'], text = correctAnswer['title'], image = correctAnswer['art']['poster'])
 
+        # TODO excludeTitles()
         # Find other movies in set
         if correctAnswer['set'] is not None:
-            otherMoviesInSet = library.getMovies(['title', 'art']).inSet(correctAnswer['set']).excludeTitles(self.getAnswerTexts()).limitTo(3).asList()
+            otherMoviesInSet = library.getMovies(['title', 'art']).withFilters(defaultFilters).inSet(correctAnswer['set']).excludeTitles(self.getAnswerTexts()).limitTo(3).asList()
             for movie in otherMoviesInSet:
                 self.addAnswer(id = movie['movieid'], text = movie['title'], image = movie['art']['poster'])
 
         # Find other movies in genre
         if len(self.answers) < 4:
             try:
-                otherMoviesInGenre = library.getMovies(['title', 'art']).inGenre(correctAnswer['genre']).excludeTitles(self.getAnswerTexts()).limitTo(4 - len(self.answers)).asList()
+                otherMoviesInGenre = library.getMovies(['title', 'art']).withFilters(defaultFilters).inGenre(correctAnswer['genre']).excludeTitles(self.getAnswerTexts()).limitTo(4 - len(self.answers)).asList()
                 for movie in otherMoviesInGenre:
                     self.addAnswer(id = movie['movieid'], text = movie['title'], image = movie['art']['poster'])
             except db.DbException:
@@ -219,20 +212,20 @@ class WhatMovieIsThisQuestion(MovieQuestion):
 
         # Fill with random movies
         if len(self.answers) < 4:
-            theRest = library.getMovies(['title', 'art']).excludeTitles(self.getAnswerTexts()).limitTo(4 - len(self.answers)).asList()
+            theRest = library.getMovies(['title', 'art']).withFilters(defaultFilters).excludeTitles(self.getAnswerTexts()).limitTo(4 - len(self.answers)).asList()
             for movie in theRest:
                 self.addAnswer(id = movie['movieid'], text = movie['title'], image = movie['art']['poster'])
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_MOVIE_IS_THIS)
-        videoDisplayType.setVideoFile(correctAnswer['file'])
+        videoDisplayType.setVideoFile(correctAnswer['file'], correctAnswer['resume']['position'])
 
     @staticmethod
     def isEnabled():
         return ADDON.getSetting('question.whatmovieisthis.enabled') == 'true'
 
 class WhatActorIsThisQuestion(MovieQuestion):
-    def __init__(self):
+    def __init__(self, defaultFilters):
         """
         WhatActorIsThisQuestion
         """
@@ -242,7 +235,7 @@ class WhatActorIsThisQuestion(MovieQuestion):
         # Find a bunch of actors with thumbnails
         actors = list()
         names = list()
-        for movie in library.getMovies(['cast']).limitTo(10).asList():
+        for movie in library.getMovies(['cast']).withFilters(defaultFilters).limitTo(10).asList():
             for actor in movie['cast']:
                 if actor.has_key('thumbnail') and actor['name'] not in names:
                     actors.append(actor)
@@ -276,7 +269,7 @@ class WhatActorIsThisQuestion(MovieQuestion):
 
 
 class ActorNotInMovieQuestion(MovieQuestion):
-    def __init__(self):
+    def __init__(self, defaultFilters):
         """
         Actor not in movie?
         """
@@ -284,7 +277,7 @@ class ActorNotInMovieQuestion(MovieQuestion):
         super(ActorNotInMovieQuestion, self).__init__(photoDisplayType)
 
         actors = list()
-        for movie in library.getMovies(['cast']).limitTo(10).asList():
+        for movie in library.getMovies(['cast']).withFilters(defaultFilters).limitTo(10).asList():
             for actor in movie['cast']:
                 if actor.has_key('thumbnail'):
                     actors.append(actor)
@@ -297,7 +290,7 @@ class ActorNotInMovieQuestion(MovieQuestion):
         actor = None
         for actor in actors:
             # Movie actor is in
-            movies = library.getMovies(['title', 'art']).withActor(actor['name']).limitTo(3).asList()
+            movies = library.getMovies(['title', 'art']).withFilters(defaultFilters).withActor(actor['name']).limitTo(3).asList()
             if len(movies) < 3:
                 continue
 
@@ -305,7 +298,7 @@ class ActorNotInMovieQuestion(MovieQuestion):
                 self.addAnswer(-1, movie['title'], image = movie['art']['poster'])
 
             # Movies actor is not in
-            correctAnswer = library.getMovies(['title', 'art']).withoutActor(actor['name']).limitTo(1).asItem()
+            correctAnswer = library.getMovies(['title', 'art']).withFilters(defaultFilters).withoutActor(actor['name']).limitTo(1).asItem()
             if not correctAnswer:
                 raise QuestionException('No movies found')
             self.addCorrectAnswer(actor['name'], correctAnswer['title'], image = correctAnswer['art']['poster'])
@@ -325,13 +318,13 @@ class ActorNotInMovieQuestion(MovieQuestion):
 
 
 class WhatYearWasMovieReleasedQuestion(MovieQuestion):
-    def __init__(self):
+    def __init__(self, defaultFilters):
         """
         WhatYearWasMovieReleasedQuestion
         """
         super(WhatYearWasMovieReleasedQuestion, self).__init__()
 
-        movie = library.getMovies(['title', 'year', 'art']).fromYear(1900).limitTo(1).asItem()
+        movie = library.getMovies(['title', 'year', 'art']).withFilters(defaultFilters).fromYear(1900).limitTo(1).asItem()
         if not movie:
             raise QuestionException('No movies found')
 
@@ -365,14 +358,14 @@ class WhatYearWasMovieReleasedQuestion(MovieQuestion):
 
 
 class WhatTagLineBelongsToMovieQuestion(MovieQuestion):
-    def __init__(self):
+    def __init__(self, defaultFilters):
         """
         WhatTagLineBelongsToMovieQuestion
         """
         super(WhatTagLineBelongsToMovieQuestion, self).__init__()
 
         movie = None
-        items = library.getMovies(['title', 'tagline', 'art']).limitTo(10).asList()
+        items = library.getMovies(['title', 'tagline', 'art']).withFilters(defaultFilters).limitTo(10).asList()
         for item in items:
             if not item['tagline']:
                 continue
@@ -384,7 +377,7 @@ class WhatTagLineBelongsToMovieQuestion(MovieQuestion):
             raise QuestionException('No movies found')
         self.addCorrectAnswer(id = movie['movieid'], text = movie['tagline'])
 
-        otherMovies = library.getMovies(['tagline']).excludeTitles(movie['title']).limitTo(10).asList()
+        otherMovies = library.getMovies(['tagline']).withFilters(defaultFilters).excludeTitles(movie['title']).limitTo(10).asList()
         for otherMovie in otherMovies:
             if not otherMovie['tagline']:
                 continue
@@ -392,9 +385,6 @@ class WhatTagLineBelongsToMovieQuestion(MovieQuestion):
             self.addAnswer(id = otherMovie['movieid'], text = otherMovie['tagline'])
             if len(self.answers) == 4:
                 break
-
-        if len(self.answers) < 3:
-            raise QuestionException('Not enough taglines; got %d taglines' % len(self.answers))
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_TAGLINE_BELONGS_TO_MOVIE, movie['title'])
@@ -406,14 +396,14 @@ class WhatTagLineBelongsToMovieQuestion(MovieQuestion):
 
 
 class WhatStudioReleasedMovieQuestion(MovieQuestion):
-    def __init__(self):
+    def __init__(self, defaultFilters):
         """
         WhatStudioReleasedMovieQuestion
         """
         super(WhatStudioReleasedMovieQuestion, self).__init__()
 
         movie = None
-        items = library.getMovies(['title', 'studio', 'art']).limitTo(10).asList()
+        items = library.getMovies(['title', 'studio', 'art']).withFilters(defaultFilters).limitTo(10).asList()
         for item in items:
             if not item['studio']:
                 continue
@@ -427,7 +417,7 @@ class WhatStudioReleasedMovieQuestion(MovieQuestion):
         studio = random.choice(movie['studio'])
         self.addCorrectAnswer(id = movie['movieid'], text = studio)
 
-        otherMovies = library.getMovies(['studio']).excludeTitles(movie['title']).limitTo(10).asList()
+        otherMovies = library.getMovies(['studio']).withFilters(defaultFilters).excludeTitles(movie['title']).limitTo(10).asList()
         for otherMovie in otherMovies:
             if not otherMovie['studio']:
                 continue
@@ -445,9 +435,6 @@ class WhatStudioReleasedMovieQuestion(MovieQuestion):
             if len(self.answers) == 4:
                 break
 
-        if len(self.answers) < 3:
-            raise QuestionException('Not enough movies')
-
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_STUDIO_RELEASED_MOVIE, movie['title'])
         self.setFanartFile(movie['art']['fanart'])
@@ -458,14 +445,14 @@ class WhatStudioReleasedMovieQuestion(MovieQuestion):
 
 
 class WhoPlayedRoleInMovieQuestion(MovieQuestion):
-    def __init__(self):
+    def __init__(self, defaultFilters):
         """
         WhoPlayedRoleInMovieQuestion
         """
         super(WhoPlayedRoleInMovieQuestion, self).__init__()
 
         movie = None
-        items = library.getMovies(['title', 'cast', 'genre', 'art']).limitTo(10).asList()
+        items = library.getMovies(['title', 'cast', 'genre', 'art']).withFilters(defaultFilters).limitTo(10).asList()
         for item in items:
             if len(item['cast']) < 4:
                 continue
@@ -508,7 +495,7 @@ class WhoPlayedRoleInMovieQuestion(MovieQuestion):
 
 
 class WhatMovieIsThisQuoteFrom(MovieQuestion):
-    def __init__(self):
+    def __init__(self, defaultFilters):
         """
         WhatQuoteIsThisFrom
         """
@@ -517,7 +504,7 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
 
         quoteText = None
         row = None
-        for item in library.getMovies(['title', 'art']).limitTo(10).asList():
+        for item in library.getMovies(['title', 'art']).withFilters(defaultFilters).limitTo(10).asList():
             quoteText = IMDB.getRandomQuote(item['title'], maxLength = 128)
 
             if quoteText is not None:
@@ -529,7 +516,7 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
 
         self.addCorrectAnswer(row['movieid'], row['title'], image = row['art']['poster'])
 
-        theRest = library.getMovies(['title', 'art']).excludeTitles(self.getAnswerTexts()).limitTo(3).asList()
+        theRest = library.getMovies(['title', 'art']).withFilters(defaultFilters).excludeTitles(self.getAnswerTexts()).limitTo(3).asList()
         for movie in theRest:
             self.addAnswer(movie['movieid'], movie['title'], image = movie['art']['poster'])
 
@@ -543,19 +530,19 @@ class WhatMovieIsThisQuoteFrom(MovieQuestion):
 
 
 class WhatMovieIsNewestQuestion(MovieQuestion):
-    def __init__(self):
+    def __init__(self, defaultFilters):
         """
         WhatMovieIsNewestQuestion
         """
         super(WhatMovieIsNewestQuestion, self).__init__()
 
-        movie = library.getMovies(['title', 'year', 'art']).fromYear(1900).limitTo(1).asItem()
+        movie = library.getMovies(['title', 'year', 'art']).withFilters(defaultFilters).fromYear(1900).limitTo(1).asItem()
         if not movie:
             raise QuestionException('No movies found')
 
         self.addCorrectAnswer(id = movie['movieid'], text = movie['title'], image = movie['art']['poster'])
 
-        otherMovies = library.getMovies(['title', 'art']).fromYear(1900).toYear(movie['year']).limitTo(3).asList()
+        otherMovies = library.getMovies(['title', 'art']).withFilters(defaultFilters).fromYear(1900).toYear(movie['year']).limitTo(3).asList()
         if len(otherMovies) < 3:
             raise QuestionException("Less than 3 movies found; bailing out")
 
@@ -571,14 +558,14 @@ class WhatMovieIsNewestQuestion(MovieQuestion):
 
 
 class WhoDirectedThisMovieQuestion(MovieQuestion):
-    def __init__(self):
+    def __init__(self, defaultFilters):
         """
         WhoDirectedThisMovieQuestion
         """
         super(WhoDirectedThisMovieQuestion, self).__init__()
 
         movie = None
-        items = library.getMovies(['title', 'director', 'art']).limitTo(10).asList()
+        items = library.getMovies(['title', 'director', 'art']).withFilters(defaultFilters).limitTo(10).asList()
         for item in items:
             if not item['director']:
                 continue
@@ -592,7 +579,7 @@ class WhoDirectedThisMovieQuestion(MovieQuestion):
         director = random.choice(movie['director'])
         self.addCorrectAnswer(id = movie['movieid'], text = director)
 
-        otherMovies = library.getMovies(['director']).excludeTitles(movie['title']).limitTo(10).asList()
+        otherMovies = library.getMovies(['director']).withFilters(defaultFilters).excludeTitles(movie['title']).limitTo(10).asList()
         for otherMovie in otherMovies:
             if not otherMovie['director']:
                 continue
@@ -610,9 +597,6 @@ class WhoDirectedThisMovieQuestion(MovieQuestion):
             if len(self.answers) == 4:
                 break
 
-        if len(self.answers) < 3:
-            raise QuestionException('Not enough movies')
-
         random.shuffle(self.answers)
         self.text = strings(Q_WHO_DIRECTED_THIS_MOVIE, movie['title'])
         self.setFanartFile(movie['art']['fanart'])
@@ -624,7 +608,7 @@ class WhoDirectedThisMovieQuestion(MovieQuestion):
 
 
 class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
-    def __init__(self):
+    def __init__(self, defaultFilters):
         """
         WhatMovieIsNotDirectedByQuestion
         """
@@ -633,7 +617,7 @@ class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
 
         # Find a bunch of directors
         directors = list()
-        items = library.getMovies(['title', 'director']).limitTo(10).asList()
+        items = library.getMovies(['title', 'director']).withFilters(defaultFilters).limitTo(10).asList()
         for item in items:
             directors.extend(iter(item['director']))
 
@@ -643,7 +627,7 @@ class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
         for director in directors:
 #            if not director['thumbnail']:
 #                continue
-            movies = library.getMovies(['title', 'art']).directedBy(director).limitTo(3).asList()
+            movies = library.getMovies(['title', 'art']).withFilters(defaultFilters).directedBy(director).limitTo(3).asList()
 
             if len(movies) >= 3:
                 break
@@ -652,7 +636,7 @@ class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
             raise QuestionException("Didn't find a director with at least three movies")
 
         # Find movie not directed by director
-        otherMovie = library.getMovies(['title', 'art']).notDirectedBy(director).limitTo(1).asItem()
+        otherMovie = library.getMovies(['title', 'art']).withFilters(defaultFilters).notDirectedBy(director).limitTo(1).asItem()
         if not otherMovie:
             raise QuestionException('No movie found')
         self.addCorrectAnswer(director, otherMovie['title'], image = otherMovie['art']['poster'])
@@ -670,7 +654,7 @@ class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
 
 
 class WhatActorIsInTheseMoviesQuestion(MovieQuestion):
-    def __init__(self):
+    def __init__(self, defaultFilters):
         """
         WhatActorIsInTheseMoviesQuestion
         """
@@ -679,7 +663,7 @@ class WhatActorIsInTheseMoviesQuestion(MovieQuestion):
 
         # Find a bunch of actors
         actors = list()
-        items = library.getMovies(['title', 'cast']).limitTo(10).asList()
+        items = library.getMovies(['title', 'cast']).withFilters(defaultFilters).limitTo(10).asList()
         for item in items:
             actors.extend(iter(item['cast']))
 
@@ -689,7 +673,7 @@ class WhatActorIsInTheseMoviesQuestion(MovieQuestion):
         for actor in actors:
             if not actor.has_key('thumbnail'):
                 continue
-            movies = library.getMovies(['title', 'art']).withActor(actor['name']).limitTo(3).asList()
+            movies = library.getMovies(['title', 'art']).withFilters(defaultFilters).withActor(actor['name']).limitTo(3).asList()
 
             if len(movies) >= 3:
                 break
@@ -702,14 +686,14 @@ class WhatActorIsInTheseMoviesQuestion(MovieQuestion):
             threePhotoDisplayType.addPhoto(movie['art']['poster'], movie['title'])
 
         # Find movie without actor
-        otherMovie = library.getMovies(['title', 'art']).withoutActor(actor['name']).limitTo(1).asItem()
+        otherMovie = library.getMovies(['title', 'art']).withFilters(defaultFilters).withoutActor(actor['name']).limitTo(1).asItem()
         if not otherMovie:
             raise QuestionException('No movie found')
         self.addCorrectAnswer(actor['name'], actor['title'], image = actor['thumbnail'])
 
         # Find another bunch of actors
         actors = list()
-        items = library.getMovies(['title', 'cast']).withoutActor(actor['name']).limitTo(10).asList()
+        items = library.getMovies(['title', 'cast']).withFilters(defaultFilters).withoutActor(actor['name']).limitTo(10).asList()
         for item in items:
             actors.extend(iter(item['cast']))
 
@@ -721,9 +705,6 @@ class WhatActorIsInTheseMoviesQuestion(MovieQuestion):
             if len(self.answers) == 4:
                 break
 
-        if len(self.answers) < 4:
-            raise QuestionException('Not enough answers')
-
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_ACTOR_IS_IN_THESE_MOVIES)
 
@@ -733,14 +714,14 @@ class WhatActorIsInTheseMoviesQuestion(MovieQuestion):
 
 
 class WhatActorIsInMovieBesidesOtherActorQuestion(MovieQuestion):
-    def __init__(self):
+    def __init__(self, defaultFilters):
         """
         WhatActorIsInMovieBesidesOtherActorQuestion
         """
         super(WhatActorIsInMovieBesidesOtherActorQuestion, self).__init__()
 
         # Find a bunch of movies
-        items = library.getMovies(['title', 'cast', 'art']).limitTo(10).asList()
+        items = library.getMovies(['title', 'cast', 'art']).withFilters(defaultFilters).limitTo(10).asList()
         movie = None
         for item in items:
             if len(item['cast']) >= 2:
@@ -758,7 +739,7 @@ class WhatActorIsInMovieBesidesOtherActorQuestion(MovieQuestion):
 
         # Find another bunch of actors
         otherActors = list()
-        items = library.getMovies(['title', 'cast']).withoutActor(actorOne['name']).withoutActor(actorTwo['name']).limitTo(10).asList()
+        items = library.getMovies(['title', 'cast']).withFilters(defaultFilters).withoutActor(actorOne['name']).withoutActor(actorTwo['name']).limitTo(10).asList()
         for item in items:
             otherActors.extend(iter(item['cast']))
         random.shuffle(otherActors)
@@ -770,9 +751,6 @@ class WhatActorIsInMovieBesidesOtherActorQuestion(MovieQuestion):
             if len(self.answers) == 4:
                 break
 
-        if len(self.answers) < 4:
-            raise QuestionException('Not enough answers')
-
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_ACTOR_IS_IN_MOVIE_BESIDES_OTHER_ACTOR, (movie['title'], actorTwo['name']))
         self.setFanartFile(movie['art']['fanart'])
@@ -782,14 +760,14 @@ class WhatActorIsInMovieBesidesOtherActorQuestion(MovieQuestion):
         return ADDON.getSetting('question.whatactorisinmoviebesidesotheractor.enabled') == 'true'
 
 class WhatMovieHasTheLongestRuntimeQuestion(MovieQuestion):
-    def __init__(self):
+    def __init__(self, defaultFilters):
         """
         WhatMovieHasTheLongestRuntimeQuestion
         """
         super(WhatMovieHasTheLongestRuntimeQuestion, self).__init__()
 
         # Find a bunch of movies
-        items = library.getMovies(['title', 'runtime', 'art']).limitTo(10).asList()
+        items = library.getMovies(['title', 'runtime', 'art']).withFilters(defaultFilters).limitTo(10).asList()
         movie = None
         otherMovies = list()
         for item in items:
@@ -807,9 +785,6 @@ class WhatMovieHasTheLongestRuntimeQuestion(MovieQuestion):
             self.addAnswer(id = otherMovie['movieid'], text = otherMovie['title'], image = otherMovie['art']['poster'])
             if len(self.answers) == 4:
                 break
-
-        if len(self.answers) < 4:
-            raise QuestionException('Not enough answers')
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_MOVIE_HAS_THE_LONGEST_RUNTIME)
@@ -1098,7 +1073,7 @@ class QuestionException(Exception):
     pass
 
 
-def getRandomQuestion(gameInstance):
+def getEnabledQuestionCandidates(gameInstance):
     """
         Gets random question from one of the Question subclasses.
     """
@@ -1109,19 +1084,12 @@ def getRandomQuestion(gameInstance):
         questionCandidates = TVQuestion.__subclasses__()
 
     questionCandidates = [ candidate for candidate in questionCandidates if candidate.isEnabled() ]
-    random.shuffle(questionCandidates)
 
-    for candidate in questionCandidates:
-        try:
-            return candidate()
-        except QuestionException, ex:
-            print "QuestionException: %s" % str(ex)
-        except Exception, ex:
-            xbmc.log("%s in %s" % (ex.__class__.__name__, candidate.__name__))
-            import traceback, sys
-            traceback.print_exc(file = sys.stdout)
+    return questionCandidates
 
-    return None
+
+
+
 
 def isAnyMovieQuestionsEnabled():
     subclasses = MovieQuestion.__subclasses__()

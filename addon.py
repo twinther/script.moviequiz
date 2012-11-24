@@ -24,6 +24,8 @@ import xbmcaddon
 import buggalo
 from quizlib.gui import MenuGui
 
+#import quizlib.library
+#print quizlib.library.getMovies(['title', 'resume']).limitTo(10).asList()
 
 if True:
     buggalo.SUBMIT_URL = 'http://tommy.winther.nu/exception/submit.php'
