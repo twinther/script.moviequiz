@@ -194,7 +194,6 @@ class WhatMovieIsThisQuestion(MovieQuestion):
 
         self.addCorrectAnswer(id = correctAnswer['movieid'], text = correctAnswer['title'], image = correctAnswer['art']['poster'])
 
-        # TODO excludeTitles()
         # Find other movies in set
         if correctAnswer['set'] is not None:
             otherMoviesInSet = library.getMovies(['title', 'art']).withFilters(defaultFilters).inSet(correctAnswer['set']).excludeTitles(self.getAnswerTexts()).limitTo(3).asList()
@@ -612,8 +611,7 @@ class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
         """
         WhatMovieIsNotDirectedByQuestion
         """
-        photoDisplayType = PhotoDisplayType()
-        super(WhatMovieIsNotDirectedByQuestion, self).__init__(photoDisplayType)
+        super(WhatMovieIsNotDirectedByQuestion, self).__init__()
 
         # Find a bunch of directors
         directors = list()
@@ -646,7 +644,7 @@ class WhatMovieIsNotDirectedByQuestion(MovieQuestion):
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_MOVIE_IS_NOT_DIRECTED_BY, director)
-        photoDisplayType.setPhotoFile("")# TODO director['thumbnail'])
+        # todo perhaps set fanart instead?
 
     @staticmethod
     def isEnabled():
