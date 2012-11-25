@@ -27,7 +27,6 @@ import gzip
 
 import xbmc
 
-import db
 import sqlite3
 
 class HighscoreDatabase(object):
@@ -152,7 +151,7 @@ class LocalHighscoreDatabase(HighscoreDatabase):
         highscoreDbPath = os.path.join(path, LocalHighscoreDatabase.HIGHSCORE_DB)
 
         self.conn = sqlite3.connect(highscoreDbPath, check_same_thread = False)
-        self.conn.row_factory = db._sqlite_dict_factory
+        self.conn.row_factory = self._sqlite_dict_factory
         #xbmc.log("HighscoreDatabase opened: " + highscoreDbPath)
 
         self._createTables()
@@ -286,5 +285,14 @@ class LocalHighscoreDatabase(HighscoreDatabase):
 
         xbmc.log('Highscore Database is up-to-date')
 
+    def _sqlite_dict_factory(self, cursor, row):
+        d = {}
+        for idx, col in enumerate(cursor.description):
+            dot = col[0].find('.') + 1
+            if dot != -1:
+                d[col[0][dot:]] = row[idx]
+            else:
+                d[col[0]] = row[idx]
+        return d
 
 

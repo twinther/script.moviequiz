@@ -21,8 +21,6 @@
 import os
 import random
 import datetime
-import thumb
-import db
 import re
 import imdb
 import game
@@ -42,11 +40,8 @@ class Answer(object):
         self.coverFile = image
         self.sortWeight = sortWeight
 
-    def setCoverFile(self, path, filename = None):
-        if filename is None:
-            self.coverFile = path
-        else:
-            self.coverFile = thumb.getCachedVideoThumb(path, filename)
+    def setCoverFile(self, coverFile):
+        self.coverFile = coverFile
 
     def __repr__(self):
         return "<Answer(id=%s, text=%s, correct=%s)>" % (self.id, self.text, self.correct)
@@ -201,12 +196,9 @@ class WhatMovieIsThisQuestion(MovieQuestion):
 
         # Find other movies in genre
         if len(self.answers) < 4:
-            try:
-                otherMoviesInGenre = library.getMovies(['title', 'art']).withFilters(defaultFilters).inGenre(correctAnswer['genre']).excludeTitles(self.getAnswerTexts()).limitTo(4 - len(self.answers)).asList()
-                for movie in otherMoviesInGenre:
-                    self.addAnswer(id = movie['movieid'], text = movie['title'], image = movie['art']['poster'])
-            except db.DbException:
-                pass # ignore in case user has no other movies in genre
+            otherMoviesInGenre = library.getMovies(['title', 'art']).withFilters(defaultFilters).inGenre(correctAnswer['genre']).excludeTitles(self.getAnswerTexts()).limitTo(4 - len(self.answers)).asList()
+            for movie in otherMoviesInGenre:
+                self.addAnswer(id = movie['movieid'], text = movie['title'], image = movie['art']['poster'])
 
         # Fill with random movies
         if len(self.answers) < 4:
@@ -463,10 +455,10 @@ class WhoPlayedRoleInMovieQuestion(MovieQuestion):
 
         actor = random.choice(movie['cast'])
         role = actor['role']
-        # TODO nessecary? if re.search('[|/]', role):
-        #    roles = re.split('[|/]', role)
+        if re.search('[|/,]', role):
+            roles = re.split('[|/,]', role)
             # find random role
-        #    role = roles[random.randint(0, len(roles)-1)]
+            role = roles[random.randint(0, len(roles)-1)]
 
         self.addCorrectAnswer(actor['name'], actor['name'], image = actor['thumbnail'])
 
@@ -1076,7 +1068,7 @@ def getEnabledQuestionCandidates(gameInstance):
 
     questionCandidates = [ candidate for candidate in questionCandidates if candidate.isEnabled() ]
 
-    return [WhatTVShowIsThisThemeFromQuestion]#questionCandidates
+    return questionCandidates
 
 
 def isAnyMovieQuestionsEnabled():
