@@ -23,7 +23,6 @@ import random
 import datetime
 import thumb
 import db
-import time
 import re
 import imdb
 import game
@@ -814,30 +813,29 @@ class TVQuestion(Question):
 
 
 class WhatTVShowIsThisQuestion(TVQuestion):
-    def __init__(self, database):
+    def __init__(self, defaultFilters):
         """
         WhatTVShowIsThisQuestion
-
-        @type database: quizlib.db.Database
-        @param database: Database connection instance to use
         """
         videoDisplayType  = VideoDisplayType()
         super(WhatTVShowIsThisQuestion, self).__init__(videoDisplayType)
 
-        shows = database.getTVShows(maxResults = 1)
-        if not shows:
+        show = library.getTVShows(['title', 'art']).withFilters(defaultFilters).limitTo(1).asItem()
+        if not show:
             raise QuestionException('No tvshows found')
-        row = shows[0]
-        self.addCorrectAnswer(row['idShow'], row['title'], row['idFile'], path = thumb.getCachedTVShowThumb(row['tvShowPath']))
+        self.addCorrectAnswer(id = show['tvshowid'], text = show['title'], image = show['art']['poster'])
 
-        # Fill with random episodes from other shows
-        shows = database.getTVShows(maxResults = 3, excludeTVShowId = row['idShow'], onlySelectTVShow = True)
-        for show in shows:
-            self.addAnswer(show['idShow'], show['title'], path = thumb.getCachedTVShowThumb(show['tvShowPath']))
+        episode = library.getEpisodes(['file', 'resume']).withFilters(defaultFilters).fromShow(show['title']).limitTo(1).asItem()
+        if not episode:
+            raise QuestionException('TVshow has no episodes')
+
+        otherShows = library.getTVShows(['title', 'art']).withFilters(defaultFilters).excludeTitles([show['title']]).limitTo(3).asList()
+        for otherShow in otherShows:
+            self.addAnswer(id = otherShow['tvshowid'], text= otherShow['title'], image = otherShow['art']['poster'])
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_TVSHOW_IS_THIS)
-        videoDisplayType.setVideoFile(row['strPath'], row['strFileName'])
+        videoDisplayType.setVideoFile(episode['file'], episode['resume']['position'])
 
     @staticmethod
     def isEnabled():
@@ -845,33 +843,31 @@ class WhatTVShowIsThisQuestion(TVQuestion):
 
 
 class WhatSeasonIsThisQuestion(TVQuestion):
-    def __init__(self, database):
+    def __init__(self, defaultFilters):
         """
         WhatSeasonIsThisQuestion
-
-        @type database: quizlib.db.Database
-        @param database: Database connection instance to use
         """
         videoDisplayType  = VideoDisplayType()
         super(WhatSeasonIsThisQuestion, self).__init__(videoDisplayType)
 
-        rows = database.getTVShowSeasons(maxResults = 1, minSeasonCount = 3)
-        if not rows:
-            raise QuestionException('No tvshow seasons found')
-        row = rows[0]
-        cover = thumb.getCachedSeasonThumb(row['strPath'], self._get_season_title(row['season']))
-        self.addCorrectAnswer("%s-%s" % (row['idShow'], row['season']), self._get_season_title(row['season']), row['idFile'], path = cover, sortWeight = row['season'])
+        show = library.getTVShows(['title', 'art']).withFilters(defaultFilters).limitTo(1).asItem()
+        if not show:
+            raise QuestionException('No tvshows found')
 
-        # Fill with random seasons from this show
-        shows = database.getTVShowSeasons(maxResults = 3, onlySelectSeason = True, showId = row['idShow'], excludeSeason = row['season'])
-        for show in shows:
-            cover = thumb.getCachedSeasonThumb(row['strPath'], self._get_season_title(show['season']))
-            self.addAnswer("%s-%s" % (row['idShow'], show['season']), self._get_season_title(show['season']), path = cover, sortWeight = show['season'])
+        seasons = library.getSeasons(show['tvshowid'], ['season', 'art']).limitTo(4).asList()
+        correctIdx = random.randint(0, len(seasons) - 1)
+
+        episode = library.getEpisodes(['file', 'resume']).withFilters(defaultFilters).fromShow(show['title']).fromSeason(seasons[correctIdx]['season']).limitTo(1).asItem()
+        if not episode:
+            raise QuestionException('TVshow has no episodes')
+
+        for idx, season in enumerate(seasons):
+            self.addAnswer("%s-%s" % (show['tvshowid'], season['season']), season['label'], image = season['art']['poster'], sortWeight = season['season'], correct = (idx == correctIdx))
 
         self.answers = sorted(self.answers, key=lambda answer: int(answer.sortWeight))
 
-        self.text = strings(Q_WHAT_SEASON_IS_THIS) % row['title']
-        videoDisplayType.setVideoFile(row['strPath'], row['strFileName'])
+        self.text = strings(Q_WHAT_SEASON_IS_THIS) % show['title']
+        videoDisplayType.setVideoFile(episode['file'], episode['resume']['position'])
 
     @staticmethod
     def isEnabled():
@@ -879,37 +875,32 @@ class WhatSeasonIsThisQuestion(TVQuestion):
 
 
 class WhatEpisodeIsThisQuestion(TVQuestion):
-    def __init__(self, database):
+    def __init__(self, defaultFilters):
         """
         WhatEpisodeIsThisQuestion
-
-        @type database: quizlib.db.Database
-        @param database: Database connection instance to use
         """
         videoDisplayType  = VideoDisplayType()
         super(WhatEpisodeIsThisQuestion, self).__init__(videoDisplayType)
 
-        rows = database.getTVShowEpisodes(maxResults = 1, minEpisodeCount = 3)
-        if not rows:
-            raise QuestionException('No tvshow episodes found')
-        row = rows[0]
-        answerText = self._get_episode_title(row['season'], row['episode'], row['episodeTitle'])
-        id = "%s-%s-%s" % (row['idShow'], row['season'], row['episode'])
-        cover = thumb.getCachedTVShowThumb(row['strPath'])
-        self.addCorrectAnswer(id, answerText, row['idFile'], path = cover, sortWeight = row['episode'])
+        show = library.getTVShows(['title', 'art']).withFilters(defaultFilters).limitTo(1).asItem()
+        if not show:
+            raise QuestionException('No tvshows found')
 
-        # Fill with random episodes from this show
-        episodes = database.getTVShowEpisodes(maxResults = 3, idShow = row['idShow'], season = row['season'], excludeEpisode = row['episode'])
-        for episode in episodes:
-            answerText = self._get_episode_title(episode['season'], episode['episode'], episode['episodeTitle'])
-            id = "%s-%s-%s" % (row['idShow'], row['season'], episode['episode'])
-            cover = thumb.getCachedTVShowThumb(row['strPath'])
-            self.addAnswer(id, answerText, path = cover, sortWeight = episode['episode'])
+        season = library.getSeasons(show['tvshowid'], ['season', 'art']).limitTo(14).asItem()
+        if not season:
+            raise QuestionException('No seasons found')
+
+        episodes = library.getEpisodes(['episode', 'title', 'file', 'resume']).fromShow(show['title']).fromSeason(season['season']).limitTo(4).asList()
+        correctIdx = random.randint(0, len(episodes)-1)
+
+        for idx, episode in enumerate(episodes):
+            id = "%s-%s-%s" % (show['tvshowid'], season['season'], episode['episode'])
+            self.addAnswer(id = id, text = episode['label'], image = season['art']['poster'], sortWeight = episode['episode'], correct = (idx == correctIdx))
 
         self.answers = sorted(self.answers, key=lambda answer: int(answer.sortWeight))
 
-        self.text = strings(Q_WHAT_EPISODE_IS_THIS) % row['title']
-        videoDisplayType.setVideoFile(row['strPath'], row['strFileName'])
+        self.text = strings(Q_WHAT_EPISODE_IS_THIS) % show['title']
+        videoDisplayType.setVideoFile(episodes[correctIdx]['file'], episodes[correctIdx]['resume']['position'])
 
     @staticmethod
     def isEnabled():
@@ -917,24 +908,29 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
 
 
 class WhenWasTVShowFirstAiredQuestion(TVQuestion):
-    def __init__(self, database):
+    def __init__(self, defaultFilters):
         """
         WhenWasTVShowFirstAiredQuestion
-
-        @type database: quizlib.db.Database
-        @param database: Database connection instance to use
         """
         super(WhenWasTVShowFirstAiredQuestion, self).__init__()
 
-        rows = database.getTVShows(maxResults = 1, excludeSpecials = True, episode = 1, mustHaveFirstAired = True)
-        if not rows:
-            raise QuestionException('no tvshows found')
-        row = rows[0]
-        row['year'] = time.strptime(row['firstAired'], '%Y-%m-%d').tm_year
+        show = library.getTVShows(['title', 'art']).withFilters(defaultFilters).limitTo(1).asItem()
+        if not show:
+            raise QuestionException('No shows found')
+
+        season = library.getSeasons(show['tvshowid'], ['season']).limitTo(1).asItem()
+        if not season:
+            raise QuestionException('No seasons found')
+
+        episode = library.getEpisodes(['firstaired']).withFilters(defaultFilters).episode(1).fromShow(show['title']).fromSeason(season['season']).limitTo(1).asItem()
+        if not episode:
+            raise QuestionException('No episodes found')
+
+        episodeYear = int(episode['firstaired'][0:4])
 
         skew = random.randint(0, 10)
-        minYear = int(row['year']) - skew
-        maxYear = int(row['year']) + (10 - skew)
+        minYear = episodeYear - skew
+        maxYear = episodeYear + (10 - skew)
 
         thisYear = datetime.datetime.today().year
         if maxYear > thisYear:
@@ -942,7 +938,7 @@ class WhenWasTVShowFirstAiredQuestion(TVQuestion):
             minYear = thisYear - 10
 
         years = list()
-        years.append(int(row['year']))
+        years.append(episodeYear)
         while len(years) < 4:
             year = random.randint(minYear, maxYear)
             if not year in years:
@@ -951,11 +947,10 @@ class WhenWasTVShowFirstAiredQuestion(TVQuestion):
         list.sort(years)
 
         for year in years:
-            coverFile = thumb.getCachedTVShowThumb(row['strPath'])
-            self.addAnswer(row['idFile'], str(year), row['idFile'], path = coverFile, correct = (year == int(row['year'])))
+            self.addAnswer(id = "%s-%s" % (show['tvshowid'], season['season']), text = str(year), correct = (year == episodeYear))
 
-        self.text = strings(Q_WHEN_WAS_TVSHOW_FIRST_AIRED) % (row['title'] + ' - ' + self._get_season_title(row['season']))
-        self.setFanartFile(row['strPath'])
+        self.text = strings(Q_WHEN_WAS_TVSHOW_FIRST_AIRED) % (show['title'] + ' - ' + season['label'])
+        self.setFanartFile(show['art']['fanart'])
 
     @staticmethod
     def isEnabled():
@@ -963,69 +958,67 @@ class WhenWasTVShowFirstAiredQuestion(TVQuestion):
 
 
 class WhoPlayedRoleInTVShowQuestion(TVQuestion):
-    def __init__(self, database):
+    def __init__(self, defaultFilters):
         """
         WhoPlayedRoleInTVShowQuestion
-
-        @type database: quizlib.db.Database
-        @param database: Database connection instance to use
         """
-        photoDisplayType = PhotoDisplayType()
-        super(WhoPlayedRoleInTVShowQuestion, self).__init__(photoDisplayType)
+        super(WhoPlayedRoleInTVShowQuestion, self).__init__()
 
-        rows = database.getTVShowActors(maxResults = 1, mustHaveRole = True)
-        if not rows:
-            raise QuestionException('No tvshow actors found')
-        row = rows[0]
-        role = row['strRole']
-        if re.search('[|/]', role):
-            roles = re.split('[|/]', role)
+        show = library.getTVShows(['title', 'genre', 'cast', 'art']).withFilters(defaultFilters).limitTo(1).asItem()
+        if not show or len(show['cast']) < 4:
+            raise QuestionException('No tvshows found')
+
+        otherActors = show['cast']
+        actor = otherActors.pop(random.randint(0, len(otherActors) - 1))
+
+        role = actor['role']
+        if re.search('[|/,]', role):
+            roles = re.split('[|/,]', role)
             # find random role
             role = roles[random.randint(0, len(roles)-1)]
 
-        self.addCorrectAnswer(row['idActor'], row['strActor'], path = thumb.getCachedActorThumb(row['strActor']))
 
-        actors = database.getTVShowActors(maxResults = 3, onlySelectActor = True, showId = row['idShow'], excludeActorId = row['idActor'])
-        for actor in actors:
-            self.addAnswer(actor['idActor'], actor['strActor'], path = thumb.getCachedActorThumb(actor['strActor']))
+        self.addCorrectAnswer(id = actor['name'], text = actor['name'], image = actor.get('thumbnail'))
+
+        for otherActor in otherActors:
+            self.addAnswer(id = otherActor['name'], text = otherActor['name'], image = otherActor.get('thumbnail'))
+
+            if len(self.answers) == 4:
+                break
 
         random.shuffle(self.answers)
 
-        if self._isAnimationGenre(row['genre']):
-            self.text = strings(Q_WHO_VOICES_ROLE_IN_TVSHOW) % (role, row['title'])
+        if self._isAnimationGenre(show['genre']):
+            self.text = strings(Q_WHO_VOICES_ROLE_IN_TVSHOW) % (role, show['title'])
         else:
-            self.text = strings(Q_WHO_PLAYS_ROLE_IN_TVSHOW) % (role, row['title'])
-        photoDisplayType.setPhotoFile(thumb.getCachedTVShowThumb(row['strPath']))
+            self.text = strings(Q_WHO_PLAYS_ROLE_IN_TVSHOW) % (role, show['title'])
+        self.setFanartFile(show['art']['fanart'])
 
     @staticmethod
     def isEnabled():
         return ADDON.getSetting('question.whoplayedroleintvshow.enabled') == 'true'
 
 class WhatTVShowIsThisQuoteFrom(TVQuestion):
-    def __init__(self, database):
+    def __init__(self, defaultFilters):
         """
         WhatTVShowIsThisQuoteFrom
-
-        @type database: quizlib.db.Database
-        @param database: Database connection instance to use
         """
         quoteDisplayType = QuoteDisplayType()
         super(WhatTVShowIsThisQuoteFrom, self).__init__(quoteDisplayType)
 
-        rows = database.getTVShows(maxResults = 1)
-        if not rows:
-            raise QuestionException('No tvshows found')
-        row = rows[0]
-        quoteText = IMDB.getRandomQuote(row['title'], season = row['season'], episode = row['episode'], maxLength = 128)
+        episode = library.getEpisodes(['showtitle', 'season', 'episode', 'art']).withFilters(defaultFilters).limitTo(1).asItem()
+        if not episode:
+            raise QuestionException('No episodes found')
+
+        quoteText = IMDB.getRandomQuote(episode['showtitle'], season = episode['season'], episode = episode['episode'], maxLength = 128)
         if quoteText is None:
             raise QuestionException('Did not find any quotes')
 
-        self.addCorrectAnswer(row['idShow'], row['title'], row['idFile'], path = thumb.getCachedTVShowThumb(row['tvShowPath']))
+        self.addCorrectAnswer(id = episode['showtitle'], text = episode['showtitle'], image = episode['art']['tvshow.poster'])
 
-        # Fill with random episodes from other shows
-        shows = database.getTVShows(maxResults = 3, excludeTVShowId = row['idShow'], onlySelectTVShow = True)
-        for show in shows:
-            self.addAnswer(show['idShow'], show['title'], path = thumb.getCachedTVShowThumb(show['tvShowPath']))
+        otherShows = library.getTVShows(['title', 'art']).withFilters(defaultFilters).excludeTitles([episode['showtitle']]).limitTo(3).asList()
+        for otherShow in otherShows:
+            self.addAnswer(id = otherShow['title'], text = otherShow['title'], image = otherShow['art']['poster'])
 
         random.shuffle(self.answers)
         quoteDisplayType.setQuoteText(quoteText)
@@ -1036,31 +1029,31 @@ class WhatTVShowIsThisQuoteFrom(TVQuestion):
         return ADDON.getSetting('question.whattvshowisthisquotefrom.enabled') == 'true' and IMDB.isDataPresent()
 
 class WhatTVShowIsThisThemeFromQuestion(TVQuestion):
-    def __init__(self, database):
+    def __init__(self, defaultFilters):
         audioDisplayType = AudioDisplayType()
         super(WhatTVShowIsThisThemeFromQuestion, self).__init__(audioDisplayType)
 
-        tvShow = None
-        themeSong = None
-        rows = database.getTVShows(maxResults = 10)
-        for row in rows:
-            themeSong = os.path.join(row['tvShowPath'], 'theme.mp3')
-            if xbmcvfs.exists(themeSong):
-                tvShow = row
-                break
+        items = library.getTVShows(['title', 'file', 'art']).withFilters(defaultFilters).limitTo(4).asList()
+        show = None
+        otherShows = list()
+        for item in items:
+            themeSong = os.path.join(item['file'], 'theme.mp3')
+            if show is None and xbmcvfs.exists(themeSong):
+                show = item
+            else:
+                otherShows.append(item)
 
-        if tvShow is None:
+        if show is None:
             raise QuestionException('Unable to find any tv shows with a theme.mp3 file')
 
-        self.addCorrectAnswer(tvShow['idShow'], tvShow['title'], tvShow['idFile'], path = thumb.getCachedTVShowThumb(tvShow['tvShowPath']))
+        self.addCorrectAnswer(id = show['tvshowid'], text = show['title'], image = show['art']['poster'])
 
         # Fill with random episodes from other shows
-        shows = database.getTVShows(maxResults = 3, excludeTVShowId = tvShow['idShow'], onlySelectTVShow = True)
-        for show in shows:
-            self.addAnswer(show['idShow'], show['title'], path = thumb.getCachedTVShowThumb(show['tvShowPath']))
+        for otherShow in otherShows:
+            self.addAnswer(id = otherShow['tvshowid'], text = otherShow['title'], image = otherShow['art']['poster'])
 
         random.shuffle(self.answers)
-        audioDisplayType.setAudioFile(themeSong)
+        audioDisplayType.setAudioFile(os.path.join(show['file'], 'theme.mp3'))
         self.text = strings(Q_WHAT_TVSHOW_IS_THIS_THEME_FROM)
 
     @staticmethod
@@ -1083,10 +1076,7 @@ def getEnabledQuestionCandidates(gameInstance):
 
     questionCandidates = [ candidate for candidate in questionCandidates if candidate.isEnabled() ]
 
-    return questionCandidates
-
-
-
+    return [WhatTVShowIsThisThemeFromQuestion]#questionCandidates
 
 
 def isAnyMovieQuestionsEnabled():

@@ -24,19 +24,22 @@ import json
 
 def getMovies(properties  = None):
     params = {'sort' : {'method' : 'random'}}
-    return Query('VideoLibrary.GetMovies', params, properties)
+    return Query('VideoLibrary.GetMovies', params, properties, 'movies')
 
 def getTVShows(properties = None):
     params = {'sort' : {'method' : 'random'}}
-    return Query('VideoLibrary.GetTVShows', params, properties)
+    return Query('VideoLibrary.GetTVShows', params, properties, 'tvshows')
 
-def getSeasons(properties = None):
-    params = {'sort' : {'method' : 'random'}}
-    return Query('VideoLibrary.GetSeasons', params, properties)
+def getSeasons(tvShowId, properties = None):
+    params = {
+        'sort' : {'method' : 'random'},
+        'tvshowid' : tvShowId
+    }
+    return Query('VideoLibrary.GetSeasons', params, properties, 'seasons')
 
 def getEpisodes(properties = None):
     params = {'sort' : {'method' : 'random'}}
-    return Query('VideoLibrary.GetEpisodes', params, properties)
+    return Query('VideoLibrary.GetEpisodes', params, properties, 'episodes')
 
 def getMovieCount():
     return getMovies().limitTo(1).getResponse()['result']['limits']['total']
@@ -51,10 +54,10 @@ def getEpisodesCount():
     return getEpisodes().limitTo(1).getResponse()['result']['limits']['total']
 
 def hasMovies():
-    return Query('XBMC.GetInfoBooleans', {'booleans' : ['Library.HasContent(Movies)']}).asList('Library.HasContent(Movies)')
+    return Query('XBMC.GetInfoBooleans', {'booleans' : ['Library.HasContent(Movies)']}, resultKey = 'Library.HasContent(Movies)').asList()
 
 def hasTVShows():
-    return Query('XBMC.GetInfoBooleans', {'booleans' : ['Library.HasContent(TVShows)']}).asList('Library.HasContent(TVShows)')
+    return Query('XBMC.GetInfoBooleans', {'booleans' : ['Library.HasContent(TVShows)']}, resultKey = 'Library.HasContent(TVShows)').asList()
 
 def isAnyVideosWatched():
     return len(getMovies([]).minPlayCount(1).limitTo(1).asList()) > 0
@@ -75,7 +78,7 @@ def isAnyContentRatingsAvailable():
         'field' : 'rating',
         'value' : ''
     })
-    return len(query.asList('tvshows')) > 0
+    return len(query.asList()) > 0
 
 
 def buildRatingsFilters(field, ratings):
@@ -98,10 +101,11 @@ def buildOnlyWathcedFilter():
 
 
 class Query(object):
-    def __init__(self, method, params, properties = None, id = 1):
+    def __init__(self, method, params, properties = None, resultKey = None, id = 1):
         self.properties = properties
         self.params = params
         self.filters = list()
+        self.resultKey = resultKey
         self.query = {
             'jsonrpc' : '2.0',
             'id' : id,
@@ -121,15 +125,15 @@ class Query(object):
         #print resp
         return json.loads(resp)
 
-    def asList(self, key = 'movies'):
+    def asList(self):
         response = self.getResponse()
-        if response['result'].has_key(key):
-            return self.getResponse()['result'][key]
+        if response['result'].has_key(self.resultKey):
+            return self.getResponse()['result'][self.resultKey]
         else:
             return list()
 
-    def asItem(self, key = 'movies'):
-        list = self.asList(key)
+    def asItem(self):
+        list = self.asList()
         if list:
             return list[0]
         else:
@@ -217,6 +221,30 @@ class Query(object):
             'operator' : 'greaterthan',
             'field' : 'playcount',
             'value' : str(playCount - 1)
+        })
+        return self
+
+    def fromShow(self, tvShow):
+        self.filters.append({
+            'operator' : 'is',
+            'field' : 'tvshow',
+            'value' : str(tvShow)
+        })
+        return self
+
+    def fromSeason(self, season):
+        self.filters.append({
+            'operator' : 'is',
+            'field' : 'season',
+            'value' : str(season)
+        })
+        return self
+
+    def episode(self, episode):
+        self.filters.append({
+            'operator' : 'is',
+            'field' : 'episode',
+            'value' : str(episode)
         })
         return self
 
