@@ -23,6 +23,10 @@ import xbmc
 from quizlib.game import QuestionLimitedGame
 from quizlib.gui import QuizGui
 
+import buggalo
+buggalo.SUBMIT_URL = 'http://tommy.winther.nu/exception/submit.php'
+
+@buggalo.buggalo_try_except()
 def runCinemaExperience(type, automatic, maxRating, genre, questionLimit):
     """
     Used by Cinema Experience integration. This method will block until the Movie Quiz is exited.
