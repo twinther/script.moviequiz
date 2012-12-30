@@ -160,11 +160,18 @@ class Query(object):
         return self
 
     def excludeTitles(self, titles):
-        for title in titles:
+        if type(titles) == list:
+            for title in titles:
+                self.filters.append({
+                    'operator' : 'doesnotcontain',
+                    'field' : 'title',
+                    'value' : title
+                })
+        else:
             self.filters.append({
                 'operator' : 'doesnotcontain',
                 'field' : 'title',
-                'value' : title
+                'value' : titles
             })
         return self
 
