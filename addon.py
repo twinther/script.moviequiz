@@ -1,5 +1,5 @@
 #
-#      Copyright (C) 2012 Tommy Winther
+#      Copyright (C) 2013 Tommy Winther
 #      http://tommy.winther.nu
 #
 #  This Program is free software; you can redistribute it and/or modify
@@ -24,8 +24,10 @@ import xbmcaddon
 import buggalo
 from quizlib.gui import MenuGui
 
-#import quizlib.library
-#print quizlib.library.getMovies(['title', 'resume']).limitTo(10).asList()
+#import sys
+#sys.path.append('/opt/pycharm/pycharm-debug.egg')
+#import pydevd
+#pydevd.settrace('localhost', port=5005, stdoutToServer=True, stderrToServer=True, suspend=False)
 
 if True:
     buggalo.SUBMIT_URL = 'http://tommy.winther.nu/exception/submit.php'

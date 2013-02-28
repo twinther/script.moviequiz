@@ -1,5 +1,5 @@
 #
-#      Copyright (C) 2012 Tommy Winther
+#      Copyright (C) 2013 Tommy Winther
 #      http://tommy.winther.nu
 #
 #  This Program is free software; you can redistribute it and/or modify
@@ -72,6 +72,7 @@ NO_PHOTO_IMAGE = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz
 MPAA_RATINGS = ['R', 'Rated R', 'PG-13', 'Rated PG-13', 'PG', 'Rated PG', 'G', 'Rated G']
 CONTENT_RATINGS = ['TV-MA', 'TV-14', 'TV-PG', 'TV-G', 'TV-Y7-FV', 'TV-Y7', 'TV-Y']
 
+
 class LoadingGui(xbmcgui.WindowXMLDialog):
     def __new__(cls, menuGui):
         return super(LoadingGui, cls).__new__(cls, 'script-moviequiz-loading.xml', ADDON.getAddonInfo('path'))
@@ -105,9 +106,7 @@ class LoadingGui(xbmcgui.WindowXMLDialog):
         pass
 
 
-
 class MenuGui(xbmcgui.WindowXML):
-
     C_MENU_MOVIE_QUIZ = 4001
     C_MENU_TVSHOW_QUIZ = 4002
     C_MENU_ABOUT = 4000
@@ -139,26 +138,26 @@ class MenuGui(xbmcgui.WindowXML):
         if not hasMovies and not hasTVShows:
             # Must have at least one movie or tvshow
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_REQUIREMENTS_MISSING_LINE1),
-                strings(E_REQUIREMENTS_MISSING_LINE2), strings(E_REQUIREMENTS_MISSING_LINE3))
+                                strings(E_REQUIREMENTS_MISSING_LINE2), strings(E_REQUIREMENTS_MISSING_LINE3))
             self.close()
             return
 
         if not library.isAnyVideosWatched() and ADDON.getSetting(SETT_ONLY_WATCHED_MOVIES) == 'true':
             # Only watched movies requires at least one watched video files
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_ONLY_WATCHED_LINE1),
-                strings(E_ONLY_WATCHED_LINE2), strings(E_ONLY_WATCHED_LINE3))
+                                strings(E_ONLY_WATCHED_LINE2), strings(E_ONLY_WATCHED_LINE3))
             ADDON.setSetting(SETT_ONLY_WATCHED_MOVIES, 'false')
 
         if not library.isAnyMPAARatingsAvailable() and ADDON.getSetting(SETT_MOVIE_RATING_LIMIT_ENABLED) == 'true':
             # MPAA rating requires ratings to be available in database
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_MOVIE_RATING_LIMIT_LINE1),
-                strings(E_MOVIE_RATING_LIMIT_LINE2), strings(E_MOVIE_RATING_LIMIT_LINE3))
+                                strings(E_MOVIE_RATING_LIMIT_LINE2), strings(E_MOVIE_RATING_LIMIT_LINE3))
             ADDON.setSetting(SETT_MOVIE_RATING_LIMIT_ENABLED, 'false')
 
         if not library.isAnyContentRatingsAvailable() and ADDON.getSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED) == 'true':
             # Content rating requires ratings to be available in database
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_TVSHOW_RATING_LIMIT_LINE1),
-                strings(E_TVSHOW_RATING_LIMIT_LINE2), strings(E_TVSHOW_RATING_LIMIT_LINE3))
+                                strings(E_TVSHOW_RATING_LIMIT_LINE2), strings(E_TVSHOW_RATING_LIMIT_LINE3))
             ADDON.setSetting(SETT_TVSHOW_RATING_LIMIT_ENABLED, 'false')
 
         self.moviesEnabled = bool(hasMovies and question.isAnyMovieQuestionsEnabled())
@@ -173,10 +172,12 @@ class MenuGui(xbmcgui.WindowXML):
         self.onUpdateUserSelectList()
 
         if not question.isAnyMovieQuestionsEnabled():
-            xbmcgui.Dialog().ok(strings(E_WARNING), strings(E_ALL_MOVIE_QUESTIONS_DISABLED), strings(E_QUIZ_TYPE_NOT_AVAILABLE))
+            xbmcgui.Dialog().ok(strings(E_WARNING), strings(E_ALL_MOVIE_QUESTIONS_DISABLED),
+                                strings(E_QUIZ_TYPE_NOT_AVAILABLE))
 
         if not question.isAnyTVShowQuestionsEnabled():
-            xbmcgui.Dialog().ok(strings(E_WARNING), strings(E_ALL_TVSHOW_QUESTIONS_DISABLED), strings(E_QUIZ_TYPE_NOT_AVAILABLE))
+            xbmcgui.Dialog().ok(strings(E_WARNING), strings(E_ALL_TVSHOW_QUESTIONS_DISABLED),
+                                strings(E_QUIZ_TYPE_NOT_AVAILABLE))
 
     def loadTrivia(self):
         self.trivia = ['Movie Quiz v.' + ADDON.getAddonInfo('version'),
@@ -186,16 +187,16 @@ class MenuGui(xbmcgui.WindowXML):
             self.trivia.append(strings(M_MOVIE_COLLECTION_TRIVIA))
             self.trivia.append(strings(M_MOVIE_COUNT) % library.getMovieCount())
 
-#            self.trivia.append(strings(M_ACTOR_COUNT) % actors['count'])
-#            self.trivia.append(strings(M_DIRECTOR_COUNT) % directors['count'])
-#            self.trivia.append(strings(M_STUDIO_COUNT) % studios['count'])
+        #            self.trivia.append(strings(M_ACTOR_COUNT) % actors['count'])
+        #            self.trivia.append(strings(M_DIRECTOR_COUNT) % directors['count'])
+        #            self.trivia.append(strings(M_STUDIO_COUNT) % studios['count'])
 
-#            self.trivia.append(strings(M_HOURS_OF_ENTERTAINMENT) % int(movies['total_hours']))
+        #            self.trivia.append(strings(M_HOURS_OF_ENTERTAINMENT) % int(movies['total_hours']))
 
         if library.hasTVShows():
             self.trivia.append(strings(M_TVSHOW_COLLECTION_TRIVIA))
             self.trivia.append(strings(M_TVSHOW_COUNT) % library.getTVShowsCount())
-#            self.trivia.append(strings(M_SEASON_COUNT) % self.library.getSeasonsCount())
+            #            self.trivia.append(strings(M_SEASON_COUNT) % self.library.getSeasonsCount())
             self.trivia.append(strings(M_EPISODE_COUNT) % library.getEpisodesCount())
 
 
@@ -262,17 +263,16 @@ class MenuGui(xbmcgui.WindowXML):
                     self.onUpdateUserSelectList()
 
 
-
     @buggalo.buggalo_try_except()
     def onFocus(self, controlId):
         pass
 
-    def onAddNewUser(self, createDefault = False):
+    def onAddNewUser(self, createDefault=False):
         keyboard = xbmc.Keyboard('', strings(G_WELCOME_ENTER_NICKNAME))
         keyboard.doModal()
         name = None
         if keyboard.isConfirmed() and len(keyboard.getText().strip()) > 0:
-            name =  keyboard.getText().strip()
+            name = keyboard.getText().strip()
         elif createDefault:
             name = 'Unknown player'
 
@@ -284,7 +284,7 @@ class MenuGui(xbmcgui.WindowXML):
     def onUpdateUserSelectList(self):
         localHighscore = highscore.LocalHighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
         if not localHighscore.getUsers():
-            self.onAddNewUser(createDefault = True)
+            self.onAddNewUser(createDefault=True)
 
         listControl = self.getControl(self.C_MENU_USER_SELECT)
         listControl.reset()
@@ -296,8 +296,9 @@ class MenuGui(xbmcgui.WindowXML):
         item = xbmcgui.ListItem(strings(G_ADD_USER))
         item.setProperty('id', '-1')
         listControl.addItem(item)
-        
+
         localHighscore.close()
+
 
 class GameTypeDialog(xbmcgui.WindowXMLDialog):
     C_GAMETYPE_VISIBLE_MARKER = 100
@@ -323,21 +324,21 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
     C_GAMETYPE_QUESTION_LIMIT_PREVIOUS = 4202
 
     QUESTION_SUB_TYPES = [
-        {'limit' : '5', 'text' : strings(M_X_QUESTIONS, '5')},
-        {'limit' : '10', 'text' : strings(M_X_QUESTIONS, '10')},
-        {'limit' : '15', 'text' : strings(M_X_QUESTIONS, '15')},
-        {'limit' : '25', 'text' : strings(M_X_QUESTIONS, '25')},
-        {'limit' : '50', 'text' : strings(M_X_QUESTIONS, '50')},
-        {'limit' : '100', 'text' : strings(M_X_QUESTIONS, '100')}
+        {'limit': '5', 'text': strings(M_X_QUESTIONS, '5')},
+        {'limit': '10', 'text': strings(M_X_QUESTIONS, '10')},
+        {'limit': '15', 'text': strings(M_X_QUESTIONS, '15')},
+        {'limit': '25', 'text': strings(M_X_QUESTIONS, '25')},
+        {'limit': '50', 'text': strings(M_X_QUESTIONS, '50')},
+        {'limit': '100', 'text': strings(M_X_QUESTIONS, '100')}
     ]
     TIME_SUB_TYPES = [
-        {'limit' : '1', 'text' : strings(M_ONE_MINUTE)},
-        {'limit' : '2', 'text' : strings(M_X_MINUTES, '2')},
-        {'limit' : '3', 'text' : strings(M_X_MINUTES, '3')},
-        {'limit' : '5', 'text' : strings(M_X_MINUTES, '5')},
-        {'limit' : '10', 'text' : strings(M_X_MINUTES, '10')},
-        {'limit' : '15', 'text' : strings(M_X_MINUTES, '15')},
-        {'limit' : '30', 'text' : strings(M_X_MINUTES, '30')}
+        {'limit': '1', 'text': strings(M_ONE_MINUTE)},
+        {'limit': '2', 'text': strings(M_X_MINUTES, '2')},
+        {'limit': '3', 'text': strings(M_X_MINUTES, '3')},
+        {'limit': '5', 'text': strings(M_X_MINUTES, '5')},
+        {'limit': '10', 'text': strings(M_X_MINUTES, '10')},
+        {'limit': '15', 'text': strings(M_X_MINUTES, '15')},
+        {'limit': '30', 'text': strings(M_X_MINUTES, '30')}
     ]
 
     VISIBLE_UNLIMITED = 'unlimited'
@@ -356,7 +357,7 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
     def onInit(self):
         if self.type == game.GAMETYPE_MOVIE:
             self.getControl(3999).setLabel(strings(M_CHOOSE_MOVIE_GAME_TYPE))
-        elif  self.type == game.GAMETYPE_TVSHOW:
+        elif self.type == game.GAMETYPE_TVSHOW:
             self.getControl(3999).setLabel(strings(M_CHOOSE_TV_GAME_TYPE))
 
         control = self.getControl(self.C_GAMETYPE_QUESTION_LIMIT)
@@ -380,7 +381,8 @@ class GameTypeDialog(xbmcgui.WindowXMLDialog):
     def onClick(self, controlId):
         interactive = True
         gameInstance = None
-        if controlId in [self.C_GAMETYPE_UNLIMITED_CANCEL, self.C_GAMETYPE_TIME_LIMITED_CANCEL, self.C_GAMETYPE_QUESTION_LIMITED_CANCEL]:
+        if controlId in [self.C_GAMETYPE_UNLIMITED_CANCEL, self.C_GAMETYPE_TIME_LIMITED_CANCEL,
+                         self.C_GAMETYPE_QUESTION_LIMITED_CANCEL]:
             self.close()
 
         elif controlId in [self.C_GAMETYPE_UNLIMITED, self.C_GAMETYPE_UNLIMITED_PLAY]:
@@ -527,13 +529,13 @@ class AboutDialog(xbmcgui.WindowXMLDialog):
 
         statistics = self.globalHighscore.getStatistics()
         statisticsLabel = strings(M_STATISTICS, (
-                                  statistics['users']['unique_ips'],
-                                  statistics['users']['unique_countries'],
-                                  statistics['quiz']['total_games'],
-                                  statistics['quiz']['total_questions'],
-                                  statistics['quiz']['total_correct_answers'],
-                                  statistics['quiz']['correct_percentage']
-                                  ))
+            statistics['users']['unique_ips'],
+            statistics['users']['unique_countries'],
+            statistics['quiz']['total_games'],
+            statistics['quiz']['total_questions'],
+            statistics['quiz']['total_correct_answers'],
+            statistics['quiz']['correct_percentage']
+        ))
         self.getControl(self.C_ABOUT_STATISTICS).setLabel(statisticsLabel)
 
         listControl = self.getControl(self.C_ABOUT_STATISTICS_COUNTRIES)
@@ -687,7 +689,8 @@ class QuizGui(xbmcgui.WindowXML):
             idx = MPAA_RATINGS.index(ADDON.getSetting('movie.rating.limit'))
             self.defaultLibraryFilters.extend(iter(library.buildRatingsFilters('mpaarating', MPAA_RATINGS[:idx])))
 
-        elif gameInstance.getType() == game.GAMETYPE_TVSHOW and ADDON.getSetting('tvshow.rating.limit.enabled') == 'true':
+        elif gameInstance.getType() == game.GAMETYPE_TVSHOW and ADDON.getSetting(
+                'tvshow.rating.limit.enabled') == 'true':
             idx = CONTENT_RATINGS.index(ADDON.getSetting('tvshow.rating.limit'))
             self.defaultLibraryFilters.extend(iter(library.buildRatingsFilters('rating', CONTENT_RATINGS[:idx])))
 
@@ -790,7 +793,7 @@ class QuizGui(xbmcgui.WindowXML):
             self.player.stopPlayback(True)
 
         if self.questionPointsThread is not None:
-           self.questionPointsThread.cancel()
+            self.questionPointsThread.cancel()
 
         if self.gameInstance.isInteractive():
             w = GameOverDialog(self, self.gameInstance)
@@ -877,7 +880,7 @@ class QuizGui(xbmcgui.WindowXML):
         retries = 0
         q = None
         while retries < 100 and self.uiState == self.STATE_LOADING:
-            xbmc.sleep(10) # give XBMC time to process other events
+            xbmc.sleep(10)  # give XBMC time to process other events
             retries += 1
 
             self.getControl(self.C_MAIN_LOADING).setPercent(retries)
@@ -892,11 +895,13 @@ class QuizGui(xbmcgui.WindowXML):
                 except Exception, ex:
                     xbmc.log("%s in %s" % (ex.__class__.__name__, candidate.__name__))
                     import traceback, sys
-                    traceback.print_exc(file = sys.stdout)
+
+                    traceback.print_exc(file=sys.stdout)
 
             if q is None or len(q.getAnswers()) < 3:
                 continue
-            
+
+            print type(q)
             if not q.getUniqueIdentifier() in self.previousQuestions:
                 self.previousQuestions.append(q.getUniqueIdentifier())
                 break
@@ -914,13 +919,13 @@ class QuizGui(xbmcgui.WindowXML):
         Before the timer starts the user gets a three second head start - this is to actually make it possible to get a perfect 100 score.
         """
         if self.questionPointsThread is not None:
-           self.questionPointsThread.cancel()
+            self.questionPointsThread.cancel()
 
         if self.questionPoints is None:
             self.questionPoints = 100
         else:
             self.questionPoints -= 1
-            
+
         self.getControl(4103).setLabel(str(self.questionPoints / 10.0))
         if self.questionPoints == 100:
             # three second head start
@@ -942,7 +947,7 @@ class QuizGui(xbmcgui.WindowXML):
         """
         xbmc.log("onQuestionAnswered(..)")
         if self.questionPointsThread is not None:
-           self.questionPointsThread.cancel()
+            self.questionPointsThread.cancel()
 
         if answer is not None and answer.correct:
             xbmc.playSFX(AUDIO_CORRECT)
@@ -982,8 +987,8 @@ class QuizGui(xbmcgui.WindowXML):
 
         label = self.getControl(self.C_MAIN_QUESTION_COUNT)
         label.setLabel(self.gameInstance.getStatsString())
-        
-    def onThumbChanged(self, controlId = None):
+
+    def onThumbChanged(self, controlId=None):
         if self.question is None:
             return # not initialized yet
 
@@ -996,7 +1001,7 @@ class QuizGui(xbmcgui.WindowXML):
             if answer is not None and answer.coverFile is not None:
                 self.getControl(self.C_MAIN_COVER_IMAGE_VISIBILITY).setVisible(False)
                 coverImage.setImage(answer.coverFile)
-            elif answer is not None and answer.coverFile is not None :
+            elif answer is not None and answer.coverFile is not None:
                 self.getControl(self.C_MAIN_COVER_IMAGE_VISIBILITY).setVisible(False)
                 coverImage.setImage(NO_PHOTO_IMAGE)
             else:
@@ -1013,7 +1018,7 @@ class QuizGui(xbmcgui.WindowXML):
         self.getControl(self.C_MAIN_CORRECT_VISIBILITY).setVisible(True)
         self.getControl(self.C_MAIN_INCORRECT_VISIBILITY).setVisible(True)
 
-    def onVisibilityChanged(self, displayType = None):
+    def onVisibilityChanged(self, displayType=None):
         """
         @type displayType: quizlib.question.DisplayType
         @param displayType: the type of display required by the current question
@@ -1021,7 +1026,8 @@ class QuizGui(xbmcgui.WindowXML):
         self.getControl(self.C_MAIN_VIDEO_VISIBILITY).setVisible(not isinstance(displayType, question.VideoDisplayType))
         self.getControl(self.C_MAIN_PHOTO_VISIBILITY).setVisible(not isinstance(displayType, question.PhotoDisplayType))
         self.getControl(self.C_MAIN_QUOTE_VISIBILITY).setVisible(not isinstance(displayType, question.QuoteDisplayType))
-        self.getControl(self.C_MAIN_THREE_PHOTOS_VISIBILITY).setVisible(not isinstance(displayType, question.ThreePhotoDisplayType))
+        self.getControl(self.C_MAIN_THREE_PHOTOS_VISIBILITY).setVisible(
+            not isinstance(displayType, question.ThreePhotoDisplayType))
         self.getControl(self.C_MAIN_THEME_VISIBILITY).setVisible(not isinstance(displayType, question.AudioDisplayType))
 
 
@@ -1071,7 +1077,8 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
 
     @buggalo.buggalo_try_except()
     def onInit(self):
-        self.getControl(4100).setLabel(strings(G_YOU_SCORED) % (self.game.getCorrectAnswers(), self.game.getTotalAnswers()))
+        self.getControl(4100).setLabel(
+            strings(G_YOU_SCORED) % (self.game.getCorrectAnswers(), self.game.getTotalAnswers()))
         self.getControl(4101).setLabel(str(self.game.getPoints()))
 
         if self.game.isInteractive():
