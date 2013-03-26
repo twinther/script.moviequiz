@@ -22,61 +22,75 @@ import xbmc
 import json
 
 
-def getMovies(properties  = None):
-    params = {'sort' : {'method' : 'random'}}
+def getMovies(properties=None):
+    params = {'sort': {'method': 'random'}}
     return Query('VideoLibrary.GetMovies', params, properties, 'movies')
 
-def getTVShows(properties = None):
-    params = {'sort' : {'method' : 'random'}}
+
+def getTVShows(properties=None):
+    params = {'sort': {'method': 'random'}}
     return Query('VideoLibrary.GetTVShows', params, properties, 'tvshows')
 
-def getSeasons(tvShowId, properties = None):
+
+def getSeasons(tvShowId, properties=None):
     params = {
-        'sort' : {'method' : 'random'},
-        'tvshowid' : tvShowId
+        'sort': {'method': 'random'},
+        'tvshowid': tvShowId
     }
     return Query('VideoLibrary.GetSeasons', params, properties, 'seasons')
 
-def getEpisodes(properties = None):
-    params = {'sort' : {'method' : 'random'}}
+
+def getEpisodes(properties=None):
+    params = {'sort': {'method': 'random'}}
     return Query('VideoLibrary.GetEpisodes', params, properties, 'episodes')
+
 
 def getMovieCount():
     return getMovies().limitTo(1).getResponse()['result']['limits']['total']
 
+
 def getTVShowsCount():
     return getTVShows().limitTo(1).getResponse()['result']['limits']['total']
+
 
 def getSeasonsCount():
     return getSeasons().limitTo(1).getResponse()['result']['limits']['total']
 
+
 def getEpisodesCount():
     return getEpisodes().limitTo(1).getResponse()['result']['limits']['total']
 
+
 def hasMovies():
-    return Query('XBMC.GetInfoBooleans', {'booleans' : ['Library.HasContent(Movies)']}, resultKey = 'Library.HasContent(Movies)').asList()
+    return Query('XBMC.GetInfoBooleans', {'booleans': ['Library.HasContent(Movies)']},
+                 resultKey='Library.HasContent(Movies)').asList()
+
 
 def hasTVShows():
-    return Query('XBMC.GetInfoBooleans', {'booleans' : ['Library.HasContent(TVShows)']}, resultKey = 'Library.HasContent(TVShows)').asList()
+    return Query('XBMC.GetInfoBooleans', {'booleans': ['Library.HasContent(TVShows)']},
+                 resultKey='Library.HasContent(TVShows)').asList()
+
 
 def isAnyVideosWatched():
     return len(getMovies([]).minPlayCount(1).limitTo(1).asList()) > 0
 
+
 def isAnyMPAARatingsAvailable():
     query = getMovies([]).limitTo(1)
     query.filters.append({
-        'operator' : 'isnot',
-        'field' : 'mpaarating',
-        'value' : ''
+        'operator': 'isnot',
+        'field': 'mpaarating',
+        'value': ''
     })
     return len(query.asList()) > 0
+
 
 def isAnyContentRatingsAvailable():
     query = getTVShows([]).limitTo(1)
     query.filters.append({
-        'operator' : 'isnot',
-        'field' : 'rating',
-        'value' : ''
+        'operator': 'isnot',
+        'field': 'rating',
+        'value': ''
     })
     return len(query.asList()) > 0
 
@@ -85,36 +99,37 @@ def buildRatingsFilters(field, ratings):
     filters = list()
     for rating in ratings:
         filters.append({
-            'operator' : 'isnot',
-            'field' : field,
-            'value' : rating
+            'operator': 'isnot',
+            'field': field,
+            'value': rating
         })
     return filters
 
+
 def buildOnlyWathcedFilter():
     return [{
-                'operator' : 'greaterthan',
-                'field' : 'playcount',
-                'value' : '0'
+            'operator': 'greaterthan',
+            'field': 'playcount',
+            'value': '0'
 
             }]
 
 
 class Query(object):
-    def __init__(self, method, params, properties = None, resultKey = None, id = 1):
+    def __init__(self, method, params, properties=None, resultKey=None, id=1):
         self.properties = properties
         self.params = params
         self.filters = list()
         self.resultKey = resultKey
         self.query = {
-            'jsonrpc' : '2.0',
-            'id' : id,
-            'method' : method
+            'jsonrpc': '2.0',
+            'id': id,
+            'method': method
         }
 
     def getResponse(self):
         if self.filters:
-            self.params['filter'] = {'and' : self.filters}
+            self.params['filter'] = {'and': self.filters}
         if self.properties:
             self.params['properties'] = self.properties
         if self.params:
@@ -145,17 +160,17 @@ class Query(object):
 
     def inSet(self, set):
         self.filters.append({
-            'operator' : 'is',
-            'field' : 'set',
-            'value' : set
+            'operator': 'is',
+            'field': 'set',
+            'value': set
         })
         return self
 
     def inGenre(self, genre):
         self.filters.append({
-            'operator' : 'contains',
-            'field' : 'genre',
-            'value' : genre
+            'operator': 'contains',
+            'field': 'genre',
+            'value': genre
         })
         return self
 
@@ -163,106 +178,106 @@ class Query(object):
         if type(titles) == list:
             for title in titles:
                 self.filters.append({
-                    'operator' : 'doesnotcontain',
-                    'field' : 'title',
-                    'value' : title
+                    'operator': 'doesnotcontain',
+                    'field': 'title',
+                    'value': title
                 })
         else:
             self.filters.append({
-                'operator' : 'doesnotcontain',
-                'field' : 'title',
-                'value' : titles
+                'operator': 'doesnotcontain',
+                'field': 'title',
+                'value': titles
             })
         return self
 
     def withActor(self, actor):
         self.filters.append({
-            'operator' : 'is',
-            'field' : 'actor',
-            'value' : actor
+            'operator': 'is',
+            'field': 'actor',
+            'value': actor
         })
         return self
 
     def withoutActor(self, actor):
         self.filters.append({
-            'operator' : 'isnot',
-            'field' : 'actor',
-            'value' : actor
+            'operator': 'isnot',
+            'field': 'actor',
+            'value': actor
         })
         return self
 
     def fromYear(self, fromYear):
         self.filters.append({
-            'operator' : 'greaterthan',
-            'field' : 'year',
-            'value' : str(fromYear)
+            'operator': 'greaterthan',
+            'field': 'year',
+            'value': str(fromYear)
         })
         return self
 
     def toYear(self, toYear):
         self.filters.append({
-            'operator' : 'lessthan',
-            'field' : 'year',
-            'value' : str(toYear)
+            'operator': 'lessthan',
+            'field': 'year',
+            'value': str(toYear)
         })
         return self
 
     def directedBy(self, directedBy):
         self.filters.append({
-            'operator' : 'is',
-            'field' : 'director',
-            'value' : directedBy
+            'operator': 'is',
+            'field': 'director',
+            'value': directedBy
         })
         return self
 
     def notDirectedBy(self, notDirectedBy):
         self.filters.append({
-            'operator' : 'isnot',
-            'field' : 'director',
-            'value' : str(notDirectedBy)
+            'operator': 'isnot',
+            'field': 'director',
+            'value': str(notDirectedBy)
         })
         return self
 
     def minPlayCount(self, playCount):
         self.filters.append({
-            'operator' : 'greaterthan',
-            'field' : 'playcount',
-            'value' : str(playCount - 1)
+            'operator': 'greaterthan',
+            'field': 'playcount',
+            'value': str(playCount - 1)
         })
         return self
 
     def fromShow(self, tvShow):
         self.filters.append({
-            'operator' : 'is',
-            'field' : 'tvshow',
-            'value' : str(tvShow)
+            'operator': 'is',
+            'field': 'tvshow',
+            'value': str(tvShow)
         })
         return self
 
     def fromSeason(self, season):
         self.filters.append({
-            'operator' : 'is',
-            'field' : 'season',
-            'value' : str(season)
+            'operator': 'is',
+            'field': 'season',
+            'value': str(season)
         })
         return self
 
     def episode(self, episode):
         self.filters.append({
-            'operator' : 'is',
-            'field' : 'episode',
-            'value' : str(episode)
+            'operator': 'is',
+            'field': 'episode',
+            'value': str(episode)
         })
         return self
 
     def limitTo(self, end):
-        self.params['limits'] = {'start' : 0, 'end' : end}
+        self.params['limits'] = {'start': 0, 'end': end}
         return self
 
     def limitToMPAARating(self, rating):
         self.filters.append({
-            'operator' : 'isnot',
-            'field' : 'mpaarating',
-            'value' : rating
+            'operator': 'isnot',
+            'field': 'mpaarating',
+            'value': rating
         })
         return self

@@ -80,7 +80,6 @@ class Question(object):
         a = Answer(id, text, image, sortWeight, correct)
         self.answers.append(a)
 
-
     def getCorrectAnswer(self):
         for answer in self.answers:
             if answer.correct:
@@ -116,7 +115,7 @@ class Question(object):
         return texts
 
     def _isAnimationGenre(self, genre):
-        return "Animation" in genre # todo case insensitive
+        return "Animation" in genre  # todo case insensitive
 
 #
 # DISPLAY TYPES

@@ -22,7 +22,7 @@ import os
 import xbmc
 import xbmcaddon
 import buggalo
-from quizlib.gui import MenuGui
+from quizlib.gui import QuizGui
 
 #import sys
 #sys.path.append('/opt/pycharm/pycharm-debug.egg')
@@ -37,7 +37,7 @@ if True:
         if not os.path.exists(xbmc.translatePath(ADDON.getAddonInfo('profile'))):
             os.makedirs(xbmc.translatePath(ADDON.getAddonInfo('profile')))
 
-        w = MenuGui()
+        w = QuizGui()
         w.doModal()
         del w
     except Exception:

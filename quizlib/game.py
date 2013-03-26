@@ -95,6 +95,9 @@ class UnlimitedGame(Game):
     def __repr__(self):
         return "<UnlimitedGame>"
 
+    def __eq__(self, other):
+        return type(other) == UnlimitedGame and self.type == other.type
+
 
 class QuestionLimitedGame(Game):
     def __init__(self, type, userId, interactive, questionLimit):
@@ -126,6 +129,9 @@ class QuestionLimitedGame(Game):
     def __repr__(self):
         return "<QuestionLimitedGame %s>" % str(self.questionLimit)
 
+    def __eq__(self, other):
+        return type(other) == QuestionLimitedGame and self.type == other.type and self.questionLimit == other.questionLimit
+
 class TimeLimitedGame(Game):
     def __init__(self, type, userId, interactive, timeLimitMinutes):
         super(TimeLimitedGame, self).__init__(type, userId, interactive)
@@ -155,4 +161,7 @@ class TimeLimitedGame(Game):
 
     def __repr__(self):
         return "<TimeLimitedGame %s>" % str(self.timeLimitMinutes)
+
+    def __eq__(self, other):
+        return type(other) == TimeLimitedGame and self.type == other.type and self.timeLimitMinutes == other.timeLimitMinutes
 
