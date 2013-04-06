@@ -648,7 +648,7 @@
                 <posy>100</posy>
                 <width>450</width>
                 <height>50</height>
-                <label>Back</label>
+                <label>$ADDON[script.moviequiz 30105]</label>
                 <align>left</align>
                 <aligny>center</aligny>
                 <textcolor>ff888888</textcolor>
@@ -924,7 +924,7 @@
                 <posy>150</posy>
                 <width>450</width>
                 <height>50</height>
-                <label>Back</label>
+                <label>$ADDON[script.moviequiz 30105]</label>
                 <align>left</align>
                 <aligny>center</aligny>
                 <textcolor>ff888888</textcolor>

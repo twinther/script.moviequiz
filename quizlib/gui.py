@@ -26,7 +26,6 @@ import time
 
 import xbmc
 import xbmcgui
-import datetime
 
 import game
 import question
@@ -54,6 +53,8 @@ ACTION_REMOTE7 = 65
 ACTION_REMOTE8 = 66
 ACTION_REMOTE9 = 67
 
+ACTION_NAV_BACK = 92
+
 ACTION_JUMP_SMS2 = 142
 ACTION_JUMP_SMS3 = 143
 ACTION_JUMP_SMS4 = 144
@@ -72,43 +73,6 @@ NO_PHOTO_IMAGE = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz
 
 MPAA_RATINGS = ['R', 'Rated R', 'PG-13', 'Rated PG-13', 'PG', 'Rated PG', 'G', 'Rated G']
 CONTENT_RATINGS = ['TV-MA', 'TV-14', 'TV-PG', 'TV-G', 'TV-Y7-FV', 'TV-Y7', 'TV-Y']
-
-
-class LoadingGui(xbmcgui.WindowXML):
-    def __new__(cls):
-        return super(LoadingGui, cls).__new__(cls, 'script-moviequiz-loading.xml', ADDON.getAddonInfo('path'))
-
-    def __init__(self):
-        super(LoadingGui, self).__init__()
-
-    @buggalo.buggalo_try_except()
-    def onInit(self):
-        menuGui = MenuGui()
-
-        startTime = datetime.datetime.now()
-#        menuGui.loadTrivia()
-#        question.IMDB.loadData()
-
-        delta = datetime.datetime.now() - startTime
-#        if delta.seconds < 1:
-#            xbmc.sleep(1000 * (1 - delta.seconds))
-        menuGui.doModal()
-        del menuGui
-        self.close()
-
-
-    @buggalo.buggalo_try_except()
-    def onAction(self, action):
-        if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
-            self.close()
-
-    @buggalo.buggalo_try_except()
-    def onClick(self, controlId):
-        pass
-
-    @buggalo.buggalo_try_except()
-    def onFocus(self, controlId):
-        pass
 
 
 class MenuGui(xbmcgui.WindowXMLDialog):
@@ -317,7 +281,6 @@ class MenuGui(xbmcgui.WindowXMLDialog):
         self.getControl(MenuGui.C_MENU_GAMES_PLAYED_COUNTRY_ICON).setImage(str(statistics['quiz']['countryIconUrl']))
         self.getControl(MenuGui.C_MENU_GAMES_PLAYED_GLOBAL).setLabel(str(statistics['quiz']['total_games']))
 
-
     def reloadHighscores(self):
         idx = self.getControl(MenuGui.C_MENU_HIGHSCORE_GAME_LIMIT).getSelectedPosition()
         highscoreGameType = MenuGui.GAME_TYPES[idx]
@@ -371,7 +334,6 @@ class MenuGui(xbmcgui.WindowXMLDialog):
         listControl.addItems(items)
         self.getControl(MenuGui.C_MENU_HIGHSCORE_TABLE_VISIBILITY).setVisible(False)
 
-
     def close(self):
         # hide menus
         self.getControl(MenuGui.C_MENU_VISIBILITY).setVisible(True)
@@ -388,9 +350,32 @@ class MenuGui(xbmcgui.WindowXMLDialog):
     @buggalo.buggalo_try_except()
     def onAction(self, action):
         print 'onAction'
-        if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
-            self.quizGui.close()
-            self.close()
+        print action.getId()
+        if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU, ACTION_NAV_BACK]:
+            self.getControl(MenuGui.C_MENU_VISIBILITY).setVisible(True)
+            self.getControl(MenuGui.C_MENU_SELECTION_VISIBILITY).setVisible(True)
+            self.getControl(MenuGui.C_MENU_HIGHSCORE_VISIBILITY).setVisible(True)
+            self.getControl(MenuGui.C_MENU_HIGHSCORE_TABLE_VISIBILITY).setVisible(True)
+            self.getControl(MenuGui.C_MENU_ABOUT_VISIBILITY).setVisible(True)
+            xbmc.sleep(350)
+
+            if MenuGui.STATE_MAIN == self.state:
+                self.quizGui.close()
+                self.close()
+
+            elif self.state in [MenuGui.STATE_MOVIE_QUIZ, MenuGui.STATE_TV_QUIZ, MenuGui.STATE_HIGHSCORE, MenuGui.STATE_ABOUT, MenuGui.STATE_PLAYER]:
+                self.state = MenuGui.STATE_MAIN
+                self.updateMenu()
+
+            elif self.state in [MenuGui.STATE_MOVIE_TIME, MenuGui.STATE_MOVIE_QUESTION]:
+                self.state = MenuGui.STATE_MOVIE_QUIZ
+                self.updateMenu()
+
+            elif self.state in [MenuGui.STATE_TVSHOW_TIME, MenuGui.STATE_TVSHOW_QUESTION]:
+                self.state = MenuGui.STATE_TV_QUIZ
+                self.updateMenu()
+
+            self.getControl(MenuGui.C_MENU_VISIBILITY).setVisible(False)
 
         elif MenuGui.STATE_HIGHSCORE == self.state:
             self.reloadHighscores()
@@ -411,13 +396,13 @@ class MenuGui(xbmcgui.WindowXMLDialog):
             items.append(xbmcgui.ListItem(strings(30602)))
             items.append(xbmcgui.ListItem(strings(30603)))
             items.append(xbmcgui.ListItem(strings(30604)))
-            items.append(xbmcgui.ListItem(strings(30605)))
+            items.append(xbmcgui.ListItem(strings(M_GO_BACK)))
 
         elif self.state == MenuGui.STATE_ABOUT:
             items.append(xbmcgui.ListItem(strings(30801)))
             items.append(xbmcgui.ListItem(strings(30802)))
             items.append(xbmcgui.ListItem(strings(30803)))
-            items.append(xbmcgui.ListItem('Back'))
+            items.append(xbmcgui.ListItem(strings(M_GO_BACK)))
 
         elif self.state == MenuGui.STATE_PLAYER:
             item = xbmcgui.ListItem(strings(G_ADD_USER))
@@ -649,48 +634,6 @@ class MenuGui(xbmcgui.WindowXMLDialog):
             self.updateMenu()
             self.getControl(MenuGui.C_MENU_VISIBILITY).setVisible(False)
 
-
-        # listControl = self.getControl(self.C_MENU_USER_SELECT)
-        # item = listControl.getSelectedItem()
-        #
-        # if controlId == self.C_MENU_MOVIE_QUIZ:
-        #     if item is None:
-        #         xbmcgui.Dialog().ok(strings(CHOOSE_PLAYER), strings(CHOOSE_PLAYER_LINE_1))
-        #         return
-        #     w = GameTypeDialog(game.GAMETYPE_MOVIE, item.getProperty('id'))
-        #     w.doModal()
-        #     del w
-        #
-        # elif controlId == self.C_MENU_TVSHOW_QUIZ:
-        #     if item is None:
-        #         xbmcgui.Dialog().ok(strings(CHOOSE_PLAYER), strings(CHOOSE_PLAYER_LINE_1))
-        #         return
-        #     w = GameTypeDialog(game.GAMETYPE_TVSHOW, item.getProperty('id'))
-        #     w.doModal()
-        #     del w
-        #
-        # elif controlId == self.C_MENU_ABOUT:
-        #     w = AboutDialog()
-        #     w.doModal()
-        #     del w
-        #
-        # elif controlId == self.C_MENU_EXIT:
-        #     self.close()
-        #
-        # elif controlId == self.C_MENU_USER_SELECT:
-        #     if item.getProperty('id') == '-1':
-        #         self.onAddNewUser()
-        #         self.onUpdateUserSelectList()
-        #
-        #     else:
-        #         deleteUser = xbmcgui.Dialog().yesno(strings(E_DELETE_USER, item.getLabel().decode('utf-8')),
-        #                                             strings(E_DELETE_USER_LINE1), strings(E_DELETE_USER_LINE2))
-        #         if deleteUser:
-        #             localHighscore = highscore.LocalHighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
-        #             localHighscore.deleteUser(item.getProperty('id'))
-        #             localHighscore.close()
-        #             self.onUpdateUserSelectList()
-
     @buggalo.buggalo_try_except()
     def onFocus(self, controlId):
         pass
@@ -730,339 +673,6 @@ class MenuGui(xbmcgui.WindowXMLDialog):
         listControl.addItem(item)
 
         localHighscore.close()
-
-
-class GameTypeDialog(xbmcgui.WindowXMLDialog):
-    C_GAMETYPE_VISIBLE_MARKER = 100
-
-    C_GAMETYPE_UNLIMITED = 4000
-    C_GAMETYPE_TIME_LIMITED = 4001
-    C_GAMETYPE_QUESTION_LIMITED = 4002
-
-    C_GAMETYPE_UNLIMITED_CANCEL = 4003
-    C_GAMETYPE_TIME_LIMITED_CANCEL = 4103
-    C_GAMETYPE_QUESTION_LIMITED_CANCEL = 4203
-
-    C_GAMETYPE_UNLIMITED_PLAY = 4004
-    C_GAMETYPE_TIME_LIMITED_PLAY = 4104
-    C_GAMETYPE_QUESTION_LIMITED_PLAY = 4204
-
-    C_GAMETYPE_TIME_LIMIT = 4100
-    C_GAMETYPE_TIME_LIMIT_NEXT = 4101
-    C_GAMETYPE_TIME_LIMIT_PREVIOUS = 4102
-
-    C_GAMETYPE_QUESTION_LIMIT = 4200
-    C_GAMETYPE_QUESTION_LIMIT_NEXT = 4201
-    C_GAMETYPE_QUESTION_LIMIT_PREVIOUS = 4202
-
-    QUESTION_SUB_TYPES = [
-        {'limit': '5', 'text': strings(M_X_QUESTIONS, '5')},
-        {'limit': '10', 'text': strings(M_X_QUESTIONS, '10')},
-        {'limit': '15', 'text': strings(M_X_QUESTIONS, '15')},
-        {'limit': '25', 'text': strings(M_X_QUESTIONS, '25')},
-        {'limit': '50', 'text': strings(M_X_QUESTIONS, '50')},
-        {'limit': '100', 'text': strings(M_X_QUESTIONS, '100')}
-    ]
-    TIME_SUB_TYPES = [
-        {'limit': '1', 'text': strings(M_ONE_MINUTE)},
-        {'limit': '2', 'text': strings(M_X_MINUTES, '2')},
-        {'limit': '3', 'text': strings(M_X_MINUTES, '3')},
-        {'limit': '5', 'text': strings(M_X_MINUTES, '5')},
-        {'limit': '10', 'text': strings(M_X_MINUTES, '10')},
-        {'limit': '15', 'text': strings(M_X_MINUTES, '15')},
-        {'limit': '30', 'text': strings(M_X_MINUTES, '30')}
-    ]
-
-    VISIBLE_UNLIMITED = 'unlimited'
-    VISIBLE_TIME_LIMITED = 'time-limited'
-    VISIBLE_QUESTION_LIMITED = 'question-limited'
-
-    def __new__(cls, type, userId):
-        return super(GameTypeDialog, cls).__new__(cls, 'script-moviequiz-gametype.xml', ADDON.getAddonInfo('path'))
-
-    def __init__(self, type, userId):
-        super(GameTypeDialog, self).__init__()
-        self.type = type
-        self.userId = userId
-
-    @buggalo.buggalo_try_except()
-    def onInit(self):
-        if self.type == game.GAMETYPE_MOVIE:
-            self.getControl(3999).setLabel(strings(M_CHOOSE_MOVIE_GAME_TYPE))
-        elif self.type == game.GAMETYPE_TVSHOW:
-            self.getControl(3999).setLabel(strings(M_CHOOSE_TV_GAME_TYPE))
-
-        control = self.getControl(self.C_GAMETYPE_QUESTION_LIMIT)
-        for subTypes in self.QUESTION_SUB_TYPES:
-            item = xbmcgui.ListItem(subTypes['text'])
-            item.setProperty("limit", subTypes['limit'])
-            control.addItem(item)
-
-        control = self.getControl(self.C_GAMETYPE_TIME_LIMIT)
-        for subTypes in self.TIME_SUB_TYPES:
-            item = xbmcgui.ListItem(subTypes['text'])
-            item.setProperty("limit", subTypes['limit'])
-            control.addItem(item)
-
-    @buggalo.buggalo_try_except()
-    def onAction(self, action):
-        if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
-            self.close()
-
-    @buggalo.buggalo_try_except()
-    def onClick(self, controlId):
-        interactive = True
-        gameInstance = None
-        if controlId in [self.C_GAMETYPE_UNLIMITED_CANCEL, self.C_GAMETYPE_TIME_LIMITED_CANCEL,
-                         self.C_GAMETYPE_QUESTION_LIMITED_CANCEL]:
-            self.close()
-
-        elif controlId in [self.C_GAMETYPE_UNLIMITED, self.C_GAMETYPE_UNLIMITED_PLAY]:
-            gameInstance = game.UnlimitedGame(self.type, self.userId, interactive)
-
-        elif controlId in [self.C_GAMETYPE_QUESTION_LIMITED, self.C_GAMETYPE_QUESTION_LIMITED_PLAY]:
-            control = self.getControl(self.C_GAMETYPE_QUESTION_LIMIT)
-            maxQuestions = int(control.getSelectedItem().getProperty("limit"))
-            gameInstance = game.QuestionLimitedGame(self.type, self.userId, interactive, maxQuestions)
-
-        elif controlId in [self.C_GAMETYPE_TIME_LIMITED, self.C_GAMETYPE_TIME_LIMITED_PLAY]:
-            control = self.getControl(self.C_GAMETYPE_TIME_LIMIT)
-            timeLimit = int(control.getSelectedItem().getProperty("limit"))
-            gameInstance = game.TimeLimitedGame(self.type, self.userId, interactive, timeLimit)
-
-        elif controlId == self.C_GAMETYPE_TIME_LIMIT_NEXT:
-            control = self.getControl(self.C_GAMETYPE_TIME_LIMIT)
-            idx = control.getSelectedPosition() + 1
-            if idx > len(self.TIME_SUB_TYPES) - 1:
-                idx = 0
-            control.selectItem(idx)
-
-        elif controlId == self.C_GAMETYPE_TIME_LIMIT_PREVIOUS:
-            control = self.getControl(self.C_GAMETYPE_TIME_LIMIT)
-            idx = control.getSelectedPosition() - 1
-            if idx < 0:
-                idx = len(self.TIME_SUB_TYPES) - 1
-            control.selectItem(idx)
-
-        elif controlId == self.C_GAMETYPE_QUESTION_LIMIT_NEXT:
-            control = self.getControl(self.C_GAMETYPE_QUESTION_LIMIT)
-            idx = control.getSelectedPosition() + 1
-            if idx > len(self.QUESTION_SUB_TYPES) - 1:
-                idx = 0
-            control.selectItem(idx)
-
-        elif controlId == self.C_GAMETYPE_QUESTION_LIMIT_PREVIOUS:
-            control = self.getControl(self.C_GAMETYPE_QUESTION_LIMIT)
-            idx = control.getSelectedPosition() - 1
-            if idx < 0:
-                idx = len(self.QUESTION_SUB_TYPES) - 1
-            control.selectItem(idx)
-
-        if gameInstance is not None:
-            self.close()
-
-            w = QuizGui(gameInstance)
-            w.doModal()
-            del w
-
-    @buggalo.buggalo_try_except()
-    def onFocus(self, controlId):
-        if controlId == self.C_GAMETYPE_UNLIMITED:
-            self.getControl(self.C_GAMETYPE_VISIBLE_MARKER).setLabel(self.VISIBLE_UNLIMITED)
-        elif controlId == self.C_GAMETYPE_QUESTION_LIMITED:
-            self.getControl(self.C_GAMETYPE_VISIBLE_MARKER).setLabel(self.VISIBLE_QUESTION_LIMITED)
-        elif controlId == self.C_GAMETYPE_TIME_LIMITED:
-            self.getControl(self.C_GAMETYPE_VISIBLE_MARKER).setLabel(self.VISIBLE_TIME_LIMITED)
-
-
-class AboutDialog(xbmcgui.WindowXMLDialog):
-    C_ABOUT_VISIBILITY_MARKER = 100
-    C_ABOUT_HIGHSCORE_BUTTON = 500
-    C_ABOUT_STATISTICS_BUTTON = 501
-    C_ABOUT_ABOUT_BUTTON = 502
-    C_ABOUT_CHANGELOG_BUTTON = 503
-    C_ABOUT_CLOSE_BUTTON = 504
-
-    C_ABOUT_GLOBAL_HIGHSCORE_LIST = 1001
-    C_ABOUT_HIGHSCORE_GLOBAL_TOGGLE = 1002
-    C_ABOUT_HIGHSCORE_TYPE_LIST = 1003
-    C_ABOUT_HIGHSCORE_MOVIE_TOGGLE = 1004
-
-    C_ABOUT_STATISTICS = 2001
-    C_ABOUT_STATISTICS_COUNTRIES = 2002
-    C_ABOUT_STATISTICS_USERS = 2003
-    C_ABOUT_ABOUT = 3001
-    C_ABOUT_CHANGELOG = 4001
-
-    VISIBLE_HIGHSCORES = 'highscores'
-    VISIBLE_STATISTICS = 'statistics'
-    VISIBLE_ABOUT = 'about'
-    VISIBLE_CHANGELOG = 'changelog'
-
-    GAME_TYPES = [
-        game.UnlimitedGame(game.GAMETYPE_MOVIE, -1, True),
-
-        game.QuestionLimitedGame(game.GAMETYPE_MOVIE, -1, True, 5),
-        game.QuestionLimitedGame(game.GAMETYPE_MOVIE, -1, True, 10),
-        game.QuestionLimitedGame(game.GAMETYPE_MOVIE, -1, True, 15),
-        game.QuestionLimitedGame(game.GAMETYPE_MOVIE, -1, True, 25),
-        game.QuestionLimitedGame(game.GAMETYPE_MOVIE, -1, True, 50),
-        game.QuestionLimitedGame(game.GAMETYPE_MOVIE, -1, True, 100),
-
-        game.TimeLimitedGame(game.GAMETYPE_MOVIE, -1, True, 1),
-        game.TimeLimitedGame(game.GAMETYPE_MOVIE, -1, True, 2),
-        game.TimeLimitedGame(game.GAMETYPE_MOVIE, -1, True, 3),
-        game.TimeLimitedGame(game.GAMETYPE_MOVIE, -1, True, 5),
-        game.TimeLimitedGame(game.GAMETYPE_MOVIE, -1, True, 10),
-        game.TimeLimitedGame(game.GAMETYPE_MOVIE, -1, True, 15),
-        game.TimeLimitedGame(game.GAMETYPE_MOVIE, -1, True, 30),
-    ]
-
-    def __new__(cls):
-        return super(AboutDialog, cls).__new__(cls, 'script-moviequiz-about.xml', ADDON.getAddonInfo('path'))
-
-    def __init__(self):
-        super(AboutDialog, self).__init__()
-        self.globalHighscore = highscore.GlobalHighscoreDatabase(ADDON.getAddonInfo('version'))
-        self.localHighscore = highscore.LocalHighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
-
-        self.useGlobal = True
-        self.useMovieQuiz = True
-        self.gameType = self.GAME_TYPES[0]
-        self.isClosing = False
-        self.globalHighscorePage = 0
-
-    def close(self):
-        self.localHighscore.close()
-        self.isClosing = True
-        super(AboutDialog, self).close()
-
-    @buggalo.buggalo_try_except()
-    def onInit(self):
-        f = open(ADDON.getAddonInfo('changelog'))
-        changelog = f.read()
-        f.close()
-        self.getControl(self.C_ABOUT_CHANGELOG).setText(changelog)
-
-        f = open(os.path.join(ADDON.getAddonInfo('path'), 'about.txt'))
-        about = f.read()
-        f.close()
-        self.getControl(self.C_ABOUT_ABOUT).setText(about)
-
-        self.typeOptionList = []
-        for type in self.GAME_TYPES:
-            if isinstance(type, game.UnlimitedGame):
-                self.typeOptionList.append(strings(M_UNLIMITED))
-            elif isinstance(type, game.QuestionLimitedGame):
-                self.typeOptionList.append(strings(M_X_QUESTIONS, type.getGameSubType()))
-            elif isinstance(type, game.TimeLimitedGame):
-                self.typeOptionList.append(strings(M_X_MINUTES, type.getGameSubType()))
-            else:
-                self.typeOptionList.append(repr(type))
-
-        statistics = self.globalHighscore.getStatistics()
-        statisticsLabel = strings(M_STATISTICS, (
-            statistics['users']['unique_ips'],
-            statistics['users']['unique_countries'],
-            statistics['quiz']['total_games'],
-            statistics['quiz']['total_questions'],
-            statistics['quiz']['total_correct_answers'],
-            statistics['quiz']['correct_percentage']
-        ))
-        self.getControl(self.C_ABOUT_STATISTICS).setLabel(statisticsLabel)
-
-        listControl = self.getControl(self.C_ABOUT_STATISTICS_COUNTRIES)
-        listControl.reset()
-        items = list()
-        for entry in statistics['top_countries']:
-            item = xbmcgui.ListItem('%s games' % entry['highscores'])
-            item.setProperty('countryIconUrl', entry['countryIconUrl'])
-            items.append(item)
-        listControl.addItems(items)
-
-        listControl = self.getControl(self.C_ABOUT_STATISTICS_USERS)
-        listControl.reset()
-        items = list()
-        for entry in statistics['top_users']:
-            item = xbmcgui.ListItem(entry['nickname'])
-            item.setProperty('games', '%s games' % entry['games'])
-            item.setProperty('countryIconUrl', entry['countryIconUrl'])
-            items.append(item)
-        listControl.addItems(items)
-
-        self.reloadHighscores()
-
-    @buggalo.buggalo_try_except()
-    def onAction(self, action):
-        if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
-            self.close()
-
-    @buggalo.buggalo_try_except()
-    def onClick(self, controlId):
-        if controlId == self.C_ABOUT_CLOSE_BUTTON:
-            self.close()
-
-        elif controlId == self.C_ABOUT_HIGHSCORE_GLOBAL_TOGGLE:
-            self.useGlobal = not self.useGlobal
-            if self.useGlobal:
-                self.globalHighscorePage = 0
-            self.reloadHighscores()
-
-        elif controlId == self.C_ABOUT_HIGHSCORE_TYPE_LIST:
-            idx = xbmcgui.Dialog().select(strings(M_CHOOSE_TYPE), self.typeOptionList)
-            if idx != -1:
-                self.getControl(self.C_ABOUT_HIGHSCORE_TYPE_LIST).setLabel(self.typeOptionList[idx])
-                self.gameType = self.GAME_TYPES[idx]
-                self.reloadHighscores()
-
-        elif controlId == self.C_ABOUT_HIGHSCORE_MOVIE_TOGGLE:
-            self.useMovieQuiz = not self.useMovieQuiz
-            self.reloadHighscores()
-
-    @buggalo.buggalo_try_except()
-    def onFocus(self, controlId):
-        if controlId == self.C_ABOUT_HIGHSCORE_BUTTON:
-            self.getControl(self.C_ABOUT_VISIBILITY_MARKER).setLabel(self.VISIBLE_HIGHSCORES)
-        elif controlId == self.C_ABOUT_STATISTICS_BUTTON:
-            self.getControl(self.C_ABOUT_VISIBILITY_MARKER).setLabel(self.VISIBLE_STATISTICS)
-        elif controlId == self.C_ABOUT_ABOUT_BUTTON:
-            self.getControl(self.C_ABOUT_VISIBILITY_MARKER).setLabel(self.VISIBLE_ABOUT)
-        elif controlId == self.C_ABOUT_CHANGELOG_BUTTON:
-            self.getControl(self.C_ABOUT_VISIBILITY_MARKER).setLabel(self.VISIBLE_CHANGELOG)
-
-    def reloadHighscores(self):
-        threading.Timer(0.1, self.reloadHighscoresInThread).start()
-
-    @buggalo.buggalo_try_except()
-    def reloadHighscoresInThread(self):
-        if self.useMovieQuiz:
-            self.gameType.setType(game.GAMETYPE_MOVIE)
-        else:
-            self.gameType.setType(game.GAMETYPE_TVSHOW)
-
-        if self.useGlobal:
-            entries = self.globalHighscore.getHighscores(self.gameType, self.globalHighscorePage)
-        else:
-            entries = self.localHighscore.getHighscores(self.gameType)
-
-        listControl = self.getControl(self.C_ABOUT_GLOBAL_HIGHSCORE_LIST)
-        listControl.reset()
-        items = list()
-        for idx, entry in enumerate(entries):
-            item = xbmcgui.ListItem(entry['nickname'])
-            item.setProperty('position', str(entry['position']))
-            item.setProperty('score', str(entry['score']))
-            if self.useGlobal:
-                item.setProperty('countryIconUrl', entry['countryIconUrl'])
-                item.setProperty('timestamp', entry['timeAgo'])
-            else:
-                item.setProperty('timestamp', entry['timestamp'])
-            items.append(item)
-
-            if self.isClosing:
-                return
-
-        listControl.addItems(items)
 
 
 class QuizGui(xbmcgui.WindowXML):
@@ -1107,10 +717,6 @@ class QuizGui(xbmcgui.WindowXML):
         return super(QuizGui, cls).__new__(cls, 'script-moviequiz-main.xml', ADDON.getAddonInfo('path'))
 
     def __init__(self):
-        """
-        @param gameInstance: the Game instance
-        @type gameInstance: Game
-        """
         super(QuizGui, self).__init__()
 
         self.gameInstance = None
@@ -1249,11 +855,9 @@ class QuizGui(xbmcgui.WindowXML):
             self.questionPointsThread.cancel()
 
         if self.gameInstance.isInteractive():
-            self.showMenuDialog()
-
-            #w = GameOverDialog(self, self.gameInstance)
-            #w.doModal()
-            #del w
+            w = GameOverDialog(self, self.gameInstance)
+            w.doModal()
+            del w
 
     @buggalo.buggalo_try_except()
     def onNewQuestion(self):
@@ -1506,21 +1110,12 @@ class QuizGui(xbmcgui.WindowXML):
 
 
 class GameOverDialog(xbmcgui.WindowXMLDialog):
-    C_GAMEOVER_VISIBILITY_MARKER = 100
+    C_GAMEOVER_RETRY = 2000
+    C_GAMEOVER_MAINMENU = 2001
 
-    C_GAMEOVER_RETRY = 4000
-    C_GAMEOVER_GLOBAL_HIGHSCORE = 4001
-    C_GAMEOVER_HIGHSCORE = 4002
-    C_GAMEOVER_MAINMENU = 4003
-
-    C_GAMEOVER_GLOBAL_HIGHSCORE_LIST = 8001
-    C_GAMEOVER_GLOBAL_HIGHSCORE_TYPE = 8002
-
-    C_GAMEOVER_LOCAL_HIGHSCORE_LIST = 9001
-    C_GAMEOVER_LOCAL_HIGHSCORE_TYPE = 9002
-
-    VISIBLE_GLOBAL_HIGHSCORE = 'globalHighscore'
-    VISIBLE_LOCAL_HIGHSCORE = 'localHighscore'
+    C_GAMEOVER_HIGHSCORE_LIST_VISIBILITY = 8000
+    C_GAMEOVER_HIGHSCORE_LIST = 8001
+    C_GAMEOVER_HIGHSCORE_TITLE = 8002
 
     def __new__(cls, parentWindow, gameType):
         return super(GameOverDialog, cls).__new__(cls, 'script-moviequiz-gameover.xml', ADDON.getAddonInfo('path'))
@@ -1530,102 +1125,123 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
 
         self.parentWindow = parentWindow
         self.game = game
+        self.localHighscoresShown = True
+        self.highscoreTimer = None
 
     @buggalo.buggalo_try_except()
     def onInit(self):
+        self.getControl(GameOverDialog.C_GAMEOVER_HIGHSCORE_LIST_VISIBILITY).setVisible(True)
+
+        movies = library.getMovies(['art']).limitTo(44).asList()
+        for idx in range(0, 44):
+            self.getControl(1000 + idx).setImage(movies[idx % len(movies)]['art']['poster'])
+
         self.getControl(4100).setLabel(
             strings(G_YOU_SCORED) % (self.game.getCorrectAnswers(), self.game.getTotalAnswers()))
         self.getControl(4101).setLabel(str(self.game.getPoints()))
 
         if self.game.isInteractive():
-            self._setupHighscores()
+            self.loadHighscores()
+
+            if self.globalHighscoreEntries is not None:
+                self.highscoreTimer = threading.Timer(5, self.swapHighscoreDisplay)
+                self.highscoreTimer.start()
+
+    def close(self):
+        if self.highscoreTimer:
+            self.highscoreTimer.cancel()
+
+        self.getControl(GameOverDialog.C_GAMEOVER_HIGHSCORE_LIST_VISIBILITY).setVisible(True)
+        super(GameOverDialog, self).close()
+
+    def swapHighscoreDisplay(self):
+        if self.localHighscoresShown:
+            self.showHighscores(M_GLOBAL_HIGHSCORE, self.globalHighscoreEntries, self.globalHighscoreNewId)
+            self.localHighscoresShown = False
+        else:
+            self.showHighscores(M_LOCAL_HIGHSCORE, self.localHighscoreEntries, self.localHighscoreNewId)
+            self.localHighscoresShown = True
+
+        if self.globalHighscoreEntries:
+            self.highscoreTimer = threading.Timer(5, self.swapHighscoreDisplay)
+            self.highscoreTimer.start()
 
     @buggalo.buggalo_try_except()
     def onAction(self, action):
         if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU]:
             self.close()
-            self.parentWindow.close()
+            xbmc.sleep(500)
+
+            w = MenuGui(self.parentWindow)
+            w.doModal()
+            del w
 
     @buggalo.buggalo_try_except()
     def onClick(self, controlId):
         if controlId == self.C_GAMEOVER_RETRY:
-            self.parentWindow.newGame(self.parentWindow.gameInstance)
             self.close()
+            self.parentWindow.newGame(self.parentWindow.gameInstance)
 
         elif controlId == self.C_GAMEOVER_MAINMENU:
             self.close()
-            self.parentWindow.close()
+            xbmc.sleep(500)
+
+            w = MenuGui(self.parentWindow)
+            w.doModal()
+            del w
 
     @buggalo.buggalo_try_except()
     def onFocus(self, controlId):
-        if controlId in [self.C_GAMEOVER_RETRY, self.C_GAMEOVER_MAINMENU]:
-            self.getControl(self.C_GAMEOVER_VISIBILITY_MARKER).setLabel('')
-        elif controlId == self.C_GAMEOVER_GLOBAL_HIGHSCORE:
-            self.getControl(self.C_GAMEOVER_VISIBILITY_MARKER).setLabel(self.VISIBLE_GLOBAL_HIGHSCORE)
-        elif controlId == self.C_GAMEOVER_HIGHSCORE:
-            self.getControl(self.C_GAMEOVER_VISIBILITY_MARKER).setLabel(self.VISIBLE_LOCAL_HIGHSCORE)
+        pass
 
-    def _setupHighscores(self):
+    def loadHighscores(self):
         # Local highscore
         localHighscore = highscore.LocalHighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
-        newHighscoreId = localHighscore.addHighscore(self.game)
+        self.localHighscoreNewId = localHighscore.addHighscore(self.game)
         name = localHighscore.getNickname(self.game.getUserId())
 
-        entries = localHighscore.getHighscoresNear(self.game, newHighscoreId)
+        self.localHighscoreEntries = localHighscore.getHighscoresNear(self.game, self.localHighscoreNewId)
         localHighscore.close()
-
-        subTypeText = None
-        if isinstance(self.game, game.UnlimitedGame):
-            subTypeText = strings(M_UNLIMITED)
-        elif isinstance(self.game, game.QuestionLimitedGame):
-            subTypeText = strings(M_X_QUESTIONS_LIMIT, self.game.getGameSubType())
-
-        elif isinstance(self.game, game.TimeLimitedGame):
-            if int(self.game.getGameSubType()) == 1:
-                subTypeText = strings(M_ONE_MINUT_LIMIT)
-            else:
-                subTypeText = strings(M_X_MINUTS_LIMIT, self.game.getGameSubType())
-
-        self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_TYPE).setLabel(subTypeText)
-        items = list()
-        selectedIndex = -1
-        for entry in entries:
-            item = xbmcgui.ListItem("%d. %s" % (entry['position'], entry['nickname']))
-            item.setProperty('score', str(entry['score']))
-            if int(entry['id']) == int(newHighscoreId):
-                item.setProperty('highlight', 'true')
-                selectedIndex = len(items)
-            items.append(item)
-        listControl = self.getControl(self.C_GAMEOVER_LOCAL_HIGHSCORE_LIST)
-        listControl.addItems(items)
-        if selectedIndex != -1:
-            selectedIndex += 5
-            if selectedIndex > len(items):
-                selectedIndex = len(items) - 1
-            listControl.selectItem(selectedIndex)
+        self.showHighscores(M_LOCAL_HIGHSCORE, self.localHighscoreEntries, self.localHighscoreNewId)
 
         # Global highscore
         globalHighscore = highscore.GlobalHighscoreDatabase(ADDON.getAddonInfo('version'))
         if ADDON.getSetting('submit.highscores') == 'true':
-            newHighscoreId = globalHighscore.addHighscore(name, self.game)
+            self.globalHighscoreNewId = globalHighscore.addHighscore(name, self.game)
         else:
-            newHighscoreId = -1
+            self.globalHighscoreNewId = -1
 
-        entries = globalHighscore.getHighscoresNear(self.game, newHighscoreId)
-        self.getControl(self.C_GAMEOVER_GLOBAL_HIGHSCORE_TYPE).setLabel(subTypeText)
+        self.globalHighscoreEntries = globalHighscore.getHighscoresNear(self.game, self.globalHighscoreNewId)
+
+    def showHighscores(self, titleId, entries, newHighscoreId):
+        self.getControl(GameOverDialog.C_GAMEOVER_HIGHSCORE_LIST_VISIBILITY).setVisible(True)
+        xbmc.sleep(350)
+
+        self.getControl(GameOverDialog.C_GAMEOVER_HIGHSCORE_TITLE).setLabel(strings(titleId))
+
         items = list()
         selectedIndex = -1
         for entry in entries:
-            item = xbmcgui.ListItem("%s. %s" % (entry['position'], entry['nickname']))
+            item = xbmcgui.ListItem(entry['nickname'])
+            item.setProperty('position', str(entry['position']))
             item.setProperty('score', str(entry['score']))
+            if 'timeAgo' in entry:
+                item.setProperty('timestamp', entry['timeAgo'])
+                item.setProperty('countryIconUrl', entry['countryIconUrl'])
+            else:
+                item.setProperty('timestamp', entry['timestamp'][0:10])
+
             if int(entry['id']) == int(newHighscoreId):
                 item.setProperty('highlight', 'true')
                 selectedIndex = len(items)
             items.append(item)
-        listControl = self.getControl(self.C_GAMEOVER_GLOBAL_HIGHSCORE_LIST)
+        listControl = self.getControl(self.C_GAMEOVER_HIGHSCORE_LIST)
         listControl.addItems(items)
         if selectedIndex != -1:
             selectedIndex += 5
-            if selectedIndex > len(items):
-                selectedIndex = len(items) - 1
-            listControl.selectItem(selectedIndex)
+        if selectedIndex > len(items):
+            selectedIndex = len(items) - 1
+        listControl.selectItem(selectedIndex)
+
+        self.getControl(GameOverDialog.C_GAMEOVER_HIGHSCORE_LIST_VISIBILITY).setVisible(False)
+
