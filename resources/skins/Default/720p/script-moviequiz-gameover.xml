@@ -581,7 +581,7 @@
 
             <control type="label" id="8002">
                 <description>title</description>
-                <posx>-30</posx>
+                <posx>-40</posx>
                 <posy>430</posy>
                 <width>400</width>
                 <height>40</height>
@@ -593,7 +593,7 @@
             <control type="label">
                 <posx>0</posx>
                 <posy>0</posy>
-                <width>60</width>
+                <width>70</width>
                 <height>40</height>
                 <textcolor>ffffffff</textcolor>
                 <font>font13</font>
@@ -603,9 +603,9 @@
             </control>
             <control type="label">
                 <description>nickname</description>
-                <posx>90</posx>
+                <posx>100</posx>
                 <posy>0</posy>
-                <width>310</width>
+                <width>300</width>
                 <height>40</height>
                 <textcolor>ffffffff</textcolor>
                 <textoffsetx>10</textoffsetx>
