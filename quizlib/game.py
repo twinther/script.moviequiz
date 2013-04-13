@@ -25,6 +25,7 @@ from strings import *
 GAMETYPE_MOVIE = "movie"
 GAMETYPE_TVSHOW = "tvshow"
 
+
 class Game(object):
     def __init__(self, type, userId, interactive):
         self.type = type
@@ -82,6 +83,7 @@ class Game(object):
         self.correctAnswers = 0
         self.wrongAnswers = 0
 
+
 class UnlimitedGame(Game):
     def __init__(self, type, userId, interactive):
         super(UnlimitedGame, self).__init__(type, userId, interactive)
@@ -131,6 +133,7 @@ class QuestionLimitedGame(Game):
 
     def __eq__(self, other):
         return type(other) == QuestionLimitedGame and self.type == other.type and self.questionLimit == other.questionLimit
+
 
 class TimeLimitedGame(Game):
     def __init__(self, type, userId, interactive, timeLimitMinutes):
