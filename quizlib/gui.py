@@ -178,8 +178,9 @@ class MenuGui(xbmcgui.WindowXMLDialog):
         self.trivia = []
 
         movies = library.getMovies(['art']).limitTo(44).asList()
+        posters = [movie['art']['poster'] for movie in movies if 'art' in movie and 'poster' in movie['art']]
         for idx in range(0, 44):
-            self.getControl(1000 + idx).setImage(movies[idx % len(movies)]['art']['poster'])
+            self.getControl(1000 + idx).setImage(posters[idx % len(posters)])
 
         users = self.localHighscore.getUsers()
         if users:
@@ -1134,8 +1135,9 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
         self.getControl(GameOverDialog.C_GAMEOVER_HIGHSCORE_LIST_VISIBILITY).setVisible(True)
 
         movies = library.getMovies(['art']).limitTo(44).asList()
+        posters = [movie['art']['poster'] for movie in movies if 'art' in movie and 'poster' in movie['art']]
         for idx in range(0, 44):
-            self.getControl(1000 + idx).setImage(movies[idx % len(movies)]['art']['poster'])
+            self.getControl(1000 + idx).setImage(posters[idx % len(posters)])
 
         self.getControl(4100).setLabel(
             strings(G_YOU_SCORED) % (self.game.getCorrectAnswers(), self.game.getTotalAnswers()))
