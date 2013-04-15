@@ -112,6 +112,7 @@ class MenuGui(xbmcgui.WindowXMLDialog):
     STATE_TVSHOW_TIME = 8
     STATE_TVSHOW_QUESTION = 9
     STATE_HIGHSCORE = 10
+    STATE_EXIT = 99
 
     QUESTION_SUB_TYPES = [
         {'limit': '5', 'text': strings(M_X_QUESTIONS, '5')},
@@ -163,8 +164,6 @@ class MenuGui(xbmcgui.WindowXMLDialog):
         self.tvShowsEnabled = True
 
         self.userId = -1
-        self.statisticsLabel = None
-
         self.localHighscore = highscore.LocalHighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
         self.globalHighscore = highscore.GlobalHighscoreDatabase(ADDON.getAddonInfo('version'))
         self.globalHighscorePage = 0
@@ -179,14 +178,20 @@ class MenuGui(xbmcgui.WindowXMLDialog):
 
         movies = library.getMovies(['art']).limitTo(44).asList()
         posters = [movie['art']['poster'] for movie in movies if 'art' in movie and 'poster' in movie['art']]
-        for idx in range(0, 44):
-            self.getControl(1000 + idx).setImage(posters[idx % len(posters)])
+        if posters:
+            for idx in range(0, 44):
+                self.getControl(1000 + idx).setImage(posters[idx % len(posters)])
 
         users = self.localHighscore.getUsers()
-        if users:
-            self.userId = users[0]['id']
-            gamesPlayed = self.localHighscore.getGamesPlayed(self.userId)
-            self.getControl(MenuGui.C_MENU_GAMES_PLAYED_LOCAL).setLabel(str(gamesPlayed))
+        if not users:
+            self.userId = self.onAddNewUser(createDefault=True)
+            users = self.localHighscore.getUsers()
+
+        self.userId = users[0]['id']
+        gamesPlayed = self.localHighscore.getGamesPlayed(self.userId)
+
+        self.getControl(MenuGui.C_MENU_CURRENT_PLAYER).setLabel(users[0]['nickname'])
+        self.getControl(MenuGui.C_MENU_GAMES_PLAYED_LOCAL).setLabel(str(gamesPlayed))
 
         # highscore menu
         listControl = self.getControl(MenuGui.C_MENU_HIGHSCORE_LOCAL_GLOBAL)
@@ -216,18 +221,16 @@ class MenuGui(xbmcgui.WindowXMLDialog):
             else:
                 listControl.addItem(xbmcgui.ListItem(repr(gameType)))
 
-        self.updateMenu()
-        self.getControl(MenuGui.C_MENU_VISIBILITY).setVisible(False)
-
         # Check preconditions
         hasMovies = library.hasMovies()
         hasTVShows = library.hasTVShows()
 
         if not hasMovies and not hasTVShows:
+            self.close()
+            self.quizGui.close()
             # Must have at least one movie or tvshow
             xbmcgui.Dialog().ok(strings(E_REQUIREMENTS_MISSING), strings(E_REQUIREMENTS_MISSING_LINE1),
                                 strings(E_REQUIREMENTS_MISSING_LINE2), strings(E_REQUIREMENTS_MISSING_LINE3))
-            self.close()
             return
 
         if not library.isAnyVideosWatched() and ADDON.getSetting(SETT_ONLY_WATCHED_MOVIES) == 'true':
@@ -259,20 +262,15 @@ class MenuGui(xbmcgui.WindowXMLDialog):
             xbmcgui.Dialog().ok(strings(E_WARNING), strings(E_ALL_TVSHOW_QUESTIONS_DISABLED),
                                 strings(E_QUIZ_TYPE_NOT_AVAILABLE))
 
+
+        self.updateMenu()
+        self.getControl(MenuGui.C_MENU_VISIBILITY).setVisible(False)
+
         threading.Timer(0.1, self.loadStatistics).start()
 
     def loadStatistics(self):
         globalHighscore = highscore.GlobalHighscoreDatabase(ADDON.getAddonInfo('version'))
         statistics = globalHighscore.getStatistics()
-
-        self.statisticsLabel = strings(M_STATISTICS, (
-            statistics['users']['unique_ips'],
-            statistics['users']['unique_countries'],
-            statistics['quiz']['total_games'],
-            statistics['quiz']['total_questions'],
-            statistics['quiz']['total_correct_answers'],
-            statistics['quiz']['correct_percentage']
-        ))
 
         self.getControl(MenuGui.C_MENU_GAMES_PLAYED_COUNTRY).setLabel(str(statistics['quiz']['total_games_in_country']))
         self.getControl(MenuGui.C_MENU_GAMES_PLAYED_COUNTRY_ICON).setImage(str(statistics['quiz']['countryIconUrl']))
@@ -377,19 +375,34 @@ class MenuGui(xbmcgui.WindowXMLDialog):
         elif MenuGui.STATE_HIGHSCORE == self.state:
             self.reloadHighscores()
 
+        #elif action.getId() ==
+
     def updateMenu(self):
         listControl = self.getControl(MenuGui.C_MENU_LIST)
         listControl.reset()
         items = []
         if self.state == MenuGui.STATE_MAIN:
             if self.moviesEnabled:
-                items.append(xbmcgui.ListItem(strings(30100)))
+                item = xbmcgui.ListItem(strings(30100))
+                item.setProperty('state', str(MenuGui.STATE_MOVIE_QUIZ))
+                items.append(item)
             if self.tvShowsEnabled:
-                items.append(xbmcgui.ListItem(strings(30101)))
-            items.append(xbmcgui.ListItem(strings(30104)))
-            items.append(xbmcgui.ListItem(strings(30102)))
-            items.append(xbmcgui.ListItem(strings(30801)))
-            items.append(xbmcgui.ListItem(strings(30103)))
+                item = xbmcgui.ListItem(strings(30101))
+                item.setProperty('state', str(MenuGui.STATE_TV_QUIZ))
+                items.append(item)
+
+            item = xbmcgui.ListItem(strings(30104))
+            item.setProperty('state', str(MenuGui.STATE_PLAYER))
+            items.append(item)
+            item = xbmcgui.ListItem(strings(30102))
+            item.setProperty('state', str(MenuGui.STATE_HIGHSCORE))
+            items.append(item)
+            item = xbmcgui.ListItem(strings(30801))
+            item.setProperty('state', str(MenuGui.STATE_ABOUT))
+            items.append(item)
+            item = xbmcgui.ListItem(strings(30103))
+            item.setProperty('state', str(MenuGui.STATE_EXIT))
+            items.append(item)
 
         elif self.state in [MenuGui.STATE_MOVIE_QUIZ, MenuGui.STATE_TV_QUIZ]:
             items.append(xbmcgui.ListItem(strings(30602)))
@@ -435,14 +448,10 @@ class MenuGui(xbmcgui.WindowXMLDialog):
             visibilityControlId = MenuGui.C_MENU_VISIBILITY
 
             if self.state == MenuGui.STATE_MAIN:
-                if idx == 0:
-                    self.state = MenuGui.STATE_MOVIE_QUIZ
-                elif idx == 1:
-                    self.state = MenuGui.STATE_TV_QUIZ
-                elif idx == 2:
-                    self.state = MenuGui.STATE_PLAYER
-                elif idx == 3:
-                    self.state = MenuGui.STATE_HIGHSCORE
+                item = self.getControl(MenuGui.C_MENU_LIST).getSelectedItem()
+                self.state = int(item.getProperty('state'))
+
+                if self.state == MenuGui.STATE_HIGHSCORE:
                     self.highscoreGlobal = None
                     self.highscoreType = None
                     self.highscoreGameType = None
@@ -452,14 +461,13 @@ class MenuGui(xbmcgui.WindowXMLDialog):
                     self.reloadHighscores()
                     return
 
-                elif idx == 4:
-                    self.state = MenuGui.STATE_ABOUT
+                elif self.state == MenuGui.STATE_ABOUT:
                     f = open(os.path.join(ADDON.getAddonInfo('path'), 'about.txt'))
                     self.getControl(MenuGui.C_MENU_ABOUT_TEXT).setText(f.read())
                     f.close()
                     self.getControl(MenuGui.C_MENU_ABOUT_VISIBILITY).setVisible(False)
 
-                elif idx == 5:
+                elif self.state == MenuGui.STATE_EXIT:
                     self.quizGui.close()
                     self.close()
                     return
@@ -653,25 +661,6 @@ class MenuGui(xbmcgui.WindowXMLDialog):
             return userId
 
         return None
-
-    def onUpdateUserSelectList(self):
-        localHighscore = highscore.LocalHighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
-        if not localHighscore.getUsers():
-            self.onAddNewUser(createDefault=True)
-
-        listControl = self.getControl(self.C_MENU_USER_SELECT)
-        listControl.reset()
-        for user in localHighscore.getUsers():
-            item = xbmcgui.ListItem(user['nickname'])
-            item.setProperty('id', str(user['id']))
-            listControl.addItem(item)
-
-        item = xbmcgui.ListItem(strings(G_ADD_USER))
-        item.setProperty('id', '-1')
-        listControl.addItem(item)
-
-        localHighscore.close()
-
 
 class QuizGui(xbmcgui.WindowXML):
     C_MAIN_FIRST_ANSWER = 4000
@@ -1136,8 +1125,9 @@ class GameOverDialog(xbmcgui.WindowXMLDialog):
 
         movies = library.getMovies(['art']).limitTo(44).asList()
         posters = [movie['art']['poster'] for movie in movies if 'art' in movie and 'poster' in movie['art']]
-        for idx in range(0, 44):
-            self.getControl(1000 + idx).setImage(posters[idx % len(posters)])
+        if posters:
+            for idx in range(0, 44):
+                self.getControl(1000 + idx).setImage(posters[idx % len(posters)])
 
         self.getControl(4100).setLabel(
             strings(G_YOU_SCORED) % (self.game.getCorrectAnswers(), self.game.getTotalAnswers()))

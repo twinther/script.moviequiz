@@ -1295,9 +1295,9 @@
             </animation>
 
             <control type="label">
-                <posx>0</posx>
+                <posx>-50</posx>
                 <posy>0</posy>
-                <width>150</width>
+                <width>200</width>
                 <height>30</height>
                 <textcolor>ffffffff</textcolor>
                 <font>font13</font>
@@ -1306,20 +1306,20 @@
                 <aligny>center</aligny>
             </control>
             <control type="image">
-                <posx>0</posx>
+                <posx>-50</posx>
                 <posy>40</posy>
                 <width>16</width>
                 <height>16</height>
                 <texture>quiz-icon-player.png</texture>
             </control>
             <control type="label" id="5000">
-                <posx>20</posx>
+                <posx>-30</posx>
                 <posy>30</posy>
-                <width>150</width>
+                <width>200</width>
                 <height>30</height>
                 <textcolor>ffffffff</textcolor>
                 <font>font13</font>
-                <label>Tommy</label>
+                <label>...</label>
                 <align>left</align>
                 <aligny>center</aligny>
             </control>

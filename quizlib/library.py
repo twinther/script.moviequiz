@@ -142,8 +142,8 @@ class Query(object):
 
     def asList(self):
         response = self.getResponse()
-        if response['result'].has_key(self.resultKey):
-            return self.getResponse()['result'][self.resultKey]
+        if 'result' in response and self.resultKey in response['result']:
+            return response['result'][self.resultKey]
         else:
             return list()
 
