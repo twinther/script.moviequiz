@@ -429,7 +429,7 @@
             <posx>800</posx>
             <posy>70</posy>
             <width>296</width>
-            <height>190</height>
+            <height>188</height>
             <texture>quiz-logo-gameover.png</texture>
             <animation type="WindowOpen">
                 <effect type="fade" start="0" end="100" time="500" />
