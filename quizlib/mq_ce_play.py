@@ -39,7 +39,7 @@ def runCinemaExperience(type, automatic, maxRating, genre, questionLimit):
     questionLimit -- the number of questions to go through before the quiz ends.
     """
     xbmc.log("Starting Movie Quiz in Cinema Experience mode with params: type=%s, automatic=%s, maxRating=%s, genre=%s, questionLimit=%d"
-        % (type, automatic, maxRating, genre, questionLimit))
+             % (type, automatic, maxRating, genre, questionLimit))
     game = QuestionLimitedGame(type, -1, not automatic, questionLimit)
     w = QuizGui(game)
     w.doModal()

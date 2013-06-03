@@ -164,6 +164,7 @@ class MenuGui(xbmcgui.WindowXMLDialog):
         self.tvShowsEnabled = True
 
         self.userId = -1
+        self.statisticsLabel = None
         self.localHighscore = highscore.LocalHighscoreDatabase(xbmc.translatePath(ADDON.getAddonInfo('profile')))
         self.globalHighscore = highscore.GlobalHighscoreDatabase(ADDON.getAddonInfo('version'))
         self.globalHighscorePage = 0
@@ -272,6 +273,15 @@ class MenuGui(xbmcgui.WindowXMLDialog):
         globalHighscore = highscore.GlobalHighscoreDatabase(ADDON.getAddonInfo('version'))
         statistics = globalHighscore.getStatistics()
 
+        self.statisticsLabel = strings(M_STATISTICS, (
+            statistics['users']['unique_ips'],
+            statistics['users']['unique_countries'],
+            statistics['quiz']['total_games'],
+            statistics['quiz']['total_questions'],
+            statistics['quiz']['total_correct_answers'],
+            statistics['quiz']['correct_percentage']
+        ))
+
         self.getControl(MenuGui.C_MENU_GAMES_PLAYED_COUNTRY).setLabel(str(statistics['quiz']['total_games_in_country']))
         self.getControl(MenuGui.C_MENU_GAMES_PLAYED_COUNTRY_ICON).setImage(str(statistics['quiz']['countryIconUrl']))
         self.getControl(MenuGui.C_MENU_GAMES_PLAYED_GLOBAL).setLabel(str(statistics['quiz']['total_games']))
@@ -344,7 +354,6 @@ class MenuGui(xbmcgui.WindowXMLDialog):
 
     @buggalo.buggalo_try_except()
     def onAction(self, action):
-        print 'onAction'
         if action.getId() in [ACTION_PARENT_DIR, ACTION_PREVIOUS_MENU, ACTION_NAV_BACK]:
             self.getControl(MenuGui.C_MENU_VISIBILITY).setVisible(True)
             self.getControl(MenuGui.C_MENU_SELECTION_VISIBILITY).setVisible(True)
@@ -662,6 +671,7 @@ class MenuGui(xbmcgui.WindowXMLDialog):
 
         return None
 
+
 class QuizGui(xbmcgui.WindowXML):
     C_MAIN_FIRST_ANSWER = 4000
     C_MAIN_LAST_ANSWER = 4003
@@ -699,13 +709,13 @@ class QuizGui(xbmcgui.WindowXML):
     STATE_PLAYING = 3
     STATE_GAME_OVER = 4
 
-    def __new__(cls):
+    def __new__(cls, gameInstance = None):
         return super(QuizGui, cls).__new__(cls, 'script-moviequiz-main.xml', ADDON.getAddonInfo('path'))
 
-    def __init__(self):
+    def __init__(self, gameInstance = None):
         super(QuizGui, self).__init__()
 
-        self.gameInstance = None
+        self.gameInstance = gameInstance
 
         self.player = player.TenSecondPlayer()
         self.questionCandidates = []
@@ -730,7 +740,10 @@ class QuizGui(xbmcgui.WindowXML):
         if delta.seconds < 2:
             xbmc.sleep(1000 * (2 - delta.seconds))
 
-        self.showMenuDialog()
+        if self.gameInstance:
+            self.newGame(self.gameInstance)
+        else:
+            self.showMenuDialog()
 
     def showMenuDialog(self):
         menuGui = MenuGui(self)

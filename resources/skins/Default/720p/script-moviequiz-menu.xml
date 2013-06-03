@@ -1350,6 +1350,10 @@
                 <width>100</width>
                 <height>30</height>
                 <label>...</label>
+                <textcolor>ffffffff</textcolor>
+                <font>font13</font>
+                <align>left</align>
+                <aligny>center</aligny>
             </control>
 
 
@@ -1368,6 +1372,10 @@
                 <width>100</width>
                 <height>30</height>
                 <label />
+                <textcolor>ffffffff</textcolor>
+                <font>font13</font>
+                <align>left</align>
+                <aligny>center</aligny>
             </control>
 
             <control type="image">
@@ -1384,8 +1392,11 @@
                 <width>100</width>
                 <height>30</height>
                 <label />
+                <textcolor>ffffffff</textcolor>
+                <font>font13</font>
+                <align>left</align>
+                <aligny>center</aligny>
             </control>
-
 
         </control>
 
