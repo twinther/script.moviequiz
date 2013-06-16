@@ -1272,6 +1272,8 @@
                 <posy>550</posy>
                 <width>550</width>
                 <height>80</height>
+                <textcolor>ffffffff</textcolor>
+                <font>font13</font>
                 <label>$ADDON[script.moviequiz 30816]</label>
                 <wrapmultiline>true</wrapmultiline>
                 <align>center</align>
