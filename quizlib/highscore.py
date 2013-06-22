@@ -250,7 +250,11 @@ class LocalHighscoreDatabase(object):
         c.execute("UPDATE user SET last_used = datetime('now') WHERE id = ?", [userId])
         self.conn.commit()
         c.execute('SELECT nickname FROM user WHERE id = ?', [userId])
-        nickname = c.fetchone()['nickname']
+        row = c.fetchone()
+        if row:
+            nickname = row['nickname']
+        else:
+            nickname = 'Unknown player'
         c.close()
         return nickname
 
