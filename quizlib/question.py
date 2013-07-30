@@ -127,17 +127,13 @@ class DisplayType(object):
 
 
 class VideoDisplayType(DisplayType):
-    def setVideoFile(self, videoFile, resumePoint):
+    def setVideoFile(self, videoFile):
         self.videoFile = videoFile
-        self.resumePoint = resumePoint
         if not xbmcvfs.exists(self.videoFile):
             raise QuestionException('Video file not found: %s' % self.videoFile.encode('utf-8', 'ignore'))
 
     def getVideoFile(self):
         return self.videoFile
-
-    def getResumePoint(self):
-        return self.resumePoint
 
 
 class PhotoDisplayType(DisplayType):
@@ -191,7 +187,7 @@ class WhatMovieIsThisQuestion(MovieQuestion):
         videoDisplayType = VideoDisplayType()
         super(WhatMovieIsThisQuestion, self).__init__(videoDisplayType)
 
-        correctAnswer = library.getMovies(['title', 'set', 'genre', 'file', 'resume', 'art']).withFilters(
+        correctAnswer = library.getMovies(['title', 'set', 'genre', 'file', 'art']).withFilters(
             defaultFilters).limitTo(1).asItem()
         if not correctAnswer:
             raise QuestionException('No movies found')
@@ -222,7 +218,7 @@ class WhatMovieIsThisQuestion(MovieQuestion):
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_MOVIE_IS_THIS)
-        videoDisplayType.setVideoFile(correctAnswer['file'], correctAnswer['resume']['position'])
+        videoDisplayType.setVideoFile(correctAnswer['file'])
 
     @staticmethod
     def isEnabled():
@@ -847,7 +843,7 @@ class WhatTVShowIsThisQuestion(TVQuestion):
             raise QuestionException('No tvshows found')
         self.addCorrectAnswer(id=show['tvshowid'], text=show['title'], image=show['art']['poster'])
 
-        episode = library.getEpisodes(['file', 'resume']).withFilters(defaultFilters).fromShow(show['title']).limitTo(
+        episode = library.getEpisodes(['file']).withFilters(defaultFilters).fromShow(show['title']).limitTo(
             1).asItem()
         if not episode:
             raise QuestionException('TVshow has no episodes')
@@ -859,7 +855,7 @@ class WhatTVShowIsThisQuestion(TVQuestion):
 
         random.shuffle(self.answers)
         self.text = strings(Q_WHAT_TVSHOW_IS_THIS)
-        videoDisplayType.setVideoFile(episode['file'], episode['resume']['position'])
+        videoDisplayType.setVideoFile(episode['file'])
 
     @staticmethod
     def isEnabled():
@@ -881,7 +877,7 @@ class WhatSeasonIsThisQuestion(TVQuestion):
         seasons = library.getSeasons(show['tvshowid'], ['season', 'art']).limitTo(4).asList()
         correctIdx = random.randint(0, len(seasons) - 1)
 
-        episode = library.getEpisodes(['file', 'resume']).withFilters(defaultFilters).fromShow(
+        episode = library.getEpisodes(['file']).withFilters(defaultFilters).fromShow(
             show['title']).fromSeason(seasons[correctIdx]['season']).limitTo(1).asItem()
         if not episode:
             raise QuestionException('TVshow has no episodes')
@@ -893,7 +889,7 @@ class WhatSeasonIsThisQuestion(TVQuestion):
         self.answers = sorted(self.answers, key=lambda answer: int(answer.sortWeight))
 
         self.text = strings(Q_WHAT_SEASON_IS_THIS) % show['title']
-        videoDisplayType.setVideoFile(episode['file'], episode['resume']['position'])
+        videoDisplayType.setVideoFile(episode['file'])
 
     @staticmethod
     def isEnabled():
@@ -916,7 +912,7 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
         if not season:
             raise QuestionException('No seasons found')
 
-        episodes = library.getEpisodes(['episode', 'title', 'file', 'resume']).fromShow(show['title']).fromSeason(
+        episodes = library.getEpisodes(['episode', 'title', 'file']).fromShow(show['title']).fromSeason(
             season['season']).limitTo(4).asList()
         correctIdx = random.randint(0, len(episodes) - 1)
 
@@ -928,7 +924,7 @@ class WhatEpisodeIsThisQuestion(TVQuestion):
         self.answers = sorted(self.answers, key=lambda answer: int(answer.sortWeight))
 
         self.text = strings(Q_WHAT_EPISODE_IS_THIS) % show['title']
-        videoDisplayType.setVideoFile(episodes[correctIdx]['file'], episodes[correctIdx]['resume']['position'])
+        videoDisplayType.setVideoFile(episodes[correctIdx]['file'])
 
     @staticmethod
     def isEnabled():
@@ -1095,6 +1091,99 @@ class WhatTVShowIsThisThemeFromQuestion(TVQuestion):
         return ADDON.getSetting('question.whattvshowisthisthemefrom.enabled') == 'true'
 
 
+class MusicQuestion(Question):
+    pass
+
+    def get_song_title(self, title, artist):
+        return "[B]%s[/B] by [B]%s[/B]" % (title, artist[0])
+
+
+class WhatSongIsThisQuestion(MusicQuestion):
+    def __init__(self, defaultFilters):
+        audioDisplayType = AudioDisplayType()
+        super(WhatSongIsThisQuestion, self).__init__(audioDisplayType)
+
+        correctAnswer = library.getSongs(['title', 'artist', 'artistid', 'file', 'thumbnail']).withFilters(defaultFilters).limitTo(1).asItem()
+        if not correctAnswer:
+            raise QuestionException('No songs found')
+
+        self.addCorrectAnswer(id=correctAnswer['file'], text=correctAnswer['title'], image=correctAnswer['thumbnail'])
+
+        # Fill with random songs
+        theRest = library.getSongs(['title', 'artist', 'thumbnail']).withFilters(defaultFilters).excludeTitles(
+            self.getAnswerTexts()).withArtist(correctAnswer['artist'][0]).limitTo(4 - len(self.answers)).asList()
+        for song in theRest:
+            self.addAnswer(id=-1, text=song['title'], image=song['thumbnail'])
+
+        random.shuffle(self.answers)
+        self.text = strings(Q_WHAT_SONG_IS_THIS, correctAnswer['artist'][0])
+        audioDisplayType.setAudioFile(correctAnswer['file'])
+
+        artist = library.getArtistDetails(correctAnswer['artistid'][0], ['fanart']).asItem()
+        self.setFanartFile(artist['fanart'])
+
+    @staticmethod
+    def isEnabled():
+        return False  #ADDON.getSetting('question.whatsongisthis.enabled') == 'true'
+
+
+class WhoMadeTheSongQuestion(MusicQuestion):
+    def __init__(self, defaultFilters):
+        audioDisplayType = AudioDisplayType()
+        super(WhoMadeTheSongQuestion, self).__init__(audioDisplayType)
+
+        correctAnswer = library.getArtists().withFilters(defaultFilters).limitTo(1).asItem()
+        artist = library.getArtistDetails(correctAnswer['artistid'], ['thumbnail']).asItem()
+        song = library.getSongs(['title', 'file']).withFilters(defaultFilters).withArtist(correctAnswer['artist']).limitTo(1).asItem()
+        if not correctAnswer or not song:
+            raise QuestionException('No artist or song found')
+
+        self.addCorrectAnswer(id=correctAnswer['artistid'], text=correctAnswer['artist'], image=artist['thumbnail'])
+
+        # Fill with random artists
+        theRest = library.getArtists().withFilters(defaultFilters).withoutArtist(correctAnswer['artist']).limitTo(4 - len(self.answers)).asList()
+        for item in theRest:
+            artist = library.getArtistDetails(item['artistid'], ['thumbnail']).asItem()
+            self.addAnswer(id=item['artist'], text=item['artist'], image=artist['thumbnail'])
+
+        random.shuffle(self.answers)
+        self.text = strings(Q_WHO_MADE_THE_SONG, song['title'])
+        audioDisplayType.setAudioFile(song['file'])
+
+    @staticmethod
+    def isEnabled():
+        return False  #ADDON.getSetting('question.whatsongisthis.enabled') == 'true'
+
+
+class WhoMadeTheAlbumQuestion(MusicQuestion):
+    def __init__(self, defaultFilters):
+        photoDisplayType = PhotoDisplayType()
+        super(WhoMadeTheAlbumQuestion, self).__init__(photoDisplayType)
+
+        correctAnswer = library.getArtists().withFilters(defaultFilters).limitTo(1).asItem()
+        artist = library.getArtistDetails(correctAnswer['artistid'], ['thumbnail']).asItem()
+        album = library.getAlbums(['title', 'fanart', 'thumbnail']).withFilters(defaultFilters).withArtist(correctAnswer['artist']).limitTo(1).asItem()
+        if not correctAnswer or not album:
+            raise QuestionException('No artist or album found')
+
+        self.addCorrectAnswer(id=correctAnswer['artistid'], text=correctAnswer['artist'], image=artist['thumbnail'])
+
+        # Fill with random artists
+        theRest = library.getArtists().withFilters(defaultFilters).withoutArtist(correctAnswer['artist']).limitTo(4 - len(self.answers)).asList()
+        for item in theRest:
+            artist = library.getArtistDetails(item['artistid'], ['thumbnail']).asItem()
+            self.addAnswer(id=item['artist'], text=item['artist'], image=artist['thumbnail'])
+
+        random.shuffle(self.answers)
+        self.text = strings(Q_WHO_MADE_THE_ALBUM, album['title'])
+        photoDisplayType.setPhotoFile(album['thumbnail'])
+        self.setFanartFile(album['fanart'])
+
+    @staticmethod
+    def isEnabled():
+        return True  #ADDON.getSetting('question.whatsongisthis.enabled') == 'true'
+
+
 class QuestionException(Exception):
     pass
 
@@ -1108,6 +1197,8 @@ def getEnabledQuestionCandidates(gameInstance):
         questionCandidates = MovieQuestion.__subclasses__()
     elif gameInstance.getType() == game.GAMETYPE_TVSHOW:
         questionCandidates = TVQuestion.__subclasses__()
+    elif gameInstance.getType() == game.GAMETYPE_MUSIC:
+        questionCandidates = MusicQuestion.__subclasses__()
 
     questionCandidates = [candidate for candidate in questionCandidates if candidate.isEnabled()]
 
@@ -1122,5 +1213,10 @@ def isAnyMovieQuestionsEnabled():
 
 def isAnyTVShowQuestionsEnabled():
     subclasses = TVQuestion.__subclasses__()
+    subclasses = [subclass for subclass in subclasses if subclass.isEnabled()]
+    return subclasses
+
+def isAnyMusicQuestionsEnabled():
+    subclasses = MusicQuestion.__subclasses__()
     subclasses = [subclass for subclass in subclasses if subclass.isEnabled()]
     return subclasses

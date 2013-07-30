@@ -24,6 +24,7 @@ from strings import *
 
 GAMETYPE_MOVIE = "movie"
 GAMETYPE_TVSHOW = "tvshow"
+GAMETYPE_MUSIC = "music"
 
 
 class Game(object):

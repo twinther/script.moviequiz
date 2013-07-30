@@ -65,11 +65,12 @@ ACTION_JUMP_SMS7 = 147
 ACTION_JUMP_SMS8 = 148
 ACTION_JUMP_SMS9 = 149
 
-RESOURCES_PATH = os.path.join(ADDON.getAddonInfo('path'), 'resources', )
+RESOURCES_PATH = os.path.join(ADDON.getAddonInfo('path'), 'resources')
 AUDIO_CORRECT = os.path.join(RESOURCES_PATH, 'audio', 'correct.wav')
 AUDIO_WRONG = os.path.join(RESOURCES_PATH, 'audio', 'wrong.wav')
 BACKGROUND_MOVIE = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz-background-movie.jpg')
 BACKGROUND_TV = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz-background-tvshows.jpg')
+BACKGROUND_THEME = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz-background-theme.jpg')
 NO_PHOTO_IMAGE = os.path.join(RESOURCES_PATH, 'skins', 'Default', 'media', 'quiz-no-photo.png')
 
 MPAA_RATINGS = ['R', 'Rated R', 'PG-13', 'Rated PG-13', 'PG', 'Rated PG', 'G', 'Rated G']
@@ -105,12 +106,15 @@ class MenuGui(xbmcgui.WindowXMLDialog):
     STATE_MAIN = 1
     STATE_MOVIE_QUIZ = 2
     STATE_TV_QUIZ = 3
+    STATE_MUSIC_QUIZ = 11
     STATE_PLAYER = 4
     STATE_ABOUT = 5
     STATE_MOVIE_TIME = 6
     STATE_MOVIE_QUESTION = 7
     STATE_TVSHOW_TIME = 8
     STATE_TVSHOW_QUESTION = 9
+    STATE_MUSIC_TIME = 12
+    STATE_MUSIC_QUESTION = 13
     STATE_HIGHSCORE = 10
     STATE_EXIT = 99
 
@@ -225,8 +229,9 @@ class MenuGui(xbmcgui.WindowXMLDialog):
         # Check preconditions
         hasMovies = library.hasMovies()
         hasTVShows = library.hasTVShows()
+        hasMusic = library.hasMusic()
 
-        if not hasMovies and not hasTVShows:
+        if not hasMovies and not hasTVShows and not hasMusic:
             self.close()
             self.quizGui.close()
             # Must have at least one movie or tvshow
@@ -254,6 +259,7 @@ class MenuGui(xbmcgui.WindowXMLDialog):
 
         self.moviesEnabled = bool(hasMovies and question.isAnyMovieQuestionsEnabled())
         self.tvShowsEnabled = bool(hasTVShows and question.isAnyTVShowQuestionsEnabled())
+        self.musicEnabled = bool(hasMusic)  # TODO
 
         if not question.isAnyMovieQuestionsEnabled():
             xbmcgui.Dialog().ok(strings(E_WARNING), strings(E_ALL_MOVIE_QUESTIONS_DISABLED),
@@ -379,6 +385,10 @@ class MenuGui(xbmcgui.WindowXMLDialog):
                 self.state = MenuGui.STATE_TV_QUIZ
                 self.updateMenu()
 
+            elif self.state in [MenuGui.STATE_MUSIC_TIME, MenuGui.STATE_MUSIC_QUESTION]:
+                self.state = MenuGui.STATE_MUSIC_QUIZ
+                self.updateMenu()
+
             self.getControl(MenuGui.C_MENU_VISIBILITY).setVisible(False)
 
         elif MenuGui.STATE_HIGHSCORE == self.state:
@@ -399,6 +409,10 @@ class MenuGui(xbmcgui.WindowXMLDialog):
                 item = xbmcgui.ListItem(strings(30101))
                 item.setProperty('state', str(MenuGui.STATE_TV_QUIZ))
                 items.append(item)
+            if self.musicEnabled:
+                item = xbmcgui.ListItem(strings(30106))
+                item.setProperty('state', str(MenuGui.STATE_MUSIC_QUIZ))
+                items.append(item)
 
             item = xbmcgui.ListItem(strings(30104))
             item.setProperty('state', str(MenuGui.STATE_PLAYER))
@@ -413,7 +427,7 @@ class MenuGui(xbmcgui.WindowXMLDialog):
             item.setProperty('state', str(MenuGui.STATE_EXIT))
             items.append(item)
 
-        elif self.state in [MenuGui.STATE_MOVIE_QUIZ, MenuGui.STATE_TV_QUIZ]:
+        elif self.state in [MenuGui.STATE_MOVIE_QUIZ, MenuGui.STATE_TV_QUIZ, MenuGui.STATE_MUSIC_QUIZ]:
             items.append(xbmcgui.ListItem(strings(30602)))
             items.append(xbmcgui.ListItem(strings(30603)))
             items.append(xbmcgui.ListItem(strings(30604)))
@@ -552,6 +566,41 @@ class MenuGui(xbmcgui.WindowXMLDialog):
                     self.state = MenuGui.STATE_MAIN
                     self.updateMenu()
 
+            elif self.state == MenuGui.STATE_MUSIC_QUIZ:
+                if idx == 0:  # unlimited
+                    gameInstance = game.UnlimitedGame(game.GAMETYPE_MUSIC, self.userId, interactive=True)
+                    self.close()
+                    self.quizGui.newGame(gameInstance)
+                    return
+
+                elif idx == 1:  # time limited
+                    self.state = MenuGui.STATE_MUSIC_TIME
+                    visibilityControlId = MenuGui.C_MENU_SELECTION_VISIBILITY
+                    self.setFocusId(MenuGui.C_MENU_SELECTION_START)
+
+                    listControl = self.getControl(MenuGui.C_MENU_SELECTION_OPTION)
+                    listControl.reset()
+                    for subTypes in self.TIME_SUB_TYPES:
+                        item = xbmcgui.ListItem(subTypes['text'])
+                        item.setProperty("limit", subTypes['limit'])
+                        listControl.addItem(item)
+
+                elif idx == 2:  # question limited
+                    self.state = MenuGui.STATE_MUSIC_QUESTION
+                    visibilityControlId = MenuGui.C_MENU_SELECTION_VISIBILITY
+                    self.setFocusId(MenuGui.C_MENU_SELECTION_START)
+
+                    listControl = self.getControl(MenuGui.C_MENU_SELECTION_OPTION)
+                    listControl.reset()
+                    for subTypes in self.QUESTION_SUB_TYPES:
+                        item = xbmcgui.ListItem(subTypes['text'])
+                        item.setProperty("limit", subTypes['limit'])
+                        listControl.addItem(item)
+
+                elif idx == 3:  # main menu
+                    self.state = MenuGui.STATE_MAIN
+                    self.updateMenu()
+
             elif self.state == MenuGui.STATE_PLAYER:
                 item = self.getControl(MenuGui.C_MENU_LIST).getSelectedItem()
                 if item.getProperty('id') == '-1':
@@ -613,6 +662,10 @@ class MenuGui(xbmcgui.WindowXMLDialog):
                 gameInstance = game.TimeLimitedGame(game.GAMETYPE_TVSHOW, self.userId, interactive=True, timeLimitMinutes=limit)
             elif MenuGui.STATE_TVSHOW_QUESTION == self.state:
                 gameInstance = game.QuestionLimitedGame(game.GAMETYPE_TVSHOW, self.userId, interactive=True, questionLimit=limit)
+            elif MenuGui.STATE_MUSIC_TIME == self.state:
+                gameInstance = game.TimeLimitedGame(game.GAMETYPE_MUSIC, self.userId, interactive=True, timeLimitMinutes=limit)
+            elif MenuGui.STATE_MUSIC_QUESTION == self.state:
+                gameInstance = game.QuestionLimitedGame(game.GAMETYPE_MUSIC, self.userId, interactive=True, questionLimit=limit)
             if gameInstance:
                 self.close()
                 self.quizGui.newGame(gameInstance)
@@ -635,6 +688,8 @@ class MenuGui(xbmcgui.WindowXMLDialog):
                 self.state = MenuGui.STATE_MOVIE_QUIZ
             elif self.state in [MenuGui.STATE_TVSHOW_QUESTION, MenuGui.STATE_TVSHOW_TIME]:
                 self.state = MenuGui.STATE_TV_QUIZ
+            elif self.state in [MenuGui.STATE_MUSIC_QUESTION, MenuGui.STATE_MUSIC_TIME]:
+                self.state = MenuGui.STATE_MUSIC_QUIZ
             else:
                 self.state = MenuGui.STATE_MAIN
             self.updateMenu()
@@ -763,9 +818,7 @@ class QuizGui(xbmcgui.WindowXML):
             self.defaultBackground = BACKGROUND_TV
         else:
             self.defaultBackground = BACKGROUND_MOVIE
-
-        if self.gameInstance.getType() == game.GAMETYPE_TVSHOW:
-            self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(self.defaultBackground)
+        self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(self.defaultBackground)
 
         self.defaultLibraryFilters = list()
         if gameInstance.getType() == game.GAMETYPE_MOVIE and ADDON.getSetting('movie.rating.limit.enabled') == 'true':
@@ -895,16 +948,18 @@ class QuizGui(xbmcgui.WindowXML):
 
         self.onThumbChanged()
 
-        if self.question.getFanartFile() is not None:
+        displayType = self.question.getDisplayType()
+        if self.question.getFanartFile():
             self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(self.question.getFanartFile())
+        elif isinstance(displayType, question.AudioDisplayType):
+            self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(BACKGROUND_THEME)
         else:
             self.getControl(self.C_MAIN_MOVIE_BACKGROUND).setImage(self.defaultBackground)
 
-        displayType = self.question.getDisplayType()
         if isinstance(displayType, question.VideoDisplayType):
             self.getControl(self.C_MAIN_VIDEO_FILE_NOT_FOUND).setVisible(False)
             xbmc.sleep(1500)  # give skin animation time to execute
-            if not self.player.playWindowed(displayType.getVideoFile(), displayType.getResumePoint()):
+            if not self.player.playWindowed(displayType.getVideoFile()):
                 self.getControl(self.C_MAIN_VIDEO_FILE_NOT_FOUND).setVisible(True)
 
         elif isinstance(displayType, question.PhotoDisplayType):
@@ -924,7 +979,8 @@ class QuizGui(xbmcgui.WindowXML):
             self.getControl(self.C_MAIN_QUOTE_LABEL).setText(quoteText)
 
         elif isinstance(displayType, question.AudioDisplayType):
-            self.player.playAudio(displayType.getAudioFile())
+            #self.player.playAudio(displayType.getAudioFile())
+            self.player.playWindowed(displayType.getAudioFile())
 
         self.onVisibilityChanged(displayType)
 
@@ -1091,8 +1147,7 @@ class QuizGui(xbmcgui.WindowXML):
         self.getControl(self.C_MAIN_VIDEO_VISIBILITY).setVisible(not isinstance(displayType, question.VideoDisplayType))
         self.getControl(self.C_MAIN_PHOTO_VISIBILITY).setVisible(not isinstance(displayType, question.PhotoDisplayType))
         self.getControl(self.C_MAIN_QUOTE_VISIBILITY).setVisible(not isinstance(displayType, question.QuoteDisplayType))
-        self.getControl(self.C_MAIN_THREE_PHOTOS_VISIBILITY).setVisible(
-            not isinstance(displayType, question.ThreePhotoDisplayType))
+        self.getControl(self.C_MAIN_THREE_PHOTOS_VISIBILITY).setVisible(not isinstance(displayType, question.ThreePhotoDisplayType))
         self.getControl(self.C_MAIN_THEME_VISIBILITY).setVisible(not isinstance(displayType, question.AudioDisplayType))
 
     def _obfuscateQuote(self, quote):

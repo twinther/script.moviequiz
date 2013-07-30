@@ -306,7 +306,7 @@
             </control>
 
             <!-- theme group -->
-            <control type="group">
+            <!--<control type="group">
                 <description>theme group</description>
                 <posx>0</posx>
                 <posy>0</posy>
@@ -323,7 +323,7 @@
                     <height>720</height>
                     <texture>quiz-background-theme.jpg</texture>
                 </control>
-            </control>
+            </control>-->
 
             <!--<control type="image">-->
                 <!--<description>Loading glasspane</description>-->
@@ -458,7 +458,7 @@
                     <label>$ADDON[script.moviequiz 30011]</label>
                     <align>center</align>
                     <onright>4011</onright>
-                    <enable>!Control.IsVisible(5000) + !Control.IsVisible(4800)</enable>
+                    <enable>[!Control.IsVisible(5000) + !Control.IsVisible(4800)] | !Control.IsVisible(5008)</enable>
                 </control>
                 <control type="button" id="4011">
                     <description>Exit quiz</description>

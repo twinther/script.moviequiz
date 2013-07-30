@@ -1,5 +1,6 @@
 TODOs and suggestions in no particular order
 
+- Button "in game" to disable the current question type
 - Error message when we are unable to find additional questions
 - DVD ISO's plays menu instead of movie
 - Multiplayer support
@@ -17,3 +18,7 @@ Movie Question suggestions:
 
 TV Question:
 - When was season first aired?
+
+Music Question:
+- Who made album?
+- When was album released?

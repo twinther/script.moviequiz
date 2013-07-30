@@ -24,12 +24,12 @@ import json
 
 def getMovies(properties=None):
     params = {'sort': {'method': 'random'}}
-    return Query('VideoLibrary.GetMovies', params, properties, 'movies')
+    return VideoQuery('VideoLibrary.GetMovies', params, properties, 'movies')
 
 
 def getTVShows(properties=None):
     params = {'sort': {'method': 'random'}}
-    return Query('VideoLibrary.GetTVShows', params, properties, 'tvshows')
+    return VideoQuery('VideoLibrary.GetTVShows', params, properties, 'tvshows')
 
 
 def getSeasons(tvShowId, properties=None):
@@ -37,12 +37,12 @@ def getSeasons(tvShowId, properties=None):
         'sort': {'method': 'random'},
         'tvshowid': tvShowId
     }
-    return Query('VideoLibrary.GetSeasons', params, properties, 'seasons')
+    return VideoQuery('VideoLibrary.GetSeasons', params, properties, 'seasons')
 
 
 def getEpisodes(properties=None):
     params = {'sort': {'method': 'random'}}
-    return Query('VideoLibrary.GetEpisodes', params, properties, 'episodes')
+    return VideoQuery('VideoLibrary.GetEpisodes', params, properties, 'episodes')
 
 
 def getMovieCount():
@@ -53,12 +53,37 @@ def getTVShowsCount():
     return getTVShows().limitTo(1).getResponse()['result']['limits']['total']
 
 
-def getSeasonsCount():
-    return getSeasons().limitTo(1).getResponse()['result']['limits']['total']
+def getSeasonsCount(tvShowId):
+    return getSeasons(tvShowId).limitTo(1).getResponse()['result']['limits']['total']
 
 
 def getEpisodesCount():
     return getEpisodes().limitTo(1).getResponse()['result']['limits']['total']
+
+
+def getSongs(properties=None):
+    params = {'sort': {'method': 'random'}}
+    return AudioQuery('AudioLibrary.GetSongs', params, properties, 'songs')
+
+
+def getAlbums(properties=None):
+    params = {'sort': {'method': 'random'}}
+    return AudioQuery('AudioLibrary.GetAlbums', params, properties, 'albums')
+
+
+def getAlbumDetailss(albumId, properties=None):
+    params = {'albumid': albumId}
+    return AudioQuery('AudioLibrary.GetAlbumDetails', params, properties, 'albumdetails')
+
+
+def getArtists(properties=None):
+    params = {'sort': {'method': 'random'}}
+    return AudioQuery('AudioLibrary.GetArtists', params, properties, 'artists')
+
+
+def getArtistDetails(artistId, properties=None):
+    params = {'artistid': artistId}
+    return AudioQuery('AudioLibrary.GetArtistDetails', params, properties, 'artistdetails')
 
 
 def hasMovies():
@@ -69,6 +94,11 @@ def hasMovies():
 def hasTVShows():
     return Query('XBMC.GetInfoBooleans', {'booleans': ['Library.HasContent(TVShows)']},
                  resultKey='Library.HasContent(TVShows)').asList()
+
+
+def hasMusic():
+    return Query('XBMC.GetInfoBooleans', {'booleans': ['Library.HasContent(Music)']},
+                 resultKey='Library.HasContent(Music)').asList()
 
 
 def isAnyVideosWatched():
@@ -137,7 +167,7 @@ class Query(object):
 
         command = json.dumps(self.query)
         resp = xbmc.executeJSONRPC(command)
-        #print resp
+        print resp
         return json.loads(resp)
 
     def asList(self):
@@ -148,16 +178,38 @@ class Query(object):
             return list()
 
     def asItem(self):
-        list = self.asList()
-        if list:
-            return list[0]
+        result = self.asList()
+        if type(result) == list:
+            return result[0]
         else:
-            return None
+            return result
 
     def withFilters(self, filters):
         self.filters.extend(iter(filters))
         return self
 
+    def limitTo(self, end):
+        self.params['limits'] = {'start': 0, 'end': end}
+        return self
+
+    def excludeTitles(self, titles):
+        if type(titles) == list:
+            for title in titles:
+                self.filters.append({
+                    'operator': 'doesnotcontain',
+                    'field': 'title',
+                    'value': title
+                })
+        else:
+            self.filters.append({
+                'operator': 'isnot',
+                'field': 'title',
+                'value': titles
+            })
+        return self
+
+
+class VideoQuery(Query):
     def inSet(self, set):
         self.filters.append({
             'operator': 'is',
@@ -172,22 +224,6 @@ class Query(object):
             'field': 'genre',
             'value': genre
         })
-        return self
-
-    def excludeTitles(self, titles):
-        if type(titles) == list:
-            for title in titles:
-                self.filters.append({
-                    'operator': 'doesnotcontain',
-                    'field': 'title',
-                    'value': title
-                })
-        else:
-            self.filters.append({
-                'operator': 'doesnotcontain',
-                'field': 'title',
-                'value': titles
-            })
         return self
 
     def withActor(self, actor):
@@ -270,14 +306,28 @@ class Query(object):
         })
         return self
 
-    def limitTo(self, end):
-        self.params['limits'] = {'start': 0, 'end': end}
-        return self
-
     def limitToMPAARating(self, rating):
         self.filters.append({
             'operator': 'isnot',
             'field': 'mpaarating',
             'value': rating
+        })
+        return self
+
+
+class AudioQuery(Query):
+    def withArtist(self, artist):
+        self.filters.append({
+            'operator': 'is',
+            'field': 'artist',
+            'value': artist
+        })
+        return self
+
+    def withoutArtist(self, artist):
+        self.filters.append({
+            'operator': 'isnot',
+            'field': 'artist',
+            'value': artist
         })
         return self

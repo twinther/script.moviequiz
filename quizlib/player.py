@@ -144,7 +144,11 @@ class TenSecondPlayer(xbmc.Player):
         self.bookmark = None
         self.isAudioFile = True
         self.playBackEventReceived = False
-        self.play(item=item, windowed=True)
+
+        listItem = xbmcgui.ListItem(path=item)
+        # (Ab)use the original_listitem_url to avoid saving/overwriting a bookmark in the file
+        listItem.setProperty("original_listitem_url", "plugin://script.moviequiz/dummy-savestate")
+        self.play(item=item, listitem=listItem, windowed=True)
 
         retries = 0
         while not self.playBackEventReceived and retries < 20:
@@ -194,6 +198,8 @@ class TenSecondPlayer(xbmc.Player):
             self.startingPlayback = False
             return
 
+        if self.tenSecondTimer is not None:
+            self.tenSecondTimer.cancel()
         self.tenSecondTimer = threading.Timer(10.0, self.onTenSecondsPassed)
         self.tenSecondTimer.start()
 
