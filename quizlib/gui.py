@@ -915,6 +915,8 @@ class QuizGui(xbmcgui.WindowXML):
             w = GameOverDialog(self, self.gameInstance)
             w.doModal()
             del w
+        else:
+            self.close()
 
     @buggalo.buggalo_try_except()
     def onNewQuestion(self):
