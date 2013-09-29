@@ -1124,13 +1124,13 @@ class WhatSongIsThisQuestion(MusicQuestion):
 
     @staticmethod
     def isEnabled():
-        return False  #ADDON.getSetting('question.whatsongisthis.enabled') == 'true'
+        return ADDON.getSetting('question.whatsongisthis.enabled') == 'true'
 
 
-class WhoMadeTheSongQuestion(MusicQuestion):
+class WhoMadeThisSongQuestion(MusicQuestion):
     def __init__(self, defaultFilters):
         audioDisplayType = AudioDisplayType()
-        super(WhoMadeTheSongQuestion, self).__init__(audioDisplayType)
+        super(WhoMadeThisSongQuestion, self).__init__(audioDisplayType)
 
         correctAnswer = library.getArtists().withFilters(defaultFilters).limitTo(1).asItem()
         artist = library.getArtistDetails(correctAnswer['artistid'], ['thumbnail']).asItem()
@@ -1152,13 +1152,13 @@ class WhoMadeTheSongQuestion(MusicQuestion):
 
     @staticmethod
     def isEnabled():
-        return False  #ADDON.getSetting('question.whatsongisthis.enabled') == 'true'
+        return ADDON.getSetting('question.whomadethissong.enabled') == 'true'
 
 
-class WhoMadeTheAlbumQuestion(MusicQuestion):
+class WhoMadeThisAlbumQuestion(MusicQuestion):
     def __init__(self, defaultFilters):
         photoDisplayType = PhotoDisplayType()
-        super(WhoMadeTheAlbumQuestion, self).__init__(photoDisplayType)
+        super(WhoMadeThisAlbumQuestion, self).__init__(photoDisplayType)
 
         correctAnswer = library.getArtists().withFilters(defaultFilters).limitTo(1).asItem()
         artist = library.getArtistDetails(correctAnswer['artistid'], ['thumbnail']).asItem()
@@ -1181,7 +1181,7 @@ class WhoMadeTheAlbumQuestion(MusicQuestion):
 
     @staticmethod
     def isEnabled():
-        return True  #ADDON.getSetting('question.whatsongisthis.enabled') == 'true'
+        return ADDON.getSetting('question.whomadethisalbum.enabled') == 'true'
 
 
 class QuestionException(Exception):
@@ -1215,6 +1215,7 @@ def isAnyTVShowQuestionsEnabled():
     subclasses = TVQuestion.__subclasses__()
     subclasses = [subclass for subclass in subclasses if subclass.isEnabled()]
     return subclasses
+
 
 def isAnyMusicQuestionsEnabled():
     subclasses = MusicQuestion.__subclasses__()

@@ -45,6 +45,11 @@
         <setting id="question.whattvshowisthisquotefrom.enabled" label="30585" type="bool" default="true"/>
         <setting id="question.whattvshowisthisthemefrom.enabled" label="30586" type="bool" default="true"/>
 
+        <setting type="lsep" label="30570"/>
+        <setting id="question.whatsongisthis.enabled" label="30571" type="bool" default="true"/>
+        <setting id="question.whomadethissong.enabled" label="30572" type="bool" default="true"/>
+        <setting id="question.whomadethisalbum.enabled" label="30573" type="bool" default="true"/>
+
      </category>
 
     <category label="30503">

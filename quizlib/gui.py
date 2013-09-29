@@ -166,6 +166,7 @@ class MenuGui(xbmcgui.WindowXMLDialog):
 
         self.moviesEnabled = True
         self.tvShowsEnabled = True
+        self.musicEnabled = True
 
         self.userId = -1
         self.statisticsLabel = None
@@ -214,6 +215,9 @@ class MenuGui(xbmcgui.WindowXMLDialog):
         item = xbmcgui.ListItem(strings(30811))
         item.setProperty('type', 'tvshow')
         listControl.addItem(item)
+        item = xbmcgui.ListItem(strings(30817))
+        item.setProperty('type', 'music')
+        listControl.addItem(item)
 
         listControl = self.getControl(MenuGui.C_MENU_HIGHSCORE_GAME_LIMIT)
         for gameType in self.GAME_TYPES:
@@ -259,7 +263,7 @@ class MenuGui(xbmcgui.WindowXMLDialog):
 
         self.moviesEnabled = bool(hasMovies and question.isAnyMovieQuestionsEnabled())
         self.tvShowsEnabled = bool(hasTVShows and question.isAnyTVShowQuestionsEnabled())
-        self.musicEnabled = bool(hasMusic)  # TODO
+        self.musicEnabled = bool(hasMusic) and question.isAnyMusicQuestionsEnabled()
 
         if not question.isAnyMovieQuestionsEnabled():
             xbmcgui.Dialog().ok(strings(E_WARNING), strings(E_ALL_MOVIE_QUESTIONS_DISABLED),
@@ -268,7 +272,6 @@ class MenuGui(xbmcgui.WindowXMLDialog):
         if not question.isAnyTVShowQuestionsEnabled():
             xbmcgui.Dialog().ok(strings(E_WARNING), strings(E_ALL_TVSHOW_QUESTIONS_DISABLED),
                                 strings(E_QUIZ_TYPE_NOT_AVAILABLE))
-
 
         self.updateMenu()
         self.getControl(MenuGui.C_MENU_VISIBILITY).setVisible(False)
@@ -298,8 +301,10 @@ class MenuGui(xbmcgui.WindowXMLDialog):
 
         if self.getControl(MenuGui.C_MENU_HIGHSCORE_GAME_TYPE).getSelectedItem().getProperty('type') == 'movie':
             highscoreType = game.GAMETYPE_MOVIE
-        else:
+        elif self.getControl(MenuGui.C_MENU_HIGHSCORE_GAME_TYPE).getSelectedItem().getProperty('type') == 'tvshow':
             highscoreType = game.GAMETYPE_TVSHOW
+        else:
+            highscoreType = game.GAMETYPE_MUSIC
 
         if self.getControl(MenuGui.C_MENU_HIGHSCORE_LOCAL_GLOBAL).getSelectedItem().getProperty('type') == 'global':
             highscoreGlobal = True
